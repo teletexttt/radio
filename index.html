@@ -3,36 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teletext Radio Online</title>
+    <title>Mi Radio Online</title>
     <style>
+        /* Incluir la fuente Chomsky */
+        @font-face {
+            font-family: 'Chomsky';
+            src: url('chomsky.otf') format('opentype'); /* Asegúrate de tener chomsky.otf en la carpeta */
+        }
+
         body {
-            margin: 0;
-            padding: 0;
-            background-image: url('ff.png'); /* Cambia por el nombre de la imagen que subiste */
+            background-image: url('ff.jpg');
             background-size: cover;
             background-position: center;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .content {
-            text-align: center;
+            background-repeat: no-repeat;
             color: white;
-            padding-top: 20%;
+            font-family: 'Chomsky', serif; /* Aplicar la fuente Chomsky */
+            text-align: center;
+            padding: 50px;
         }
+
+        h1 {
+            color: #ffffff;
+        }
+
         .player {
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="content">
-        <h1>Bienvenido a Teletext Radio Online</h1>
-        <div class="player">
-            <!-- Cambia la URL para que apunte al servidor de streaming (Icecast o Shoutcast) -->
-            <audio controls>
-                <source src="http://tu-dominio.com:8000/stream" type="audio/mpeg">
-                Tu navegador no soporta el reproductor de audio.
-            </audio>
-        </div>
+    <h1>Teletext Radio Online</h1>
+    <p>Escucha nuestra radio en vivo las 24 horas.</p>
+    
+    <div class="player">
+        <audio controls>
+            <source src="http://tu-servidor-icecast:puerto/stream" type="audio/mpeg">
+            Tu navegador no soporta el reproductor de audio.
+        </audio>
+
+        <!-- listen2myradio.com SHOUTcast Flash Player -->
+        <p id='preview'></p>
+        <script id='myscript' language='javascript' src='http://flashplayer.listen2myradio.com/getInfo.js?id=2214c83mbo1f5raroe2tiqc84611v2'></script>
+        <!-- End Player -->
     </div>
 </body>
 </html>

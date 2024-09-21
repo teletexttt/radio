@@ -3,48 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Radio Online</title>
+    <title>TXT Radio</title>
     <style>
-        /* Incluir la fuente Chomsky */
-        @font-face {
-            font-family: 'Chomsky';
-            src: url('chomsky.otf') format('opentype'); /* Asegúrate de tener chomsky.otf en la carpeta */
-        }
-
         body {
-            background-image: url('ff.jpg');
+            background-image: url('ff.png'); /* Cambia por tu imagen de fondo */
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             color: white;
-            font-family: 'Chomsky', serif; /* Aplicar la fuente Chomsky */
+            font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
         }
-
         h1 {
-            color: #ffffff;
+            color: #4CAF50;
         }
-
         .player {
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <h1>Teletext Radio Online</h1>
-    <p>Escucha nuestra radio en vivo las 24 horas.</p>
+    <h1>Bienvenido a TXT Radio</h1>
+    <p>Escucha nuestra radio en vivo las 24 horas desde GitHub Pages.</p>
     
     <div class="player">
-        <audio controls>
-            <source src="http://tu-servidor-icecast:puerto/stream" type="audio/mpeg">
+        <!-- Reproductor de audio con la URL proporcionada -->
+        <audio controls autoplay>
+            <source src="https://teletext.radio12345.com/" type="audio/mpeg">
             Tu navegador no soporta el reproductor de audio.
         </audio>
-
-        <!-- listen2myradio.com SHOUTcast Flash Player -->
-        <p id='preview'></p>
-        <script id='myscript' language='javascript' src='http://flashplayer.listen2myradio.com/getInfo.js?id=2214c83mbo1f5raroe2tiqc84611v2'></script>
-        <!-- End Player -->
     </div>
 </body>
 </html>

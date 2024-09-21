@@ -1,0 +1,53 @@
+<icecast>
+    <location>Earth</location>
+    <admin>icemaster@localhost</admin>
+
+    <!-- Cambia localhost por tu dominio o IP pública -->
+    <hostname>tu-dominio.com</hostname>
+
+    <limits>
+        <clients>100</clients> <!-- Número máximo de oyentes simultáneos -->
+        <sources>2</sources>
+        <queue-size>524288</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <burst-on-connect>1</burst-on-connect>
+        <burst-size>65535</burst-size>
+    </limits>
+
+    <authentication>
+        <!-- Cambia las contraseñas por valores seguros -->
+        <source-password>tu_contraseña_segura</source-password>
+        <relay-password>tu_contraseña_segura</relay-password>
+        <admin-user>admin</admin-user>
+        <admin-password>tu_contraseña_segura</admin-password>
+    </authentication>
+
+    <listen-socket>
+        <!-- Cambia el puerto si es necesario -->
+        <port>8000</port>
+    </listen-socket>
+
+    <!-- Cabeceras HTTP para permitir la reproducción en otros sitios -->
+    <http-headers>
+        <!-- Permite a cualquier sitio web incrustar el stream -->
+        <header name="Access-Control-Allow-Origin" value="*"/>
+    </http-headers>
+
+    <fileserve>1</fileserve>
+
+    <paths>
+        <logdir>./log</logdir>
+        <webroot>./web</webroot>
+        <adminroot>./admin</adminroot>
+        <alias source="/" destination="/status.xsl"/>
+    </paths>
+
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>3</loglevel> <!-- 4 Debug, 3 Info, 2 Warn, 1 Error -->
+        <logsize>10000</logsize>
+    </logging>
+</icecast>

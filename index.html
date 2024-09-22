@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproductor de Audio - TXT Radio</title>
+    <style>
+        body {
+            background-image: url('ff.jpg'); /* Agrega la imagen de fondo */
+            background-size: cover;
+            background-position: center;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: rgb(0, 0, 0); /* Color de texto blanco */
+            font-family: 'Chomsky'; /* Tipografía Chomsky */
+            text-shadow: 2px 2px 0px rgb(255, 255, 255); /* Sombra negra para simular borde */
+        }
+        .container {
+            text-align: center;
+        }
+        .player {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teletext Radio</h1>
+        <p>Escucha nuestra transmisión en vivo:</p>
+        <div class="player">
+            <!-- Reproductor de audio con la URL proporcionada -->
+            <audio controls autoplay>
+                <source src="https://uk7freenew.listen2myradio.com/live.mp3?typeportmount=s1_25744_stream_772357005" type="audio/mpeg">
+                Tu navegador no soporta el reproductor de audio.
+            </audio>
+        </div>
+    </div>
+</body>
+</html>

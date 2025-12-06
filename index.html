@@ -1,53 +1,126 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teletext Radio</title>
-  <style>
-    @font-face {
-      font-family: 'Chomsky';
-      src: url('/static/Chomsky.otf') format('opentype');
-    }
-    body {
-      background-image: url('/static/ff.jpg');
-      background-size: cover;
-      background-position: center;
-      background-color: #000;
-      color: white;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      text-align: center;
-    }
-    h1 {
-      color: rgb(0, 0, 0);
-      font-family: 'Chomsky';
-      text-shadow: 2px 2px 0px rgb(255, 255, 255);
-    }
-    .player {
-      margin-top: 20px;
-    }
-    audio {
-      width: 300px;
-      max-width: 80vw;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teletext Radio</title>
+
+    <style>
+        @font-face {
+            font-family: 'Chomsky';
+            src: url('Chomsky.otf') format('opentype');
+        }
+
+        body {
+            background-image: url('ff.jpg');
+            background-size: cover;
+            background-position: center;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            backdrop-filter: blur(3px);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        h1 {
+            font-family: 'Chomsky';
+            color: black;
+            font-size: 55px;
+            text-shadow: 2px 2px 0px white;
+            margin: 0;
+        }
+
+        h2 {
+            margin-top: 5px;
+            font-size: 20px;
+            color: white;
+            text-shadow: 1px 1px 3px black;
+        }
+
+        /* === REPRODUCTOR ESTILO TELETEXT === */
+        .player {
+            margin-top: 25px;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+
+        #playPauseBtn {
+            width: 55px;
+            height: 55px;
+            font-size: 25px;
+            background: white;
+            color: black;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        #progressContainer {
+            flex: 1;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        #progressBar {
+            height: 100%;
+            width: 0%;
+            background: white;
+            border-radius: 10px;
+        }
+
+        #current-track {
+            margin-top: 15px;
+            font-size: 17px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 40px; }
+            #playPauseBtn { width: 50px; height: 50px; }
+        }
+    </style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>Teletext Radio</h1>
-    <p>Escucha nuestra transmisión en vivo:</p>
-    <div class="player">
-      <audio controls autoplay>
-        <source src="http://localhost:8000/stream" type="audio/mpeg">
-        Tu navegador no soporta el reproductor de audio.
-      </audio>
+    <div class="container">
+        <h1>Teletext Radio</h1>
+        <h2>Radio online 24 Hs.</h2>
+
+        <div class="player">
+            <div class="controls">
+                <button id="playPauseBtn">▶️</button>
+
+                <div id="progressContainer">
+                    <div id="progressBar"></div>
+                </div>
+            </div>
+
+            <p id="current-track"></p>
+        </div>
     </div>
-  </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
 

@@ -1,3 +1,4 @@
+
 let playlist = [];
 let audio = new Audio();
 let index = 0;
@@ -7,19 +8,43 @@ const playPauseBtn = document.getElementById("playPauseBtn");
 const progressContainer = document.getElementById("progressContainer");
 const progressBar = document.getElementById("progressBar");
 
-// Cargar playlist generada automáticamente por GitHub
+// Esperar a que cargue la playlist antes de permitir play
+let playlistLoaded = false;
+
 fetch("playlist.json")
     .then(r => r.json())
     .then(data => {
         playlist = data.tracks;
-    });
+        playlistLoaded = true;
+        console.log("Playlist cargada:", playlist);
+    })
+    .catch(err => console.error("Error cargando playlist:", err));
+
+function loadTrack(i) {
+    if (!playlistLoaded || playlist.length === 0) {
+        console.log("Esperando carga de playlist...");
+        return;
+    }
+
+    audio.src = playlist[i];
+    audio.load(); // 🔥 NECESARIO
+}
 
 // Reproducir canción
 function playTrack() {
-    audio.src = playlist[index];
-    audio.play();
-    isPlaying = true;
-    playPauseBtn.textContent = "⏸";
+    if (!playlistLoaded || playlist.length === 0) {
+        console.log("Playlist todavía no lista...");
+        return;
+    }
+
+    loadTrack(index);
+
+    audio.play()
+        .then(() => {
+            isPlaying = true;
+            playPauseBtn.textContent = "⏸";
+        })
+        .catch(err => console.error("Error al reproducir:", err));
 }
 
 // Pausar
@@ -29,6 +54,7 @@ function pauseTrack() {
     playPauseBtn.textContent = "▶️";
 }
 
+// Click en botón
 playPauseBtn.addEventListener("click", () => {
     if (!isPlaying) playTrack();
     else pauseTrack();
@@ -52,5 +78,6 @@ progressContainer.addEventListener("click", (ev) => {
 // Loop infinito
 audio.addEventListener("ended", () => {
     index = (index + 1) % playlist.length;
+    loadTrack(index);
     playTrack();
 });

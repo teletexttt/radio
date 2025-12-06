@@ -28,3 +28,4 @@ jobs:
         git add playlist.json
         git commit -m "Auto-update playlist" || echo "No changes"
         git push
+        

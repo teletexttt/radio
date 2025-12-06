@@ -1,0 +1,30 @@
+name: Generate Playlist
+
+on:
+  push:
+    paths:
+      - 'music/**'
+      - '.github/workflows/playlist.yml'
+
+jobs:
+  build-playlist:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Generate playlist.json
+      run: |
+        echo "{ \"tracks\": [" > playlist.json
+        find music -type f -name "*.mp3" | sed 's/^/  \"/; s/$/\",/' >> playlist.json
+        sed -i '$ s/,$//' playlist.json
+        echo "] }" >> playlist.json
+
+    - name: Commit playlist.json
+      run: |
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        git add playlist.json
+        git commit -m "Auto-update playlist" || echo "No changes"
+        git push

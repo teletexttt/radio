@@ -6,6 +6,9 @@ on:
       - 'music/**'
       - '.github/workflows/playlist.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build-playlist:
     runs-on: ubuntu-latest
@@ -13,6 +16,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
     - name: Generate playlist.json
       run: |
@@ -28,4 +33,3 @@ jobs:
         git add playlist.json
         git commit -m "Auto-update playlist" || echo "No changes"
         git push
-        

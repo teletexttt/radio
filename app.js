@@ -39,13 +39,23 @@ function playTrack() {
 
     loadTrack(index);
 
-    audio.play()
-        .then(() => {
-            isPlaying = true;
-            playPauseBtn.textContent = "⏸";
-        })
-        .catch(err => console.error("Error al reproducir:", err));
+    // Reproducir, luego saltar a un punto aleatorio (si es la primera vez)
+    audio.onloadedmetadata = () => {
+        if (!isPlaying) {
+            // Arrancar en un punto aleatorio entre 0% y 90%
+            const randomStart = Math.random() * audio.duration * 0.90;
+            audio.currentTime = randomStart;
+        }
+
+        audio.play()
+            .then(() => {
+                isPlaying = true;
+                playPauseBtn.textContent = "⏸";
+            })
+            .catch(err => console.error("Error al reproducir:", err));
+    };
 }
+
 
 // Pausar
 function pauseTrack() {
@@ -81,3 +91,4 @@ audio.addEventListener("ended", () => {
     loadTrack(index);
     playTrack();
 });
+

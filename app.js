@@ -1,28 +1,28 @@
 let playlist = [];
-let audio = new Audio();
 let index = 0;
 let isPlaying = false;
+
+let audio = new Audio();
+let nextAudio = new Audio();
 
 const playPauseBtn = document.getElementById("playPauseBtn");
 const progressContainer = document.getElementById("progressContainer");
 const progressBar = document.getElementById("progressBar");
 
 let playlistLoaded = false;
+const CROSSFADE_TIME = 3; // segundos
 
-// Cargar playlist generada automáticamente
+// Cargar playlist
 fetch("playlist.json")
     .then(r => r.json())
     .then(data => {
         playlist = data.tracks;
-        playlistLoaded = true;
-
-        // Mezclar aleatoriamente al estilo radio
         shufflePlaylist();
-        console.log("Playlist cargada y mezclada:", playlist);
-    })
-    .catch(err => console.error("Error cargando playlist:", err));
+        playlistLoaded = true;
+        console.log("Playlist cargada:", playlist);
+    });
 
-// Mezcla aleatoria tipo radio
+// Mezclar playlist
 function shufflePlaylist() {
     for (let i = playlist.length - 1; i > 0; i--) {
         let j = Math.floor(Math.random() * (i + 1));
@@ -30,68 +30,96 @@ function shufflePlaylist() {
     }
 }
 
-// Cargar canción
-function loadTrack(i) {
-    if (!playlistLoaded || playlist.length === 0) return;
-    audio.src = playlist[i];
-    audio.load();
+function loadTrack(player, i) {
+    player.src = playlist[i];
+    player.load();
 }
 
-// Reproducir canción con arranque aleatorio tipo radio
+// Reproducir con inicio aleatorio
 function playTrack() {
-    if (!playlistLoaded || playlist.length === 0) {
-        console.log("Esperando playlist...");
-        return;
-    }
+    if (!playlistLoaded || playlist.length === 0) return;
 
-    loadTrack(index);
+    loadTrack(audio, index);
 
     audio.onloadedmetadata = () => {
-
-        // Arranque aleatorio entre 0% y 85% para simular radio en vivo
+        // Salto aleatorio para simular radio
         const randomStart = Math.random() * audio.duration * 0.85;
         audio.currentTime = randomStart;
 
-        audio.play()
-            .then(() => {
-                isPlaying = true;
-                playPauseBtn.textContent = "⏸";
-            })
-            .catch(err => console.error("Error en play:", err));
+        audio.volume = 1;
+
+        audio.play().then(() => {
+            isPlaying = true;
+            playPauseBtn.textContent = "⏸";
+
+            scheduleCrossfade();
+        });
     };
 }
 
-// Pausar
+function scheduleCrossfade() {
+    const remaining = audio.duration - audio.currentTime;
+
+    if (remaining > CROSSFADE_TIME) {
+        setTimeout(() => startCrossfade(), (remaining - CROSSFADE_TIME) * 1000);
+    } else {
+        startCrossfade();
+    }
+}
+
+// Crossfade REAL compatible con navegadores
+function startCrossfade() {
+    index = (index + 1) % playlist.length;
+
+    loadTrack(nextAudio, index);
+
+    nextAudio.onloadedmetadata = () => {
+        let t = 0;
+        nextAudio.volume = 0;
+        nextAudio.play();
+
+        const interval = setInterval(() => {
+            t += 0.05;
+
+            audio.volume = Math.max(0, 1 - t / CROSSFADE_TIME);
+            nextAudio.volume = Math.min(1, t / CROSSFADE_TIME);
+
+            if (t >= CROSSFADE_TIME) {
+                clearInterval(interval);
+
+                audio.pause();
+                audio = nextAudio;
+                nextAudio = new Audio();
+
+                scheduleCrossfade();
+            }
+        }, 50);
+    };
+}
+
+// PAUSA
 function pauseTrack() {
     audio.pause();
     isPlaying = false;
     playPauseBtn.textContent = "▶️";
 }
 
-// Botón play/pause
+// BOTÓN PLAY
 playPauseBtn.addEventListener("click", () => {
     if (!isPlaying) playTrack();
     else pauseTrack();
 });
 
-// Barra de progreso
+// BARRA DE PROGRESO
 audio.addEventListener("timeupdate", () => {
     if (audio.duration) {
-        let pct = (audio.currentTime / audio.duration) * 100;
-        progressBar.style.width = pct + "%";
+        progressBar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
     }
 });
 
-// Buscar en la barra
-progressContainer.addEventListener("click", (ev) => {
+// SEEK
+progressContainer.addEventListener("click", e => {
     const width = progressContainer.clientWidth;
-    const clickX = ev.offsetX;
+    const clickX = e.offsetX;
     audio.currentTime = (clickX / width) * audio.duration;
 });
-
-// Cuando termina → siguiente tema aleatorio
-audio.addEventListener("ended", () => {
-    index = (index + 1) % playlist.length;
-    playTrack();
-});
-

@@ -121,6 +121,37 @@
     </div>
 
     <script src="app.js"></script>
+    <!-- Botones flotantes -->
+<a href="https://cafecito.app/ripgordon" target="_blank" class="floating-btn cafecito">
+    <img src="https://cdn.cafecito.app/img/boton-cafecito.png" alt="Invitame un cafecito">
+</a>
+
+<a href="https://wa.me/5492920276985" target="_blank" class="floating-btn whatsapp">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+</a>
+
+<style>
+.floating-btn {
+    position: fixed;
+    right: 20px;
+    z-index: 1000;
+    transition: transform 0.2s;
+}
+.floating-btn img {
+    width: 60px;
+    height: auto;
+}
+
+/* Separación vertical entre botones */
+.cafecito { bottom: 20px; }
+.whatsapp { bottom: 90px; }
+
+/* Pequeña animación al pasar el mouse */
+.floating-btn:hover {
+    transform: scale(1.1);
+}
+</style>
 </body>
 </html>
+
 

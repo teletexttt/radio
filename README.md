@@ -2,16 +2,16 @@
 
 
 
+# TELETEXT RADIO ONLINE
 
-
-Teletext Radio es una radio online en desarrollo, pensada para transmisión de música y contenido en vivo. 
+Teletext Radio es un proyecto en desarrollo, pensado para transmisión de música y contenido en vivo. 
 La plataforma busca ser simple, clara y funcional, con control manual de reproducción y soporte responsive para distintos dispositivos.
 
 
-Estado del Proyecto
+## Estado del Proyecto
 Actualmente en construcción. 
 
-Funcionalidades principales pendientes:
+## Funcionalidades principales pendientes:
 
 *Reproductor de música online. 
 * Listas de reproducción y streaming en vivo. 
@@ -21,21 +21,21 @@ Funcionalidades principales pendientes:
 Próximamente: configuración de listas de reproducción y streaming.
 
 
-Contribuciones
+## Contribuciones
 
 Se aceptan contribuciones para:
 * Mejoras en la interfaz y experiencia de usuario.
 * Integración completa del reproductor.
 * Soporte responsive y modo oscuro.
 
-Contacto
+## Contacto
 Para dudas o sugerencias: ripgordonestudio@gmail.com
 
 
-PUEDES APOYAR ESTE PROYECTO:
+# PUEDES APOYAR ESTE PROYECTO:
 Donando lo que puedas <3
 
-Alias: CYBERESPACIO
+## Alias: CYBERESPACIO
 
 GRACIAS.
 

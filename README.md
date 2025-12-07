@@ -47,3 +47,4 @@ Soporte responsive y modo oscuro.
 Contacto
 
 Para dudas o sugerencias: ripgordon@gmail.com
+

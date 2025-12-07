@@ -1,3 +1,9 @@
+![ff](https://github.com/user-attachments/assets/c1308d28-2560-451f-a4f5-eb1f7b7f1333)
+
+
+
+
+
 Teletext Radio es una radio online en desarrollo, pensada para transmisión de música y contenido en vivo. 
 La plataforma busca ser simple, clara y funcional, con control manual de reproducción y soporte responsive para distintos dispositivos.
 

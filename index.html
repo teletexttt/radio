@@ -61,54 +61,42 @@
             background: rgba(255, 255, 255, 0.4);
             transform: scale(1.05);
         }
-        <!-- Botón de inicio para móviles -->
-<div id="mobileStart" style="
-    display: none;
-    margin-top: 15px;
-    text-align: center;
-">
-    <button id="startRadioBtn" style="
-        padding: 15px 30px;
-        font-size: 1.2rem;
-        background: linear-gradient(45deg, #8a2be2, #4a00e0);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
-        transition: all 0.3s;
-    ">
-        ▶️ INICIAR RADIO
-    </button>
-    <p style="font-size: 0.9rem; color: #ccc; margin-top: 8px;">
-        Presiona para comenzar la transmisión
-    </p>
-</div>
 
-<script>
-// Detectar móvil y mostrar botón
-if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-    document.getElementById('mobileStart').style.display = 'block';
-    
-    // Ocultar reproductor nativo en móvil (opcional)
-    const nativePlayer = document.getElementById('radioPlayer');
-    if (nativePlayer) {
-        nativePlayer.style.display = 'none';
-    }
-}
-</script>
         /* Corrige la posición del botón de colaboración */
-.player {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px; /* separación vertical */
-}
+        .player {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px; /* separación vertical */
+        }
 
-#donate-btn {
-  display: block;
-  margin: 0 auto;
-}
+        #donate-btn {
+          display: block;
+          margin: 0 auto;
+        }
+
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                width: 90%;
+            }
+            
+            h1 {
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+            
+            audio {
+                width: 100%;
+                min-width: 280px;
+            }
+            
+            #donate-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
 
     </style>
 </head>
@@ -119,9 +107,13 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
 
         <div class="player">
             <audio id="radioPlayer" controls></audio>
-            <button id="donate-btn" onclick="window.open('https://cafecito.app/ripgordon', '_blank')">
-                💜 Colaborar con el proyecto
-            </button>
+            
+            <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' style="margin-top: 25px; display: inline-block;">
+                <img srcset='https://cdn.cafecito.app/imgs/buttons/button_5.png 1x, https://cdn.cafecito.app/imgs/buttons/button_5_2x.png 2x, https://cdn.cafecito.app/imgs/buttons/button_5_3.75x.png 3.75x' 
+                     src='https://cdn.cafecito.app/imgs/buttons/button_5.png' 
+                     alt='Invitame un café en cafecito.app' 
+                     style="border-radius: 8px; max-width: 100%; height: auto;" />
+            </a>
         </div>
 
         <!-- Controles ocultos para compatibilidad con app.js -->
@@ -150,8 +142,6 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
     <script src="app.js" defer></script>
 </body>
 </html>
-
-
 
 
 

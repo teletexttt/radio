@@ -28,29 +28,40 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            padding: 20px;
+        }
+        
+        /* Container más grande y transparente */
+        .container {
+            text-align: center;
+            padding: 40px 50px;
+            background: rgba(0, 0, 0, 0.65); /* Más transparente que antes */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
+                        0 1px 0 rgba(255, 255, 255, 0.05) inset;
+            max-width: 500px;
+            width: 100%;
+            margin: 20px;
         }
         
         h1 {
-            color: #00FF37; /* Verde exacto solicitado */
+            color: #00FF37;
             font-family: 'Chomsky', serif;
             font-size: 4rem;
-            text-shadow: 3px 3px 0 #002FFF, /* Sombra azul exacta */
+            text-shadow: 3px 3px 0 #002FFF,
                          5px 5px 0 rgba(0, 47, 255, 0.5);
             letter-spacing: 3px;
-            margin: 0 0 10px 0;
+            margin: 0 0 15px 0;
             line-height: 1;
-            text-align: center;
-        }
-        
-        .container {
-            text-align: center;
-            padding: 40px;
         }
         
         .subtitle {
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 1.2rem;
-            margin-bottom: 30px;
+            margin-bottom: 35px;
             font-weight: 300;
         }
         
@@ -58,13 +69,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 25px;
+            gap: 30px;
         }
 
         audio {
             background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             transition: all 0.3s ease;
             width: 100%;
             max-width: 400px;
@@ -74,67 +85,68 @@
         audio:hover {
             background-color: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
         }
 
-        /* Botón de cafecito TRANSPARENTE/DIFUMINADO */
+        /* Botón con nuevo texto */
         .cafecito-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
-            padding: 14px 28px;
-            background: rgba(255, 255, 255, 0.08); /* Muy transparente */
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             text-decoration: none;
-            border-radius: 12px;
+            border-radius: 15px;
             font-family: Arial, sans-serif;
             font-weight: 500;
             border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
             transition: all 0.3s ease;
             width: 100%;
-            max-width: 350px;
+            max-width: 360px;
         }
 
         .cafecito-btn:hover {
             background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
             border-color: rgba(255, 255, 255, 0.25);
         }
 
         .cafecito-logo {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             background: url('https://cdn.cafecito.app/imgs/logo.png') no-repeat center;
             background-size: contain;
             filter: brightness(0) invert(1) opacity(0.9);
         }
 
         .cafecito-text {
-            font-size: 1rem;
-            letter-spacing: 0.3px;
+            font-size: 1.05rem;
+            letter-spacing: 0.5px;
             color: rgba(255, 255, 255, 0.95);
         }
 
-        /* Responsive para móviles */
+        /* Responsive */
         @media (max-width: 768px) {
             .container {
-                padding: 20px;
-                width: 90%;
+                padding: 30px 25px;
+                margin: 15px;
+                background: rgba(0, 0, 0, 0.7); /* Un poco menos transparente en móvil */
             }
             
             h1 {
-                font-size: 2.8rem;
+                font-size: 3rem;
                 text-shadow: 2px 2px 0 #002FFF,
                              4px 4px 0 rgba(0, 47, 255, 0.5);
             }
             
             .subtitle {
-                font-size: 1rem;
+                font-size: 1.1rem;
             }
             
             audio {
@@ -145,19 +157,22 @@
             .cafecito-btn {
                 width: 100%;
                 max-width: 320px;
-                padding: 12px 20px;
+                padding: 14px 24px;
             }
         }
 
-        /* Para pantallas muy pequeñas */
         @media (max-width: 480px) {
             h1 {
-                font-size: 2.2rem;
+                font-size: 2.5rem;
+            }
+            
+            .container {
+                padding: 25px 20px;
             }
             
             .cafecito-btn {
                 flex-direction: column;
-                gap: 8px;
+                gap: 10px;
                 padding: 15px;
             }
         }
@@ -174,7 +189,7 @@
             
             <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
                 <div class="cafecito-logo"></div>
-                <span class="cafecito-text">Colaborá con este proyecto</span>
+                <span class="cafecito-text">&lt;3 colabora con este proyecto</span>
             </a>
         </div>
 

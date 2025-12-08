@@ -1,10 +1,11 @@
-// === TELEtext Radio Continuous Player ===
-// Reproducción continua con crossfade y control de playlist.json
+// === TELEtext Radio v2 ===
+// Crossfade + Shuffle avanzado + control automático
 
 let playlist = [];
 let index = 0;
 let isPlaying = false;
 let fadeInProgress = false;
+let lastTrack = -1;
 
 let audio = new Audio();
 let nextAudio = new Audio();
@@ -14,26 +15,35 @@ const progressContainer = document.getElementById("progressContainer");
 const progressBar = document.getElementById("progressBar");
 
 let playlistLoaded = false;
-const CROSSFADE_TIME = 3; // segundos de mezcla
+const CROSSFADE_TIME = 5; // segundos de mezcla suave
 
 // === Cargar playlist ===
 fetch("playlist.json")
   .then(r => r.json())
   .then(data => {
     playlist = data.tracks;
-    shufflePlaylist(); // comentar esta línea si querés orden fijo
+    complexShuffle(); // mezcla completa sin repetir la última
     playlistLoaded = true;
     console.log("✅ Playlist cargada:", playlist);
-    playTrack(); // inicia automáticamente
+    playTrack();
   })
   .catch(err => console.error("❌ Error cargando playlist:", err));
 
-// === Mezclar playlist ===
-function shufflePlaylist() {
+// === Mezcla avanzada (shuffle completo) ===
+function complexShuffle() {
   for (let i = playlist.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [playlist[i], playlist[j]] = [playlist[j], playlist[i]];
   }
+
+  // Evitar repetir la última canción de la sesión anterior
+  if (lastTrack !== -1 && playlist[0] === lastTrack) {
+    const temp = playlist[0];
+    playlist[0] = playlist[playlist.length - 1];
+    playlist[playlist.length - 1] = temp;
+  }
+
+  lastTrack = playlist[playlist.length - 1];
 }
 
 // === Cargar canción ===
@@ -49,7 +59,8 @@ function playTrack() {
   loadTrack(audio, index);
 
   audio.onloadedmetadata = () => {
-    const randomStart = Math.random() * audio.duration * 0.85;
+    // Salida desde un punto aleatorio (radio style)
+    const randomStart = Math.random() * audio.duration * 0.8;
     audio.currentTime = randomStart;
     audio.volume = 1;
 
@@ -57,9 +68,7 @@ function playTrack() {
       isPlaying = true;
       playPauseBtn.textContent = "⏸";
       scheduleCrossfade();
-    }).catch(err => {
-      console.log("Autoplay bloqueado o error:", err);
-    });
+    }).catch(err => console.log("Autoplay bloqueado:", err));
   };
 }
 
@@ -74,9 +83,15 @@ function scheduleCrossfade() {
   }
 }
 
-// === Crossfade real y continuo ===
+// === Crossfade suave y limpio ===
 function startCrossfade() {
   index = (index + 1) % playlist.length;
+
+  if (index === 0) {
+    // Cuando termina la lista, remezclar
+    complexShuffle();
+  }
+
   loadTrack(nextAudio, index);
 
   nextAudio.onloadedmetadata = () => {
@@ -87,19 +102,17 @@ function startCrossfade() {
 
     const interval = setInterval(() => {
       t += 0.05;
-
       audio.volume = Math.max(0, 1 - t / CROSSFADE_TIME);
       nextAudio.volume = Math.min(1, t / CROSSFADE_TIME);
 
       if (t >= CROSSFADE_TIME) {
         clearInterval(interval);
         fadeInProgress = false;
-
         audio.pause();
-        audio.src = ""; // libera el anterior
+        audio.src = "";
         audio = nextAudio;
         nextAudio = new Audio();
-        scheduleCrossfade(); // continúa ciclo infinito
+        scheduleCrossfade();
       }
     }, 50);
   };
@@ -107,11 +120,8 @@ function startCrossfade() {
 
 // === Botón Play/Pause ===
 playPauseBtn.addEventListener("click", () => {
-  if (!isPlaying) {
-    playTrack();
-  } else {
-    pauseTrack();
-  }
+  if (!isPlaying) playTrack();
+  else pauseTrack();
 });
 
 function pauseTrack() {
@@ -128,5 +138,9 @@ audio.addEventListener("timeupdate", () => {
 });
 
 // === Control manual de seek ===
-progressContain
+progressContainer.addEventListener("click", e => {
+  const width = progressContainer.clientWidth;
+  const clickX = e.offsetX;
+  audio.currentTime = (clickX / width) * audio.duration;
+});
 

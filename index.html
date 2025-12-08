@@ -2,6 +2,22 @@
 <html lang="es">
 <head>
     <link rel="icon" href="favicon.png" type="image/png">
+    <style>
+  .barra-inferior {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #00aaff; /* tu color "axy" */
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .barra-inferior span {
+    color: #00ff00; /* verde */
+    font-weight: bold;
+    font-family: monospace;
+  }
+</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teletext Radio</title>
@@ -179,9 +195,13 @@
     height: 50px;
 }
 </style>
+<div class="barra-inferior">
+  <span>Tu texto aquí</span>
+</div>
 
 </body>
 </html>
+
 
 
 

@@ -37,21 +37,18 @@
         <p>Radio en vivo las 24 hs.</p>
 
         <div class="player">
-            <!-- Reproductor de audio -->
-            <audio id="radioPlayer" controls autoplay>
-                <source src="music/doomsday.mp3" type="audio/mpeg">
-                Tu navegador no soporta el reproductor de audio.
-            </audio>
+  <!-- Reproductor controlado por app.js -->
+  <audio id="radioPlayer" controls></audio>
 
-            <!-- Controles ocultos (compatibilidad con app.js) -->
-            <div id="controls" style="display:none;">
-                <button id="playPauseBtn">▶️</button>
-                <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
-                    <div id="progressBar" style="height:5px;width:0;background:white;"></div>
-                </div>
-            </div>
-        </div>
+  <!-- Controles ocultos para compatibilidad con app.js -->
+  <div id="controls" style="display:none;">
+    <button id="playPauseBtn">▶️</button>
+    <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
+      <div id="progressBar" style="height:5px;width:0;background:white;"></div>
     </div>
+  </div>
+</div>
+
 
     <!-- Script principal (se carga después del DOM) -->
     <script>
@@ -69,6 +66,7 @@
     <script src="app.js" defer></script>
 </body>
 </html>
+
 
 
 

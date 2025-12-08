@@ -3,37 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TXT Radio</title>
+  <title>Reproductor de Audio - TXT Radio</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="favicon.png" type="image/png">
-  <script defer src="app.js"></script>
 </head>
-
 <body>
-  <div class="radio-container">
-    <header>
-      <h1>Teletext Radio</h1>
-      <p class="subtitle">Sonidos del presente continuo</p>
-    </header>
-
-    <main>
-      <audio id="audioPlayer" controls autoplay></audio>
-      <div class="controls">
-        <button id="prevBtn">⏮️ Anterior</button>
-        <button id="playPauseBtn">⏯️ Play/Pausa</button>
-        <button id="nextBtn">⏭️ Siguiente</button>
-      </div>
-      <p id="currentTrack"></p>
-    </main>
-
-    <footer>
-      <p>© 2025 Teletext Radio — Proyecto independiente</p>
-    </footer>
+  <div class="container">
+    <h1>Teletext Radio</h1>
+    <p>Escucha nuestra transmisión:</p>
+    <div class="player">
+      <audio controls autoplay>
+        <source src="music/mañana/song1.mp3" type="audio/mpeg">
+        Tu navegador no soporta el reproductor de audio.
+      </audio>
+    </div>
   </div>
 </body>
 </html>
-
-
-
 
 

@@ -45,44 +45,49 @@ p {
 }
 
 /* === REPRODUCTOR === */
+.player {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem; /* separación entre elementos */
+}
+
 audio {
   width: 100%;
-  max-width: 300px;
+  max-width: 320px;
   outline: none;
   border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.1); /* Transparente sin romper volumen */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
   transition: background 0.3s ease;
-  pointer-events: auto; /* Permite interacción con volumen */
+  pointer-events: auto;
 }
 
 audio:hover {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Oculta los minutos, mantiene barra y volumen */
-audio::-webkit-media-controls-current-time-display,
-audio::-webkit-media-controls-time-remaining-display {
-  display: none !important;
-}
-
 /* === BOTÓN COLABORAR === */
 #donate-btn {
-  margin-top: 15px;
-  padding: 10px 20px;
+  padding: 10px 24px;
   font-size: 1rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 50px;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: linear-gradient(90deg, #7a00ff, #b600ff);
+  color: white;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
 }
 
 #donate-btn:hover {
-  background: rgba(255, 255, 255, 0.4);
-  transform: scale(1.05);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 0 15px rgba(182, 0, 255, 0.6);
 }
+
 
 /* === RESPONSIVE === */
 @media (max-width: 600px) {

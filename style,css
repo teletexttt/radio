@@ -1,28 +1,90 @@
-/* Barras superior e inferior */
-.top-bar,
-.bottom-bar {
-  background-color: #0550FF;
-  color: #05FF11;
-  text-align: center;
-  font-family: monospace;
-  padding: 6px 0;
-  font-size: 14px;
-  letter-spacing: 0.5px;
+/* === TELEText Radio Style === */
+@font-face {
+  font-family: 'Chomsky';
+  src: url('Chomsky.otf') format('opentype');
 }
 
-/* Íconos sutiles */
-.icon-small {
-  width: 26px;
-  height: 26px;
-  opacity: 0.85;        /* sutil */
-  filter: brightness(0) invert(1); /* blanco sobre fondo cualquiera */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  color: white;
+  background: url('ff.jpg') no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  text-align: center;
 }
-.cafecito-cat {
-  color: #ffffffcc;     /* blanco transparente */
-  font-size: 22px;
-  text-decoration: none;
-  opacity: 0.9;
+
+.radio-container {
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 2rem;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 500px;
 }
-.cafecito-cat:hover {
-  opacity: 1;
+
+h1 {
+  font-family: 'Chomsky', serif;
+  font-size: 2.2rem;
+  text-shadow: 2px 2px 5px #fff;
+  margin-bottom: 0.3rem;
+}
+
+.subtitle {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: #ccc;
+}
+
+audio {
+  width: 100%;
+  outline: none;
+  border-radius: 10px;
+}
+
+.controls {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-around;
+}
+
+button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+#currentTrack {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #ddd;
+}
+
+footer {
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.8rem;
+  }
+  button {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.8rem;
+  }
 }

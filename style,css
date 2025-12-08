@@ -1,90 +1,63 @@
-/* === TELEText Radio Style === */
+/* === Estilo original restaurado === */
 @font-face {
   font-family: 'Chomsky';
   src: url('Chomsky.otf') format('opentype');
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  color: white;
-  background: url('ff.jpg') no-repeat center center fixed;
+  background-image: url('ff.jpg');
   background-size: cover;
+  background-position: center;
+  background-color: #000;
+  color: white;
+  font-family: Arial, sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
+  margin: 0;
   text-align: center;
 }
 
-.radio-container {
-  background-color: rgba(0, 0, 0, 0.6);
-  padding: 2rem;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 500px;
-}
-
 h1 {
+  color: rgb(0, 0, 0);
   font-family: 'Chomsky', serif;
-  font-size: 2.2rem;
-  text-shadow: 2px 2px 5px #fff;
-  margin-bottom: 0.3rem;
+  text-shadow: 2px 2px 0px rgb(255, 255, 255);
+  font-size: 2.5rem;
+  margin-bottom: 10px;
 }
 
-.subtitle {
+p {
   font-size: 1rem;
-  margin-bottom: 1.5rem;
-  color: #ccc;
+  margin: 0.5rem 0 1rem 0;
+}
+
+.container {
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.player {
+  margin-top: 20px;
 }
 
 audio {
   width: 100%;
-  outline: none;
-  border-radius: 10px;
+  max-width: 300px;
 }
 
-.controls {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: space-around;
-}
-
-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  padding: 0.6rem 1rem;
-  border-radius: 10px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-button:hover {
-  background: rgba(255, 255, 255, 0.4);
-}
-
-#currentTrack {
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  color: #ddd;
-}
-
-footer {
-  margin-top: 1.5rem;
-  font-size: 0.8rem;
-  color: #aaa;
-}
-
-/* Responsive */
+/* === Responsivo === */
 @media (max-width: 600px) {
   h1 {
-    font-size: 1.8rem;
+    font-size: 2rem;
   }
-  button {
-    font-size: 0.9rem;
-    padding: 0.5rem 0.8rem;
+  .container {
+    width: 90%;
+    padding: 15px;
+  }
+  audio {
+    max-width: 90%;
   }
 }

@@ -7,7 +7,7 @@ let isPlaying = false;
 let fadeInProgress = false;
 let lastTrack = -1;
 
-// Usar el reproductor nativo del HTML
+// MODIFICACIÓN: Usar el reproductor nativo del HTML
 let audio = document.getElementById('radioPlayer');
 let nextAudio = new Audio();
 
@@ -29,36 +29,30 @@ fetch("playlist.json")
   .then(r => r.json())
   .then(data => {
     playlist = data.tracks;
-    complexShuffle();
+    complexShuffle(); // mezcla completa sin repetir la última
     playlistLoaded = true;
     console.log("✅ Playlist cargada:", playlist);
     
-    // Precargar primera canción con inicio aleatorio
+    // Precargar primera canción en el reproductor nativo
     if (audio && playlist.length > 0) {
-        loadTrack(audio, 0);
-        
-        // Esperar a que carguen metadatos para comenzar aleatorio
-        audio.onloadedmetadata = function() {
-            if (audio.duration > 60) {
-                const randomStart = Math.random() * (audio.duration - 60);
-                audio.currentTime = randomStart;
-            }
-            
-            // Intentar reproducción después de configurar tiempo aleatorio
-            const playAttempt = audio.play();
-            if (playAttempt !== undefined) {
-                playAttempt
-                    .then(() => {
-                        isPlaying = true;
-                        if (playPauseBtn) playPauseBtn.textContent = "⏸";
-                        console.log("▶️ Reproduciendo desde:", Math.round(audio.currentTime), "segundos");
-                        scheduleCrossfade();
-                    })
-                    .catch(error => {
-                        console.log("⏸️ Autoplay bloqueado.");
-                    });
-            }
-        };
+        audio.src = playlist[0];
+        console.log("🎵 Primera canción precargada en reproductor nativo");
+    }
+    
+    // Intentar play automático (funciona en desktop, móvil necesita interacción)
+    const playAttempt = audio.play();
+    if (playAttempt !== undefined) {
+        playAttempt
+            .then(() => {
+                isPlaying = true;
+                if (playPauseBtn) playPauseBtn.textContent = "⏸";
+                console.log("▶️ Autoplay exitoso");
+                scheduleCrossfade();
+            })
+            .catch(error => {
+                console.log("⏸️ Autoplay bloqueado. Usuario debe tocar PLAY.");
+                // En móvil, el usuario debe tocar el botón del reproductor nativo
+            });
     }
   })
   .catch(err => console.error("❌ Error cargando playlist:", err));
@@ -80,18 +74,10 @@ function complexShuffle() {
   lastTrack = playlist[playlist.length - 1];
 }
 
-// === Cargar canción con inicio aleatorio ===
+// === Cargar canción ===
 function loadTrack(player, i) {
   player.src = playlist[i];
   player.load();
-  
-  // Cuando los metadatos estén cargados, comenzar en punto aleatorio
-  player.onloadedmetadata = function() {
-    if (player.duration > 60) {
-      const randomStart = Math.random() * (player.duration - 60);
-      player.currentTime = randomStart;
-    }
-  };
 }
 
 // === Programar el próximo crossfade ===
@@ -117,6 +103,7 @@ function startCrossfade() {
   index = (index + 1) % playlist.length;
 
   if (index === 0) {
+    // Cuando termina la lista, remezclar
     complexShuffle();
   }
 
@@ -137,22 +124,26 @@ function startCrossfade() {
         clearInterval(interval);
         fadeInProgress = false;
         
+        // Cambiar al nuevo audio
         audio.pause();
         audio.src = nextAudio.src;
         audio.currentTime = nextAudio.currentTime;
         audio.volume = 1;
         
+        // Reproducir el nuevo audio en el reproductor nativo
         audio.play();
         
+        // Limpiar nextAudio
         nextAudio = new Audio();
         
+        // Programar próximo crossfade
         scheduleCrossfade();
       }
     }, 50);
   };
 }
 
-// === Botón Play/Pause ===
+// === Botón Play/Pause (para controles ocultos) ===
 if (playPauseBtn) {
     playPauseBtn.addEventListener("click", () => {
         if (!isPlaying) {
@@ -174,6 +165,7 @@ audio.addEventListener("play", () => {
     isPlaying = true;
     if (playPauseBtn) playPauseBtn.textContent = "⏸";
     
+    // Si es la primera vez que se reproduce, programar crossfade
     if (!fadeInProgress && audio.currentTime === 0) {
         setTimeout(scheduleCrossfade, 1000);
     }
@@ -203,6 +195,7 @@ if (progressContainer) {
 // === Manejo de errores ===
 audio.addEventListener("error", (e) => {
     console.error("❌ Error en reproductor:", e);
+    // Intentar siguiente canción si hay error
     if (!fadeInProgress) {
         setTimeout(() => {
             index = (index + 1) % playlist.length;

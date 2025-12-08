@@ -7,7 +7,7 @@ let isPlaying = false;
 let fadeInProgress = false;
 let lastTrack = -1;
 
-// MODIFICACIÓN: Usar el reproductor nativo del HTML
+// Usar el reproductor nativo del HTML
 let audio = document.getElementById('radioPlayer');
 let nextAudio = new Audio();
 
@@ -29,30 +29,28 @@ fetch("playlist.json")
   .then(r => r.json())
   .then(data => {
     playlist = data.tracks;
-    complexShuffle(); // mezcla completa sin repetir la última
+    complexShuffle();
     playlistLoaded = true;
     console.log("✅ Playlist cargada:", playlist);
     
-    // Precargar primera canción en el reproductor nativo
+    // Precargar primera canción con inicio aleatorio
     if (audio && playlist.length > 0) {
-        audio.src = playlist[0];
-        console.log("🎵 Primera canción precargada en reproductor nativo");
-    }
-    
-    // Intentar play automático (funciona en desktop, móvil necesita interacción)
-    const playAttempt = audio.play();
-    if (playAttempt !== undefined) {
-        playAttempt
-            .then(() => {
-                isPlaying = true;
-                if (playPauseBtn) playPauseBtn.textContent = "⏸";
-                console.log("▶️ Autoplay exitoso");
-                scheduleCrossfade();
-            })
-            .catch(error => {
-                console.log("⏸️ Autoplay bloqueado. Usuario debe tocar PLAY.");
-                // En móvil, el usuario debe tocar el botón del reproductor nativo
-            });
+        loadTrackWithRandomStart(audio, 0);
+        
+        // Intentar reproducción automática
+        const playAttempt = audio.play();
+        if (playAttempt !== undefined) {
+            playAttempt
+                .then(() => {
+                    isPlaying = true;
+                    if (playPauseBtn) playPauseBtn.textContent = "⏸";
+                    console.log("▶️ Reproduciendo desde:", Math.round(audio.currentTime), "segundos");
+                    scheduleCrossfade();
+                })
+                .catch(error => {
+                    console.log("⏸️ Autoplay bloqueado - Esperando interacción del usuario");
+                });
+        }
     }
   })
   .catch(err => console.error("❌ Error cargando playlist:", err));
@@ -74,15 +72,24 @@ function complexShuffle() {
   lastTrack = playlist[playlist.length - 1];
 }
 
-// === Cargar canción ===
-function loadTrack(player, i) {
-  player.src = playlist[i];
+// === Cargar canción con inicio aleatorio (para TODAS las canciones) ===
+function loadTrackWithRandomStart(player, trackIndex) {
+  player.src = playlist[trackIndex];
   player.load();
+  
+  // Configurar inicio aleatorio cuando los metadatos estén cargados
+  player.onloadedmetadata = function() {
+    if (player.duration > 60) {
+      const randomStart = Math.random() * (player.duration - 60);
+      player.currentTime = randomStart;
+      console.log("🎲 Canción", trackIndex + 1, "inicia en:", Math.round(randomStart), "segundos");
+    }
+  };
 }
 
 // === Programar el próximo crossfade ===
 function scheduleCrossfade() {
-  if (!audio.duration) {
+  if (!audio.duration || !playlistLoaded) {
     setTimeout(scheduleCrossfade, 500);
     return;
   }
@@ -96,20 +103,21 @@ function scheduleCrossfade() {
   }
 }
 
-// === Crossfade suave y limpio ===
+// === Crossfade suave con inicio aleatorio ===
 function startCrossfade() {
   if (fadeInProgress || !playlistLoaded) return;
   
   index = (index + 1) % playlist.length;
 
   if (index === 0) {
-    // Cuando termina la lista, remezclar
     complexShuffle();
   }
 
-  loadTrack(nextAudio, index);
+  // Cargar siguiente canción con inicio aleatorio
+  loadTrackWithRandomStart(nextAudio, index);
 
-  nextAudio.onloadedmetadata = () => {
+  // Cuando nextAudio esté listo, iniciar crossfade
+  const startCrossfadeTransition = () => {
     let t = 0;
     fadeInProgress = true;
     nextAudio.volume = 0;
@@ -125,25 +133,30 @@ function startCrossfade() {
         fadeInProgress = false;
         
         // Cambiar al nuevo audio
-        audio.pause();
-        audio.src = nextAudio.src;
-        audio.currentTime = nextAudio.currentTime;
-        audio.volume = 1;
-        
-        // Reproducir el nuevo audio en el reproductor nativo
-        audio.play();
-        
-        // Limpiar nextAudio
+        const prevAudio = audio;
+        audio = nextAudio;
         nextAudio = new Audio();
+        
+        // Limpiar el audio anterior
+        prevAudio.pause();
+        prevAudio.src = "";
         
         // Programar próximo crossfade
         scheduleCrossfade();
       }
     }, 50);
   };
+
+  // Si nextAudio ya tiene metadatos, iniciar crossfade inmediatamente
+  if (nextAudio.readyState >= 1) {
+    startCrossfadeTransition();
+  } else {
+    // Esperar a que carguen los metadatos
+    nextAudio.addEventListener('loadedmetadata', startCrossfadeTransition, { once: true });
+  }
 }
 
-// === Botón Play/Pause (para controles ocultos) ===
+// === Botón Play/Pause ===
 if (playPauseBtn) {
     playPauseBtn.addEventListener("click", () => {
         if (!isPlaying) {
@@ -165,8 +178,7 @@ audio.addEventListener("play", () => {
     isPlaying = true;
     if (playPauseBtn) playPauseBtn.textContent = "⏸";
     
-    // Si es la primera vez que se reproduce, programar crossfade
-    if (!fadeInProgress && audio.currentTime === 0) {
+    if (!fadeInProgress && audio.currentTime < 5) {
         setTimeout(scheduleCrossfade, 1000);
     }
 });
@@ -195,12 +207,19 @@ if (progressContainer) {
 // === Manejo de errores ===
 audio.addEventListener("error", (e) => {
     console.error("❌ Error en reproductor:", e);
-    // Intentar siguiente canción si hay error
     if (!fadeInProgress) {
         setTimeout(() => {
             index = (index + 1) % playlist.length;
-            audio.src = playlist[index];
+            loadTrackWithRandomStart(audio, index);
             audio.play();
         }, 2000);
+    }
+});
+
+// === Reinicio aleatorio si el usuario salta manualmente ===
+audio.addEventListener("seeking", () => {
+    // Si el usuario busca manualmente cerca del inicio, reprogramar crossfade
+    if (audio.currentTime < 10 && !fadeInProgress) {
+        setTimeout(scheduleCrossfade, 1000);
     }
 });

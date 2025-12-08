@@ -6,10 +6,13 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Teletext Radio</title>
     <style>
+        /* Importar Chomsky desde Google Fonts alternativa */
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap');
+        
         @font-face {
             font-family: 'Chomsky';
-            src: url('Chomsky.woff2') format('woff2'),
-                 url('Chomsky.woff') format('woff');
+            src: url('https://raw.githubusercontent.com/teltext/radio/main/Chomsky.woff2') format('woff2'),
+                 url('https://raw.githubusercontent.com/teltext/radio/main/Chomsky.woff') format('woff');
             font-weight: normal;
             font-style: normal;
         }
@@ -26,86 +29,124 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-        }
-        h1 {
-            color: #00FF37; /* Verde solicitado */
-            font-family: 'Chomsky', serif;
-            font-size: 3rem;
-            text-shadow: 3px 3px 0 #002FFF, /* Sombra azul solicitada */
-                         6px 6px 0 rgba(0, 47, 255, 0.3);
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-        .container {
-            text-align: center;
             padding: 20px;
         }
+        
+        h1 {
+            color: #00FF37; /* Verde solicitado */
+            font-family: 'Chomsky', 'EB Garamond', serif;
+            font-size: 3.5rem;
+            text-shadow: 3px 3px 0 #002FFF, /* Sombra azul */
+                         6px 6px 0 rgba(0, 47, 255, 0.3);
+            letter-spacing: 2px;
+            margin: 0 0 10px 0;
+            line-height: 1;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 100%;
+        }
+        
         .player {
-            margin-top: 20px;
+            margin-top: 25px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px; /* Más espacio entre elementos */
+            gap: 25px;
         }
 
         audio {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-            transition: background 0.3s ease;
-            pointer-events: auto;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
             width: 100%;
             max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         audio:hover {
             background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
         }
 
-        /* Botón de cafecito personalizado */
+        /* Botón de cafecito transparente/difuminado */
         .cafecito-btn {
-            margin-top: 25px;
+            margin-top: 15px;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #8B4513, #D2691E);
+            justify-content: center;
+            gap: 12px;
+            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             text-decoration: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-family: Arial, sans-serif;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
-            border: 2px solid #A0522D;
+            width: 100%;
+            max-width: 350px;
         }
 
         .cafecito-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(139, 69, 19, 0.6);
-            background: linear-gradient(135deg, #A0522D, #CD853F);
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .cafecito-logo {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
+            background: url('https://cdn.cafecito.app/imgs/logo.png') no-repeat center;
+            background-size: contain;
             filter: brightness(0) invert(1);
         }
 
         .cafecito-text {
-            font-size: 1rem;
+            font-size: 1.05rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Subtítulo */
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            font-weight: 300;
         }
 
         /* Responsive para móviles */
         @media (max-width: 768px) {
-            .container {
+            body {
                 padding: 15px;
-                width: 95%;
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .container {
+                padding: 25px 20px;
+                margin: 20px 0;
             }
             
             h1 {
-                font-size: 2.2rem;
-                line-height: 1.2;
+                font-size: 2.5rem;
                 text-shadow: 2px 2px 0 #002FFF,
                              4px 4px 0 rgba(0, 47, 255, 0.3);
             }
@@ -117,9 +158,29 @@
             
             .cafecito-btn {
                 width: 100%;
-                max-width: 300px;
-                justify-content: center;
-                padding: 10px 15px;
+                max-width: 320px;
+                padding: 12px 20px;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+
+        /* Para pantallas muy pequeñas */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .cafecito-btn {
+                flex-direction: column;
+                gap: 8px;
+                padding: 15px;
             }
         }
 
@@ -128,15 +189,13 @@
 <body>
     <div class="container">
         <h1>Teletext Radio</h1>
-        <p>Radio en vivo las 24 hs.</p>
+        <p class="subtitle">Radio en vivo las 24 hs.</p>
 
         <div class="player">
             <audio id="radioPlayer" controls></audio>
             
             <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
-                <img src='https://cdn.cafecito.app/imgs/cafecito_logo.png' 
-                     alt='Cafecito' 
-                     class="cafecito-logo" />
+                <div class="cafecito-logo"></div>
                 <span class="cafecito-text">Colaborá con este proyecto</span>
             </a>
         </div>

@@ -7,8 +7,15 @@ let isPlaying = false;
 let fadeInProgress = false;
 let lastTrack = -1;
 
-let audio = new Audio();
+// Usar el reproductor nativo del HTML
+let audio = document.getElementById('radioPlayer');
 let nextAudio = new Audio();
+
+// Asegurar que el reproductor nativo esté configurado
+if (audio) {
+    audio.volume = 1;
+    audio.crossOrigin = "anonymous";
+}
 
 const playPauseBtn = document.getElementById("playPauseBtn");
 const progressContainer = document.getElementById("progressContainer");
@@ -22,10 +29,37 @@ fetch("playlist.json")
   .then(r => r.json())
   .then(data => {
     playlist = data.tracks;
-    complexShuffle(); // mezcla completa sin repetir la última
+    complexShuffle();
     playlistLoaded = true;
     console.log("✅ Playlist cargada:", playlist);
-    playTrack();
+    
+    // Precargar primera canción con inicio aleatorio
+    if (audio && playlist.length > 0) {
+        loadTrack(audio, 0);
+        
+        // Esperar a que carguen metadatos para comenzar aleatorio
+        audio.onloadedmetadata = function() {
+            if (audio.duration > 60) {
+                const randomStart = Math.random() * (audio.duration - 60);
+                audio.currentTime = randomStart;
+            }
+            
+            // Intentar reproducción después de configurar tiempo aleatorio
+            const playAttempt = audio.play();
+            if (playAttempt !== undefined) {
+                playAttempt
+                    .then(() => {
+                        isPlaying = true;
+                        if (playPauseBtn) playPauseBtn.textContent = "⏸";
+                        console.log("▶️ Reproduciendo desde:", Math.round(audio.currentTime), "segundos");
+                        scheduleCrossfade();
+                    })
+                    .catch(error => {
+                        console.log("⏸️ Autoplay bloqueado.");
+                    });
+            }
+        };
+    }
   })
   .catch(err => console.error("❌ Error cargando playlist:", err));
 
@@ -46,92 +80,27 @@ function complexShuffle() {
   lastTrack = playlist[playlist.length - 1];
 }
 
-// === Cargar canción ===
+// === Cargar canción con inicio aleatorio ===
 function loadTrack(player, i) {
   player.src = playlist[i];
   player.load();
-}
-
-// === REPRODUCIR - VERSIÓN OPTIMIZADA ===
-function playTrack() {
-  if (!playlistLoaded || playlist.length === 0 || isPlaying || fadeInProgress) return;
-
-  // Cargar y reproducir INMEDIATO
-  loadTrack(audio, index);
   
-  // Intentar reproducir YA, no esperar metadata
-  const playAttempt = audio.play();
-  
-  if (playAttempt !== undefined) {
-    playAttempt
-      .then(() => {
-        isPlaying = true;
-        playPauseBtn.textContent = "⏸";
-        console.log("▶️ Reproducción iniciada inmediata");
-        
-        // Programar crossfade después de asegurar reproducción
-        audio.onloadedmetadata = () => {
-          const randomStart = Math.random() * audio.duration * 0.8;
-          audio.currentTime = randomStart;
-          scheduleCrossfade();
-        };
-      })
-      .catch(error => {
-        console.log("⏸️ Autoplay bloqueado. Esperando interacción.");
-        // Mostrar botón manual en web también
-        showManualStartButton();
-      });
-  }
-}
-
-// Función auxiliar para botón manual
-function showManualStartButton() {
-  if (document.getElementById('manualStartBtn')) return;
-  
-  const btn = document.createElement('button');
-  btn.id = 'manualStartBtn';
-  btn.textContent = '▶️ INICIAR TRANSMISIÓN';
-  btn.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 15px 30px;
-    font-size: 1.2rem;
-    background: #8a2be2;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    z-index: 1000;
-    box-shadow: 0 0 30px rgba(138, 43, 226, 0.7);
-  `;
-  
-  btn.onclick = function() {
-    // Forzar inicio con interacción del usuario
-    audio.play().then(() => {
-      isPlaying = true;
-      playPauseBtn.textContent = "⏸";
-      this.remove();
-      scheduleCrossfade();
-    });
+  // Cuando los metadatos estén cargados, comenzar en punto aleatorio
+  player.onloadedmetadata = function() {
+    if (player.duration > 60) {
+      const randomStart = Math.random() * (player.duration - 60);
+      player.currentTime = randomStart;
+    }
   };
-  
-  document.body.appendChild(btn);
 }
-
-// Botón para móviles (si agregaste el HTML)
-document.getElementById('startRadioBtn')?.addEventListener('click', function() {
-  audio.play().then(() => {
-    isPlaying = true;
-    playPauseBtn.textContent = "⏸";
-    this.parentElement.style.display = 'none';
-    scheduleCrossfade();
-  });
-});
 
 // === Programar el próximo crossfade ===
 function scheduleCrossfade() {
+  if (!audio.duration) {
+    setTimeout(scheduleCrossfade, 500);
+    return;
+  }
+  
   const remaining = audio.duration - audio.currentTime;
 
   if (remaining > CROSSFADE_TIME) {
@@ -143,10 +112,11 @@ function scheduleCrossfade() {
 
 // === Crossfade suave y limpio ===
 function startCrossfade() {
+  if (fadeInProgress || !playlistLoaded) return;
+  
   index = (index + 1) % playlist.length;
 
   if (index === 0) {
-    // Cuando termina la lista, remezclar
     complexShuffle();
   }
 
@@ -166,10 +136,16 @@ function startCrossfade() {
       if (t >= CROSSFADE_TIME) {
         clearInterval(interval);
         fadeInProgress = false;
+        
         audio.pause();
-        audio.src = "";
-        audio = nextAudio;
+        audio.src = nextAudio.src;
+        audio.currentTime = nextAudio.currentTime;
+        audio.volume = 1;
+        
+        audio.play();
+        
         nextAudio = new Audio();
+        
         scheduleCrossfade();
       }
     }, 50);
@@ -177,29 +153,61 @@ function startCrossfade() {
 }
 
 // === Botón Play/Pause ===
-playPauseBtn.addEventListener("click", () => {
-  if (!isPlaying) playTrack();
-  else pauseTrack();
+if (playPauseBtn) {
+    playPauseBtn.addEventListener("click", () => {
+        if (!isPlaying) {
+            audio.play().then(() => {
+                isPlaying = true;
+                playPauseBtn.textContent = "⏸";
+                scheduleCrossfade();
+            });
+        } else {
+            audio.pause();
+            isPlaying = false;
+            playPauseBtn.textContent = "▶️";
+        }
+    });
+}
+
+// === Sincronizar estado del reproductor nativo ===
+audio.addEventListener("play", () => {
+    isPlaying = true;
+    if (playPauseBtn) playPauseBtn.textContent = "⏸";
+    
+    if (!fadeInProgress && audio.currentTime === 0) {
+        setTimeout(scheduleCrossfade, 1000);
+    }
 });
 
-function pauseTrack() {
-  audio.pause();
-  isPlaying = false;
-  playPauseBtn.textContent = "▶️";
-}
+audio.addEventListener("pause", () => {
+    isPlaying = false;
+    if (playPauseBtn) playPauseBtn.textContent = "▶️";
+});
 
 // === Barra de progreso ===
 audio.addEventListener("timeupdate", () => {
-  if (audio.duration) {
+  if (audio.duration && progressBar) {
     progressBar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
   }
 });
 
 // === Control manual de seek ===
-progressContainer.addEventListener("click", e => {
-  const width = progressContainer.clientWidth;
-  const clickX = e.offsetX;
-  audio.currentTime = (clickX / width) * audio.duration;
+if (progressContainer) {
+    progressContainer.addEventListener("click", e => {
+        const width = progressContainer.clientWidth;
+        const clickX = e.offsetX;
+        audio.currentTime = (clickX / width) * audio.duration;
+    });
+}
+
+// === Manejo de errores ===
+audio.addEventListener("error", (e) => {
+    console.error("❌ Error en reproductor:", e);
+    if (!fadeInProgress) {
+        setTimeout(() => {
+            index = (index + 1) % playlist.length;
+            audio.src = playlist[index];
+            audio.play();
+        }, 2000);
+    }
 });
-
-

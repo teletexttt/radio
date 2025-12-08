@@ -1,0 +1,28 @@
+/* Barras superior e inferior */
+.top-bar,
+.bottom-bar {
+  background-color: #0550FF;
+  color: #05FF11;
+  text-align: center;
+  font-family: monospace;
+  padding: 6px 0;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+/* Íconos sutiles */
+.icon-small {
+  width: 26px;
+  height: 26px;
+  opacity: 0.85;        /* sutil */
+  filter: brightness(0) invert(1); /* blanco sobre fondo cualquiera */
+}
+.cafecito-cat {
+  color: #ffffffcc;     /* blanco transparente */
+  font-size: 22px;
+  text-decoration: none;
+  opacity: 0.9;
+}
+.cafecito-cat:hover {
+  opacity: 1;
+}

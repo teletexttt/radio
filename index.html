@@ -6,7 +6,7 @@
     <title>Reproductor de Audio - TXT Radio</title>
     <style>
         body {
-            background-image: url('ff.jpg'); /* Agrega la imagen de fondo */
+            background-image: url('ff.jpg');
             background-size: cover;
             background-position: center;
             background-color: #000;
@@ -19,9 +19,9 @@
             margin: 0;
         }
         h1 {
-            color: rgb(0, 0, 0); /* Color de texto blanco */
-            font-family: 'Chomsky'; /* Tipografía Chomsky */
-            text-shadow: 2px 2px 0px rgb(255, 255, 255); /* Sombra negra para simular borde */
+            color: rgb(0, 0, 0);
+            font-family: 'Chomsky';
+            text-shadow: 2px 2px 0px rgb(255, 255, 255);
         }
         .container {
             text-align: center;
@@ -34,24 +34,39 @@
 <body>
     <div class="container">
         <h1>Teletext Radio</h1>
-        <p>Escucha nuestra transmisión en vivo:</p>
-       <div class="player">
-  <!-- Reproductor de audio con la URL proporcionada -->
-  <audio controls autoplay>
-    <source src="music/mañana/song1.mp3" type="audio/mpeg">
-    Tu navegador no soporta el reproductor de audio.
-  </audio>
+        <p>Radio en vivo las 24 hs.</p>
 
-  <!-- Controles ocultos para compatibilidad con app.js -->
-  <div id="controls" style="display:none;">
-    <button id="playPauseBtn">▶️</button>
-    <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
-      <div id="progressBar" style="height:5px;width:0;background:white;"></div>
+        <div class="player">
+            <!-- Reproductor de audio -->
+            <audio id="radioPlayer" controls autoplay>
+                <source src="music/mañana/song1.mp3" type="audio/mpeg">
+                Tu navegador no soporta el reproductor de audio.
+            </audio>
+
+            <!-- Controles ocultos (compatibilidad con app.js) -->
+            <div id="controls" style="display:none;">
+                <button id="playPauseBtn">▶️</button>
+                <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
+                    <div id="progressBar" style="height:5px;width:0;background:white;"></div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-        <script src="app.js"></script>
 
+    <!-- Script principal (se carga después del DOM) -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const audio = document.getElementById("radioPlayer");
+            audio.volume = 1;
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    console.log("Autoplay bloqueado: el usuario debe presionar Play manualmente.");
+                });
+            }
+        });
+    </script>
+    <script src="app.js" defer></script>
 </body>
 </html>
 

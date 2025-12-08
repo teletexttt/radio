@@ -6,6 +6,14 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Teletext Radio</title>
     <style>
+        @font-face {
+            font-family: 'Chomsky';
+            src: url('Chomsky.woff2') format('woff2'),
+                 url('Chomsky.woff') format('woff');
+            font-weight: normal;
+            font-style: normal;
+        }
+        
         body {
             background-image: url('ff.jpg');
             background-size: cover;
@@ -20,71 +28,86 @@
             margin: 0;
         }
         h1 {
-            color: rgb(0, 0, 0);
-            font-family: 'Chomsky';
-            text-shadow: 2px 2px 0px rgb(255, 255, 255);
+            color: #00FF37; /* Verde solicitado */
+            font-family: 'Chomsky', serif;
+            font-size: 3rem;
+            text-shadow: 3px 3px 0 #002FFF, /* Sombra azul solicitada */
+                         6px 6px 0 rgba(0, 47, 255, 0.3);
+            letter-spacing: 1px;
+            margin-bottom: 10px;
         }
         .container {
             text-align: center;
+            padding: 20px;
         }
         .player {
             margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Más espacio entre elementos */
         }
 
-        /* 🎨 Mejora 1: transparencia sin romper controles */
         audio {
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
             transition: background 0.3s ease;
             pointer-events: auto;
+            width: 100%;
+            max-width: 400px;
         }
 
         audio:hover {
             background-color: rgba(255, 255, 255, 0.25);
         }
 
-        /* 💜 Mejora 2: botón de colaboración */
-        #donate-btn {
-            margin-top: 15px;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
+        /* Botón de cafecito personalizado */
+        .cafecito-btn {
+            margin-top: 25px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #8B4513, #D2691E);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(139, 69, 19, 0.4);
             transition: all 0.3s ease;
+            border: 2px solid #A0522D;
         }
 
-        #donate-btn:hover {
-            background: rgba(255, 255, 255, 0.4);
-            transform: scale(1.05);
+        .cafecito-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 69, 19, 0.6);
+            background: linear-gradient(135deg, #A0522D, #CD853F);
         }
 
-        /* Corrige la posición del botón de colaboración */
-        .player {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px; /* separación vertical */
+        .cafecito-logo {
+            width: 24px;
+            height: 24px;
+            filter: brightness(0) invert(1);
         }
 
-        #donate-btn {
-          display: block;
-          margin: 0 auto;
+        .cafecito-text {
+            font-size: 1rem;
         }
 
         /* Responsive para móviles */
         @media (max-width: 768px) {
             .container {
-                padding: 20px;
-                width: 90%;
+                padding: 15px;
+                width: 95%;
             }
             
             h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
                 line-height: 1.2;
+                text-shadow: 2px 2px 0 #002FFF,
+                             4px 4px 0 rgba(0, 47, 255, 0.3);
             }
             
             audio {
@@ -92,9 +115,11 @@
                 min-width: 280px;
             }
             
-            #donate-btn {
+            .cafecito-btn {
                 width: 100%;
                 max-width: 300px;
+                justify-content: center;
+                padding: 10px 15px;
             }
         }
 
@@ -107,9 +132,13 @@
 
         <div class="player">
             <audio id="radioPlayer" controls></audio>
-            <button id="donate-btn" onclick="window.open('https://mpago.la/teletextradio', '_blank')">
-                💜 Colaborar con el proyecto
-            </button>
+            
+            <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
+                <img src='https://cdn.cafecito.app/imgs/cafecito_logo.png' 
+                     alt='Cafecito' 
+                     class="cafecito-logo" />
+                <span class="cafecito-text">Colaborá con este proyecto</span>
+            </a>
         </div>
 
         <!-- Controles ocultos para compatibilidad con app.js -->
@@ -138,7 +167,3 @@
     <script src="app.js" defer></script>
 </body>
 </html>
-
-
-
-

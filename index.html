@@ -31,11 +31,11 @@
             padding: 20px;
         }
         
-        /* Container MÁS transparente (0.55) */
+        /* Container MÁS transparente (0.5) */
         .container {
             text-align: center;
             padding: 40px 50px;
-            background: rgba(0, 0, 0, 0.55); /* MÁS TRANSPARENTE */
+            background: rgba(0, 0, 0, 0.5); /* MÁS TRANSPARENTE */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-radius: 25px;
@@ -88,7 +88,7 @@
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
         }
 
-        /* Botón con texto <3 */
+        /* Botón con corazón VERDE */
         .cafecito-btn {
             display: inline-flex;
             align-items: center;
@@ -117,12 +117,12 @@
             border-color: rgba(255, 255, 255, 0.25);
         }
 
-        .cafecito-logo {
-            width: 26px;
-            height: 26px;
-            background: url('https://cdn.cafecito.app/imgs/logo.png') no-repeat center;
-            background-size: contain;
-            filter: brightness(0) invert(1) opacity(0.9);
+        /* Corazón en VERDE (#00FF37) */
+        .cafecito-heart {
+            color: #00FF37; /* Mismo verde que el título */
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 255, 55, 0.5);
         }
 
         .cafecito-text {
@@ -136,7 +136,7 @@
             .container {
                 padding: 30px 25px;
                 margin: 15px;
-                background: rgba(0, 0, 0, 0.6); /* Más transparente en móvil también */
+                background: rgba(0, 0, 0, 0.55); /* Más transparente en móvil */
             }
             
             h1 {
@@ -188,8 +188,8 @@
             <audio id="radioPlayer" controls></audio>
             
             <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
-                <div class="cafecito-logo"></div>
-                <span class="cafecito-text">&lt;3 colabora con este proyecto</span>
+                <span class="cafecito-heart">♥</span>
+                <span class="cafecito-text">colabora con este proyecto</span>
             </a>
         </div>
 
@@ -219,4 +219,3 @@
     <script src="app.js" defer></script>
 </body>
 </html>
-

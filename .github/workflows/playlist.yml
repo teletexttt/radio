@@ -5,6 +5,10 @@ on:
     paths:
       - 'music/**'
       - '.github/workflows/playlist.yml'
+  pull_request:
+    paths:
+      - 'music/**'
+  workflow_dispatch:  # Permite ejecución manual
 
 permissions:
   contents: write
@@ -19,17 +23,34 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Generate playlist.json
+    - name: Debug - List files
       run: |
-        echo "{ \"tracks\": [" > playlist.json
-        find music -type f -name "*.mp3" | sed 's/^/  \"/; s/$/\",/' >> playlist.json
-        sed -i '$ s/,$//' playlist.json
-        echo "] }" >> playlist.json
+        echo "=== Archivos MP3 encontrados ==="
+        find music -type f -name "*.mp3" | sort
+        echo "Total: $(find music -type f -name "*.mp3" | wc -l)"
 
-    - name: Commit playlist.json
+    - name: Generate playlist.json (CORREGIDO)
       run: |
-        git config user.name "github-actions"
-        git config user.email "actions@github.com"
+        # Método 1: Solo nombres de archivo (sin 'music/')
+        echo '{ "tracks": [' > playlist.json
+        # -printf '%P' da la ruta RELATIVA (sin 'music/')
+        find music -type f -name "*.mp3" -printf '  "%P"\n' | sort | sed '$!s/$/,/' >> playlist.json
+        echo '] }' >> playlist.json
+        
+        echo "=== playlist.json generado ==="
+        cat playlist.json
+
+    - name: Commit and push changes
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
         git add playlist.json
-        git commit -m "Auto-update playlist" || echo "No changes"
-        git push
+        
+        # Solo commit si hay cambios
+        if ! git diff --cached --quiet; then
+          git commit -m "📻 Auto-update playlist - $(date '+%Y-%m-%d %H:%M')"
+          git push
+          echo "✅ playlist.json actualizado y subido"
+        else
+          echo "✅ No hay cambios en playlist.json"
+        fi

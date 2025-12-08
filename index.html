@@ -1,235 +1,74 @@
 <!DOCTYPE html>
 <html lang="es">
-    <link rel="stylesheet" href="style.css">
-    
-
 <head>
-    <a href="https://wa.me/549XXXXXXXXX" target="_blank">
-      <img src="img/wsp.png" class="icon-small">
-    </a>
-    <a href="https://cafecito.app/TUNOMBRE" target="_blank" class="cafecito-cat">
-    ฅ^•ﻌ•^ฅ
-    </a>
-
-
-    <link rel="icon" href="favicon.png" type="image/png">
-    <style>
-  .barra-inferior {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #00aaff; /* tu color "axy" */
-    padding: 8px 12px;
-    text-align: center;
-  }
-  .barra-inferior span {
-    color: #00ff00; /* verde */
-    font-weight: bold;
-    font-family: monospace;
-  }
-</style>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teletext Radio</title>
-
-    <style>
-        @font-face {
-            font-family: 'Chomsky';
-            src: url('Chomsky.otf') format('opentype');
-        }
-
-        body {
-            background-image: url('ff.jpg');
-            background-size: cover;
-            background-position: center;
-            background-color: #000;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 500px;
-            backdrop-filter: blur(3px);
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        h1 {
-            font-family: 'Chomsky';
-            color: black;
-            font-size: 55px;
-            text-shadow: 2px 2px 0px white;
-            margin: 0;
-        }
-
-        h2 {
-            margin-top: 5px;
-            font-size: 20px;
-            color: white;
-            text-shadow: 1px 1px 3px black;
-        }
-
-        /* === REPRODUCTOR ESTILO TELETEXT === */
-        .player {
-            margin-top: 25px;
-            width: 100%;
-        }
-
-        .controls {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            gap: 10px;
-        }
-
-        #playPauseBtn {
-            width: 55px;
-            height: 55px;
-            font-size: 25px;
-            background: white;
-            color: black;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        #progressContainer {
-            flex: 1;
-            height: 10px;
-            background: rgba(255, 255, 255, 0.4);
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
-        #progressBar {
-            height: 100%;
-            width: 0%;
-            background: white;
-            border-radius: 10px;
-        }
-
-        #current-track {
-            margin-top: 15px;
-            font-size: 17px;
-            text-shadow: 1px 1px 2px black;
-        }
-
-        @media (max-width: 600px) {
-            h1 { font-size: 40px; }
-            #playPauseBtn { width: 50px; height: 50px; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teletext Radio</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    /* Reset básico */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; background: #000; color: white; font-family: Arial, sans-serif; }
+    /* Barra superior / inferior */
+    .top-bar, .bottom-bar {
+      background-color: #0550FF;
+      color: #05FF11;
+      text-align: center;
+      padding: 8px 0;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .bottom-bar { margin-top: auto; } /* asegura que quede al final */
+    /* Contenido principal centrado */
+    .container {
+      flex: 1; /* ocupa el espacio entre barras */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    /* Estilos del reproductor (lo tuyo original) */
+    h1 { /* ... tus estilos ... */ }
+    /* Íconos sutiles */
+    .icon-small {
+      width: 24px;
+      height: 24px;
+      opacity: 0.8;
+      filter: brightness(0) invert(1);
+      margin: 0 6px;
+    }
+    .icon-link {
+      text-decoration: none;
+    }
+    /* Footer de íconos flotantes — si los querés arriba/dentro de container */
+    .socials {
+      margin-top: 15px;
+    }
+  </style>
 </head>
-<div class="barra-inferior">
-  <span> /\_/\  
-        ( o.o ) 
-         > ^ < </span>
-</div>
-
 <body>
-    <!-- Barra superior -->
-<div class="top-bar">
-  Desde la pat agonía para el mundo.
-</div>
+  <div class="top-bar">Desde la pat agonía para el mundo.</div>
 
-<!-- contenido de tu página acá -->
-
-<!-- Barra inferior -->
-<div class="bottom-bar">
-  todos los derechos reservados guachin 2025
-</div>
-
-    <div class="container">
-        <h1>Teletext Radio</h1>
-        <h2>Radio online 24 Hs.</h2>
-
-        <div class="player">
-            <div class="controls">
-                <button id="playPauseBtn">▶️</button>
-
-                <div id="progressContainer">
-                    <div id="progressBar"></div>
-                </div>
-            </div>
-
-            <p id="current-track"></p>
-        </div>
+  <div class="container">
+    <h1>Teletext Radio</h1>
+    <h2>Radio online 24 Hs.</h2>
+    <!-- tu player -->
+    <!-- luego los iconos -->
+    <div class="socials">
+      <a href="https://wa.me/549XXXXXXXXX" target="_blank" class="icon-link">
+        <img src="img/whatsapp-white.png" alt="WhatsApp" class="icon-small">
+      </a>
+      <a href="https://cafecito.app/TU_USER" target="_blank" class="icon-link">
+        <img src="img/cafecito-white.png" alt="Cafecito" class="icon-small">
+      </a>
     </div>
+  </div>
 
-    <script src="app.js"></script>
-<!-- Panel flotante de contacto -->
-<div class="floating-panel">
-    <!-- Cafecito -->
-    <a href="https://cafecito.app/ripgordon" target="_blank" class="btn cafecito">
-        <pre style="margin:0; font-size:14px; line-height:12px;"> 
- /\_/\  
-( o.o ) 
- > ^ <  
-        </pre>
-    </a>
-
-    <!-- WhatsApp -->
-    <a href="https://wa.me/5492920276985" target="_blank" class="btn whatsapp">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
-    </a>
-</div>
-
-<style>
-/* Panel flotante */
-.floating-panel {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    z-index: 1000;
-}
-
-/* Botones */
-.btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    background: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 5px;
-    transition: transform 0.2s, background 0.2s;
-}
-
-/* Efecto hover */
-.btn:hover {
-    transform: scale(1.1);
-    background: rgba(255,255,255,0.2);
-}
-
-/* WhatsApp icon */
-.whatsapp img {
-    width: 50px;
-    height: 50px;
-}
-</style>
-<div class="barra-inferior">
-  <span>jsjsjsjsjsjsj</span>
-</div>
-
+  <div class="bottom-bar">todos los derechos reservados guachin 2025</div>
 </body>
 </html>
-
-
-
-
 
 
 

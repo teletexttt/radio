@@ -73,6 +73,82 @@
 
 
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teletext Radio</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <style>
+    /* Reset básico */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; background: #000; color: white; font-family: Arial, sans-serif; }
+    /* Barra superior / inferior */
+    .top-bar, .bottom-bar {
+      background-color: #0550FF;
+      color: #05FF11;
+      text-align: center;
+      padding: 8px 0;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    .bottom-bar { margin-top: auto; } /* asegura que quede al final */
+    /* Contenido principal centrado */
+    .container {
+      flex: 1; /* ocupa el espacio entre barras */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    /* Estilos del reproductor (lo tuyo original) */
+    h1 { /* ... tus estilos ... */ }
+    /* Íconos sutiles */
+    .icon-small {
+      width: 24px;
+      height: 24px;
+      opacity: 0.8;
+      filter: brightness(0) invert(1);
+      margin: 0 6px;
+    }
+    .icon-link {
+      text-decoration: none;
+    }
+    /* Footer de íconos flotantes — si los querés arriba/dentro de container */
+    .socials {
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">Desde la pat agonía para el mundo.</div>
+
+  <div class="container">
+    <h1>Teletext Radio</h1>
+    <h2>Radio online 24 Hs.</h2>
+    <!-- tu player -->
+    <!-- luego los iconos -->
+    <div class="socials">
+      <a href="https://wa.me/549XXXXXXXXX" target="_blank" class="icon-link">
+        <img src="img/whatsapp-white.png" alt="WhatsApp" class="icon-small">
+      </a>
+      <a href="https://cafecito.app/TU_USER" target="_blank" class="icon-link">
+        <img src="img/cafecito-white.png" alt="Cafecito" class="icon-small">
+      </a>
+    </div>
+  </div>
+
+  <div class="bottom-bar">todos los derechos reservados guachin 2025</div>
+</body>
+</html>
+
+
+
+
+
 
 
 

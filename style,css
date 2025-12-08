@@ -44,11 +44,44 @@ p {
   margin-top: 20px;
 }
 
+/* === REPRODUCTOR === */
 audio {
   width: 100%;
   max-width: 300px;
   outline: none;
   border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1); /* Transparente sin romper volumen */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  transition: background 0.3s ease;
+  pointer-events: auto; /* Permite interacción con volumen */
+}
+
+audio:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Oculta los minutos, mantiene barra y volumen */
+audio::-webkit-media-controls-current-time-display,
+audio::-webkit-media-controls-time-remaining-display {
+  display: none !important;
+}
+
+/* === BOTÓN COLABORAR === */
+#donate-btn {
+  margin-top: 15px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+#donate-btn:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
 }
 
 /* === RESPONSIVE === */

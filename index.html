@@ -1,50 +1,107 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teletext Radio</title>
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <title>Teletext Radio</title>
+    <style>
+        body {
+            background-image: url('ff.jpg');
+            background-size: cover;
+            background-position: center;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: rgb(0, 0, 0);
+            font-family: 'Chomsky';
+            text-shadow: 2px 2px 0px rgb(255, 255, 255);
+        }
+        .container {
+            text-align: center;
+        }
+        .player {
+            margin-top: 20px;
+        }
+
+        /* 🎨 Mejora 1: transparencia sin romper controles */
+        audio {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: background 0.3s ease;
+            pointer-events: auto;
+        }
+
+        audio:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* 💜 Mejora 2: botón de colaboración */
+        #donate-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+
+        #donate-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+        }
+    </style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>Teletext Radio</h1>
-    <p>Radio en vivo las 24 hs.</p>
+    <div class="container">
+        <h1>Teletext Radio</h1>
+        <p>Radio en vivo las 24 hs.</p>
 
-    <div class="player">
-      <audio id="radioPlayer" controls></audio>
-      <button id="donate-btn" onclick="window.open('https://mpago.la/TU_ALIAS', '_blank')">
-        💜 Colaborar con el proyecto
-      </button>
+        <div class="player">
+            <audio id="radioPlayer" controls></audio>
+            <button id="donate-btn" onclick="window.open('https://mpago.la/TU_ALIAS', '_blank')">
+                💜 Colaborar con el proyecto
+            </button>
+        </div>
+
+        <!-- Controles ocultos para compatibilidad con app.js -->
+        <div id="controls" style="display:none;">
+            <button id="playPauseBtn">▶️</button>
+            <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
+                <div id="progressBar" style="height:5px;width:0;background:white;"></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Controles ocultos para compatibilidad con app.js -->
-    <div id="controls" style="display:none;">
-      <button id="playPauseBtn">▶️</button>
-      <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
-        <div id="progressBar" style="height:5px;width:0;background:white;"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const audio = document.getElementById("radioPlayer");
-      audio.volume = 1;
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          console.log("Autoplay bloqueado: el usuario debe presionar Play manualmente.");
+    <!-- Script principal -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const audio = document.getElementById("radioPlayer");
+            audio.volume = 1;
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    console.log("Autoplay bloqueado: el usuario debe presionar Play manualmente.");
+                });
+            }
         });
-      }
-    });
-  </script>
+    </script>
 
-  <script src="app.js" defer></script>
+    <script src="app.js" defer></script>
 </body>
 </html>
+
 
 
 

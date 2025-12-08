@@ -35,16 +35,24 @@
     <div class="container">
         <h1>Teletext Radio</h1>
         <p>Escucha nuestra transmisión en vivo:</p>
-        <div class="player">
-            <!-- Reproductor de audio con la URL proporcionada -->
-            <audio controls autoplay>
-                <source src="music/mañana/song1.mp3" type="audio/mpeg">
-                Tu navegador no soporta el reproductor de audio.
-            </audio>
-        </div>
+       <div class="player">
+  <!-- Reproductor de audio con la URL proporcionada -->
+  <audio controls autoplay>
+    <source src="music/mañana/song1.mp3" type="audio/mpeg">
+    Tu navegador no soporta el reproductor de audio.
+  </audio>
+
+  <!-- Controles ocultos para compatibilidad con app.js -->
+  <div id="controls" style="display:none;">
+    <button id="playPauseBtn">▶️</button>
+    <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
+      <div id="progressBar" style="height:5px;width:0;background:white;"></div>
     </div>
-    <script src="app.js"></script>
+  </div>
+</div>
+        <script src="app.js"></script>
 
 </body>
 </html>
+
 

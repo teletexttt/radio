@@ -6,13 +6,12 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <title>Teletext Radio</title>
     <style>
-        /* Importar Chomsky desde Google Fonts alternativa */
-        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap');
-        
+        /* Cargar Chomsky desde tu archivo convertido */
         @font-face {
             font-family: 'Chomsky';
-            src: url('https://raw.githubusercontent.com/teltext/radio/main/Chomsky.woff2') format('woff2'),
-                 url('https://raw.githubusercontent.com/teltext/radio/main/Chomsky.woff') format('woff');
+            src: url('Chomsky.woff2') format('woff2'),
+                 url('Chomsky.woff') format('woff'),
+                 url('Chomsky.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
         }
@@ -29,34 +28,33 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            padding: 20px;
         }
         
         h1 {
-            color: #00FF37; /* Verde solicitado */
-            font-family: 'Chomsky', 'EB Garamond', serif;
-            font-size: 3.5rem;
-            text-shadow: 3px 3px 0 #002FFF, /* Sombra azul */
-                         6px 6px 0 rgba(0, 47, 255, 0.3);
-            letter-spacing: 2px;
+            color: #00FF37; /* Verde exacto solicitado */
+            font-family: 'Chomsky', serif;
+            font-size: 4rem;
+            text-shadow: 3px 3px 0 #002FFF, /* Sombra azul exacta */
+                         5px 5px 0 rgba(0, 47, 255, 0.5);
+            letter-spacing: 3px;
             margin: 0 0 10px 0;
             line-height: 1;
+            text-align: center;
         }
         
         .container {
             text-align: center;
-            padding: 30px;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
-            width: 100%;
+            padding: 40px;
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            font-weight: 300;
         }
         
         .player {
-            margin-top: 25px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -79,76 +77,64 @@
             box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
         }
 
-        /* Botón de cafecito transparente/difuminado */
+        /* Botón de cafecito TRANSPARENTE/DIFUMINADO */
         .cafecito-btn {
-            margin-top: 15px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 12px;
-            padding: 14px 24px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            padding: 14px 28px;
+            background: rgba(255, 255, 255, 0.08); /* Muy transparente */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             color: white;
             text-decoration: none;
             border-radius: 12px;
             font-family: Arial, sans-serif;
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
             width: 100%;
             max-width: 350px;
         }
 
         .cafecito-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.25);
         }
 
         .cafecito-logo {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             background: url('https://cdn.cafecito.app/imgs/logo.png') no-repeat center;
             background-size: contain;
-            filter: brightness(0) invert(1);
+            filter: brightness(0) invert(1) opacity(0.9);
         }
 
         .cafecito-text {
-            font-size: 1.05rem;
-            letter-spacing: 0.5px;
-        }
-
-        /* Subtítulo */
-        .subtitle {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-            font-weight: 300;
+            font-size: 1rem;
+            letter-spacing: 0.3px;
+            color: rgba(255, 255, 255, 0.95);
         }
 
         /* Responsive para móviles */
         @media (max-width: 768px) {
-            body {
-                padding: 15px;
-                height: auto;
-                min-height: 100vh;
-            }
-            
             .container {
-                padding: 25px 20px;
-                margin: 20px 0;
+                padding: 20px;
+                width: 90%;
             }
             
             h1 {
-                font-size: 2.5rem;
+                font-size: 2.8rem;
                 text-shadow: 2px 2px 0 #002FFF,
-                             4px 4px 0 rgba(0, 47, 255, 0.3);
+                             4px 4px 0 rgba(0, 47, 255, 0.5);
+            }
+            
+            .subtitle {
+                font-size: 1rem;
             }
             
             audio {
@@ -161,20 +147,12 @@
                 max-width: 320px;
                 padding: 12px 20px;
             }
-            
-            .subtitle {
-                font-size: 1rem;
-            }
         }
 
         /* Para pantallas muy pequeñas */
         @media (max-width: 480px) {
             h1 {
-                font-size: 2rem;
-            }
-            
-            .container {
-                padding: 20px 15px;
+                font-size: 2.2rem;
             }
             
             .cafecito-btn {

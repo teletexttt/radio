@@ -1,83 +1,50 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="favicon.png">
-
-    <title>Teletext Radio</title>
-    <style>
-        body {
-            background-image: url('ff.jpg');
-            background-size: cover;
-            background-position: center;
-            background-color: #000;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        h1 {
-            color: rgb(0, 0, 0);
-            font-family: 'Chomsky';
-            text-shadow: 2px 2px 0px rgb(255, 255, 255);
-        }
-        .container {
-            text-align: center;
-        }
-        .player {
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teletext Radio</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <div class="container">
-        <h1>Teletext Radio</h1>
-        <p>Radio en vivo las 24 hs.</p>
-        <div class="player">
-  <audio id="radioPlayer" controls></audio>
-  <button id="donate-btn" onclick="window.open('https://mpago.la/TU_ALIAS', '_blank')">
-    💜 Colaborar con el proyecto
-  </button>
-</div>
+  <div class="container">
+    <h1>Teletext Radio</h1>
+    <p>Radio en vivo las 24 hs.</p>
 
+    <div class="player">
+      <audio id="radioPlayer" controls></audio>
+      <button id="donate-btn" onclick="window.open('https://mpago.la/TU_ALIAS', '_blank')">
+        💜 Colaborar con el proyecto
+      </button>
+    </div>
 
-        
-
-
-  <!-- Controles ocultos para compatibilidad con app.js -->
-  <div id="controls" style="display:none;">
-    <button id="playPauseBtn">▶️</button>
-    <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
-      <div id="progressBar" style="height:5px;width:0;background:white;"></div>
+    <!-- Controles ocultos para compatibilidad con app.js -->
+    <div id="controls" style="display:none;">
+      <button id="playPauseBtn">▶️</button>
+      <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
+        <div id="progressBar" style="height:5px;width:0;background:white;"></div>
+      </div>
     </div>
   </div>
-</div>
 
-
-    <!-- Script principal (se carga después del DOM) -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const audio = document.getElementById("radioPlayer");
-            audio.volume = 1;
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    console.log("Autoplay bloqueado: el usuario debe presionar Play manualmente.");
-                });
-            }
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const audio = document.getElementById("radioPlayer");
+      audio.volume = 1;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          console.log("Autoplay bloqueado: el usuario debe presionar Play manualmente.");
         });
-    </script>
-    <script src="app.js" defer></script>
+      }
+    });
+  </script>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
-
-
-
-
 
 
 

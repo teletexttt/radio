@@ -52,25 +52,83 @@ function loadTrack(player, i) {
   player.load();
 }
 
-// === Reproducir ===
+// === REPRODUCIR - VERSIÓN OPTIMIZADA ===
 function playTrack() {
   if (!playlistLoaded || playlist.length === 0 || isPlaying || fadeInProgress) return;
 
+  // Cargar y reproducir INMEDIATO
   loadTrack(audio, index);
+  
+  // Intentar reproducir YA, no esperar metadata
+  const playAttempt = audio.play();
+  
+  if (playAttempt !== undefined) {
+    playAttempt
+      .then(() => {
+        isPlaying = true;
+        playPauseBtn.textContent = "⏸";
+        console.log("▶️ Reproducción iniciada inmediata");
+        
+        // Programar crossfade después de asegurar reproducción
+        audio.onloadedmetadata = () => {
+          const randomStart = Math.random() * audio.duration * 0.8;
+          audio.currentTime = randomStart;
+          scheduleCrossfade();
+        };
+      })
+      .catch(error => {
+        console.log("⏸️ Autoplay bloqueado. Esperando interacción.");
+        // Mostrar botón manual en web también
+        showManualStartButton();
+      });
+  }
+}
 
-  audio.onloadedmetadata = () => {
-    // Salida desde un punto aleatorio (radio style)
-    const randomStart = Math.random() * audio.duration * 0.8;
-    audio.currentTime = randomStart;
-    audio.volume = 1;
-
+// Función auxiliar para botón manual
+function showManualStartButton() {
+  if (document.getElementById('manualStartBtn')) return;
+  
+  const btn = document.createElement('button');
+  btn.id = 'manualStartBtn';
+  btn.textContent = '▶️ INICIAR TRANSMISIÓN';
+  btn.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background: #8a2be2;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 0 30px rgba(138, 43, 226, 0.7);
+  `;
+  
+  btn.onclick = function() {
+    // Forzar inicio con interacción del usuario
     audio.play().then(() => {
       isPlaying = true;
       playPauseBtn.textContent = "⏸";
+      this.remove();
       scheduleCrossfade();
-    }).catch(err => console.log("Autoplay bloqueado:", err));
+    });
   };
+  
+  document.body.appendChild(btn);
 }
+
+// Botón para móviles (si agregaste el HTML)
+document.getElementById('startRadioBtn')?.addEventListener('click', function() {
+  audio.play().then(() => {
+    isPlaying = true;
+    playPauseBtn.textContent = "⏸";
+    this.parentElement.style.display = 'none';
+    scheduleCrossfade();
+  });
+});
 
 // === Programar el próximo crossfade ===
 function scheduleCrossfade() {
@@ -143,4 +201,5 @@ progressContainer.addEventListener("click", e => {
   const clickX = e.offsetX;
   audio.currentTime = (clickX / width) * audio.duration;
 });
+
 

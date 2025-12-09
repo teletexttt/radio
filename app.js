@@ -1,5 +1,5 @@
-// === TELEtext Radio - Versión SIMPLE y ESTABLE ===
-// Sin crossfade complejo, sin paradas entre temas
+// === TELEtext Radio - Sistema SIMPLE y ESTABLE ===
+// Corregido: controles nativos no pausan accidentalmente
 
 let playlist = [];
 let currentIndex = 0;
@@ -7,7 +7,7 @@ let isPlaying = false;
 let audio = new Audio();
 let playlistLoaded = false;
 
-// Usar reproductor nativo si existe (para controles visibles)
+// Usar reproductor nativo si existe (solo para visualización)
 const nativePlayer = document.getElementById('radioPlayer');
 
 // === Cargar playlist ===
@@ -68,16 +68,17 @@ function loadAndPlayTrack(index) {
   // Asegurar ruta con 'music/'
   const fullPath = track.startsWith('music/') ? track : 'music/' + track;
   
-  console.log(`🎵 Cargando: ${track}`);
+  console.log(`🎵 Cargando: ${track} (${index + 1}/${playlist.length})`);
   
-  // Configurar audio
+  // Configurar audio principal
   audio.src = fullPath;
   audio.volume = 1;
   audio.crossOrigin = "anonymous";
   
-  // Sincronizar con reproductor nativo si existe
+  // Sincronizar con reproductor nativo solo para visualización
   if (nativePlayer) {
     nativePlayer.src = fullPath;
+    nativePlayer.currentTime = 0;
   }
   
   // Cuando se carguen los metadatos, comenzar en punto aleatorio
@@ -88,33 +89,42 @@ function loadAndPlayTrack(index) {
       const randomStart = Math.random() * (audio.duration - 60);
       audio.currentTime = randomStart;
       console.log(`🎲 Inicia en: ${Math.round(randomStart)}s`);
+      
+      // Sincronizar tiempo con reproductor visual
+      if (nativePlayer) {
+        nativePlayer.currentTime = audio.currentTime;
+      }
     }
     
-    // Reproducir
+    // Reproducir audio principal
     audio.play().then(() => {
       isPlaying = true;
       console.log("▶️ Reproduciendo");
       
-      // Actualizar controles nativos
-      if (nativePlayer) {
-        nativePlayer.currentTime = audio.currentTime;
-        if (nativePlayer.paused) nativePlayer.play();
+      // Si el reproductor nativo está pausado, reproducirlo también (solo visual)
+      if (nativePlayer && nativePlayer.paused) {
+        nativePlayer.play().catch(() => {
+          // Ignorar errores en reproductor visual
+        });
       }
       
     }).catch(error => {
       console.log("⏸️ Autoplay bloqueado - Esperando interacción");
-      // Mostrar instrucción para usuario
       showPlayInstructions();
     });
   }, { once: true });
   
   // Manejar final de canción
-  audio.addEventListener('ended', playNextTrack, { once: true });
+  audio.addEventListener('ended', function onEnded() {
+    audio.removeEventListener('ended', onEnded);
+    console.log("✅ Canción terminada");
+    setTimeout(playNextTrack, 500); // Pequeña pausa entre canciones
+  }, { once: true });
   
   // Manejar errores
   audio.addEventListener('error', function onError(e) {
     audio.removeEventListener('error', onError);
-    console.error("❌ Error cargando canción:", track, e);
+    console.error("❌ Error cargando canción:", track, audio.error);
     
     // Saltar a siguiente canción después de 2 segundos
     setTimeout(() => {
@@ -197,9 +207,9 @@ window.startPlayback = function() {
   }
 };
 
-// === Sincronizar con controles nativos ===
+// === Sincronización MEJORADA con controles nativos ===
 if (nativePlayer) {
-  // Cuando el usuario interactúa con el reproductor nativo
+  // IMPORTANTE: Los controles nativos solo inician reproducción, NO la pausan
   nativePlayer.addEventListener('play', () => {
     if (!isPlaying && playlistLoaded) {
       audio.play().then(() => {
@@ -209,20 +219,25 @@ if (nativePlayer) {
     }
   });
   
-  nativePlayer.addEventListener('pause', () => {
-    if (isPlaying) {
-      audio.pause();
-      isPlaying = false;
-      console.log("⏸️ Pausa desde control nativo");
-    }
-  });
+  // ⚠️ CRUCIAL: NO escuchar eventos de pause del control nativo
+  // Esto evita pausas accidentales cuando el usuario toca los controles
   
-  // Sincronizar tiempo
-  nativePlayer.addEventListener('timeupdate', () => {
-    if (Math.abs(audio.currentTime - nativePlayer.currentTime) > 2) {
-      audio.currentTime = nativePlayer.currentTime;
+  // Solo sincronizar tiempo visualmente
+  setInterval(() => {
+    if (nativePlayer && audio && isPlaying) {
+      // Mantener el reproductor visual sincronizado
+      if (Math.abs(nativePlayer.currentTime - audio.currentTime) > 1) {
+        nativePlayer.currentTime = audio.currentTime;
+      }
+      
+      // Si el reproductor visual se pausó (por toque accidental), reanudarlo
+      if (nativePlayer.paused && isPlaying) {
+        nativePlayer.play().catch(() => {
+          // Ignorar errores, es solo visual
+        });
+      }
     }
-  });
+  }, 1000);
 }
 
 // === Monitoreo de estado ===
@@ -233,6 +248,7 @@ setInterval(() => {
       console.warn("⚠️ Audio pausado inesperadamente, reintentando...");
       audio.play().catch(err => {
         console.error("❌ No se pudo reanudar:", err);
+        playNextTrack();
       });
     }
     
@@ -256,4 +272,5 @@ document.addEventListener('click', function initPlayback() {
   }
 }, { once: true });
 
-console.log("📻 Radio Teletext - Sistema simple cargado");
+console.log("📻 Radio Teletext - Sistema simple cargado (sin pausas accidentales)");
+

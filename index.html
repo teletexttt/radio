@@ -4,14 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="favicon.png">
-    
-    <!-- Preload solo del archivo que EXISTE -->
     <link rel="preload" href="Chomsky.otf" as="font" type="font/otf" crossorigin>
-    
     <title>Teletext Radio</title>
-    
     <style>
-        /* FUENTE CHOMSKY - SOLO formato .otf que EXISTE */
         @font-face {
             font-family: 'Chomsky';
             src: url('Chomsky.otf') format('opentype');
@@ -33,6 +28,7 @@
             height: 100vh;
             margin: 0;
             padding: 20px;
+            cursor: pointer;
         }
         
         .container {
@@ -66,52 +62,10 @@
         .subtitle {
             color: rgba(255, 255, 255, 0.85);
             font-size: 1.2rem;
-            margin-bottom: 35px;
+            margin-bottom: 40px;
             font-weight: 300;
         }
         
-        .player {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-        }
-
-        /* Contenedor del tiempo */
-        .time-display {
-            font-family: monospace;
-            font-size: 3rem;
-            color: #00FF37;
-            text-shadow: 0 0 10px rgba(0, 255, 55, 0.5);
-            margin: 20px 0;
-        }
-
-        /* Botón de play/pause */
-        .play-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 40px;
-            color: white;
-            transition: all 0.2s ease;
-            margin: 20px 0;
-        }
-
-        .play-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.1);
-        }
-
-        .play-btn:active {
-            transform: scale(0.95);
-        }
-
         .cafecito-btn {
             display: inline-flex;
             align-items: center;
@@ -132,61 +86,36 @@
             width: 100%;
             max-width: 360px;
         }
-
+        
         .cafecito-btn:hover {
             background: rgba(255, 255, 255, 0.12);
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
             border-color: rgba(255, 255, 255, 0.25);
         }
-
-        .cafecito-heart {
-            color: #00FF37;
-            font-size: 1.3rem;
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(0, 255, 55, 0.5);
-        }
-
+        
         .cafecito-text {
             font-size: 1.05rem;
             letter-spacing: 0.5px;
             color: rgba(255, 255, 255, 0.95);
         }
-
+        
         @media (max-width: 768px) {
             .container {
                 padding: 30px 25px;
                 margin: 15px;
-                background: rgba(0, 0, 0, 0.55);
             }
             
             h1 {
                 font-size: 3rem;
-                text-shadow: 2px 2px 0 #002FFF,
-                             4px 4px 0 rgba(0, 47, 255, 0.5);
-            }
-            
-            .subtitle {
-                font-size: 1.1rem;
-            }
-            
-            .time-display {
-                font-size: 2.5rem;
-            }
-            
-            .play-btn {
-                width: 70px;
-                height: 70px;
-                font-size: 35px;
             }
             
             .cafecito-btn {
-                width: 100%;
                 max-width: 320px;
                 padding: 14px 24px;
             }
         }
-
+        
         @media (max-width: 480px) {
             h1 {
                 font-size: 2.5rem;
@@ -195,22 +124,11 @@
             .container {
                 padding: 25px 20px;
             }
-            
-            .time-display {
-                font-size: 2rem;
-            }
-            
-            .play-btn {
-                width: 60px;
-                height: 60px;
-                font-size: 30px;
-            }
-            
-            .cafecito-btn {
-                flex-direction: column;
-                gap: 10px;
-                padding: 15px;
-            }
+        }
+        
+        /* Audio oculto */
+        #radioPlayer {
+            display: none;
         }
     </style>
 </head>
@@ -218,26 +136,15 @@
     <div class="container">
         <h1>Teletext Radio</h1>
         <p class="subtitle">Radio en vivo las 24 hs.</p>
-
-        <div class="player">
-            <!-- Audio oculto -->
-            <audio id="radioPlayer" style="display:none"></audio>
-            
-            <!-- Display de tiempo -->
-            <div class="time-display" id="timeDisplay">0:00/0:00</div>
-            
-            <!-- Botón de play/pause -->
-            <div class="play-btn" id="playPauseBtn">▶️</div>
-            
-            <!-- Botón de cafecito -->
-            <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
-                <span class="cafecito-heart">♥</span>
-                <span class="cafecito-text">Invitame un Cafecito</span>
-            </a>
-        </div>
+        
+        <audio id="radioPlayer"></audio>
+        
+        <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
+            <span class="cafecito-text">Invitame un Cafecito</span>
+        </a>
     </div>
 
-    <script src="app.js" defer></script>
+    <script src="app.js"></script>
 </body>
 </html>
 

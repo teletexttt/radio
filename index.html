@@ -5,29 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="favicon.png">
     
-    <!-- Precargar fuente Chomsky -->
-    <link rel="preload" href="Chomsky.woff" as="font" type="font/woff" crossorigin>
+    <!-- Preload solo del archivo que EXISTE -->
+    <link rel="preload" href="Chomsky.otf" as="font" type="font/otf" crossorigin>
     
     <title>Teletext Radio</title>
     
     <style>
-        /* Ocultar título hasta que cargue la fuente */
-        .loading-font h1 {
-            visibility: hidden;
-        }
-        
-        .font-loaded h1 {
-            visibility: visible;
-            transition: opacity 0.3s ease;
-        }
-        
-        /* Fuente Chomsky */
+        /* FUENTE CHOMSKY - SOLO formato .otf que EXISTE */
         @font-face {
             font-family: 'Chomsky';
-            src: url('Chomsky.woff') format('woff');
+            src: url('Chomsky.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
-            font-display: block;
+            font-display: swap;
         }
         
         body {
@@ -45,11 +35,10 @@
             padding: 20px;
         }
         
-        /* Container MÁS transparente (0.5) */
         .container {
             text-align: center;
             padding: 40px 50px;
-            background: rgba(0, 0, 0, 0.5); /* MÁS TRANSPARENTE */
+            background: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-radius: 25px;
@@ -70,6 +59,8 @@
             letter-spacing: 3px;
             margin: 0 0 15px 0;
             line-height: 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         .subtitle {
@@ -86,7 +77,6 @@
             gap: 30px;
         }
 
-        /* Reproductor nativo - solo visual */
         audio {
             background-color: rgba(255, 255, 255, 0.15);
             border-radius: 15px;
@@ -95,7 +85,6 @@
             width: 100%;
             max-width: 400px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            /* Prevenir autoplay nativo */
             preload: none;
         }
 
@@ -105,7 +94,6 @@
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
         }
 
-        /* Botón con corazón VERDE */
         .cafecito-btn {
             display: inline-flex;
             align-items: center;
@@ -134,9 +122,8 @@
             border-color: rgba(255, 255, 255, 0.25);
         }
 
-        /* Corazón en VERDE (#00FF37) */
         .cafecito-heart {
-            color: #00FF37; /* Mismo verde que el título */
+            color: #00FF37;
             font-size: 1.3rem;
             font-weight: bold;
             text-shadow: 0 0 10px rgba(0, 255, 55, 0.5);
@@ -148,12 +135,11 @@
             color: rgba(255, 255, 255, 0.95);
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 30px 25px;
                 margin: 15px;
-                background: rgba(0, 0, 0, 0.55); /* Más transparente en móvil */
+                background: rgba(0, 0, 0, 0.55);
             }
             
             h1 {
@@ -193,16 +179,14 @@
                 padding: 15px;
             }
         }
-
     </style>
 </head>
-<body class="loading-font">
+<body>
     <div class="container">
         <h1>Teletext Radio</h1>
         <p class="subtitle">Radio en vivo las 24 hs.</p>
 
         <div class="player">
-            <!-- Reproductor nativo SOLO visual - preload="none" evita autoplay -->
             <audio id="radioPlayer" controls preload="none"></audio>
             
             <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
@@ -211,7 +195,6 @@
             </a>
         </div>
 
-        <!-- Controles ocultos para compatibilidad con app.js -->
         <div id="controls" style="display:none;">
             <button id="playPauseBtn">▶️</button>
             <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
@@ -220,32 +203,6 @@
         </div>
     </div>
 
-    <!-- Script para manejar carga de fuente -->
-    <script>
-        // Detectar cuando la fuente Chomsky se carga
-        if ('fonts' in document) {
-            document.fonts.load('1em Chomsky').then(() => {
-                document.body.classList.remove('loading-font');
-                document.body.classList.add('font-loaded');
-                console.log('✅ Fuente Chomsky cargada');
-            }).catch(() => {
-                // Si falla, mostrar igual con fallback
-                document.body.classList.remove('loading-font');
-                document.body.classList.add('font-loaded');
-                console.log('⚠️ Usando fallback para Chomsky');
-            });
-        } else {
-            // Para navegadores que no soportan Font Loading API
-            setTimeout(() => {
-                document.body.classList.remove('loading-font');
-                document.body.classList.add('font-loaded');
-            }, 100);
-        }
-    </script>
-
-    <!-- ⚠️ NO hay script de autoplay aquí - todo está en app.js -->
-    
     <script src="app.js" defer></script>
 </body>
 </html>
-

@@ -1,5 +1,5 @@
 // === TELEtext Radio v2 ===
-// Crossfade mejorado - Sin superposiciones ni cortes
+// Crossfade mejorado - Con recuperación limpia de errores
 
 let playlist = [];
 let index = 0;
@@ -135,8 +135,15 @@ function scheduleCrossfade() {
   }
 }
 
-// === CROSSFADE MEJORADO - Sin superposiciones ===
+// === CROSSFADE MEJORADO - Con verificación de errores ===
 function startCrossfade() {
+  // VERIFICACIÓN EXTRA: Si audio principal tiene error, recuperar primero
+  if (audio && audio.error) {
+    console.warn("⚠️ Audio principal con error, recuperando antes de crossfade...");
+    cleanAudioRecovery();
+    return;
+  }
+  
   if (fadeInProgress || !playlistLoaded || !audio) return;
   
   console.log("🎛️ Preparando crossfade...");
@@ -270,6 +277,50 @@ function startCrossfade() {
   }, 10000);
 }
 
+// === RECUPERACIÓN LIMPIA DESPUÉS DE ERROR ===
+function cleanAudioRecovery() {
+  console.log("🔄 Iniciando recuperación limpia...");
+  
+  // 1. Detener todo
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.volume = 1;
+  }
+  
+  if (nextAudio) {
+    nextAudio.pause();
+    nextAudio.src = "";
+    nextAudio = null;
+  }
+  
+  // 2. Resetear estados
+  fadeInProgress = false;
+  isPlaying = false;
+  
+  // 3. Avanzar a siguiente canción (evitar la que causó error)
+  index = (index + 1) % playlist.length;
+  
+  // 4. Cargar nueva canción
+  if (playlist[index]) {
+    loadTrackWithRandomStart(audio, index);
+    
+    // 5. Esperar y reproducir
+    setTimeout(() => {
+      audio.play().then(() => {
+        isPlaying = true;
+        if (playPauseBtn) playPauseBtn.textContent = "⏸";
+        console.log("✅ Recuperación completada, reproduciendo canción", index + 1);
+        
+        // 6. Reprogramar crossfade
+        setTimeout(scheduleCrossfade, 1000);
+      }).catch(err => {
+        console.error("❌ No se pudo recuperar reproducción:", err);
+      });
+    }, 500);
+  }
+}
+
 // === MANEJO DE PAUSAS ===
 if (audio) {
     audio.addEventListener("pause", () => {
@@ -331,14 +382,16 @@ if (progressContainer) {
 // === Manejo de errores del audio principal ===
 if (audio) {
     audio.addEventListener("error", (e) => {
-        console.error("❌ Error en reproductor:", e);
-        if (!fadeInProgress) {
-            setTimeout(() => {
-                index = (index + 1) % playlist.length;
-                loadTrackWithRandomStart(audio, index);
-                audio.play();
-            }, 2000);
+        console.error("❌ Error en reproductor principal:", e);
+        
+        // NO intentar recuperar inmediatamente si hay crossfade en progreso
+        if (fadeInProgress) {
+            console.log("⏳ Error durante crossfade, esperando a que termine...");
+            return;
         }
+        
+        // Esperar un momento y hacer recuperación limpia
+        setTimeout(cleanAudioRecovery, 1000);
     });
 }
 

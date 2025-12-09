@@ -242,27 +242,26 @@
         <p class="subtitle">Radio en vivo las 24 hs.</p>
 
         <div class="player">
-            <!-- 🔥 Audio oculto, sin controles nativos -->
-            <audio id="radioPlayer" preload="none"></audio>
-            
-            <!-- 🔥 Controles personalizados -->
-            <div class="custom-controls">
-                <div class="control-buttons">
-                    <button class="control-btn" id="playPauseBtn">▶️</button>
-                    <button class="control-btn" id="nextBtn">⏭️</button>
-                </div>
-                <div class="status" id="statusIndicator">
-                    Presiona play para comenzar
-                </div>
-            </div>
-            
-            <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
-                <span class="cafecito-heart">♥</span>
-                <span class="cafecito-text">apoya este proyecto</span>
-            </a>
-        </div>
+    <!-- Audio oculto -->
+    <audio id="radioPlayer" style="display:none"></audio>
+
+    <!-- Controles simples -->
+    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+        <button id="playPauseBtn" style="padding: 10px 30px; font-size: 16px; cursor: pointer;">▶️ PLAY</button>
+        <button id="nextBtn" style="padding: 10px 30px; font-size: 16px; cursor: pointer;">⏭️ SIGUIENTE</button>
+    </div>
+    <div id="statusIndicator" style="color: rgba(255,255,255,0.7); font-size: 14px;">
+        Presiona PLAY para comenzar
+    </div>
+
+    <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
+        <span class="cafecito-heart">♥</span>
+        <span class="cafecito-text">apoya este proyecto</span>
+    </a>
+</div>
     </div>
 
     <script src="app.js" defer></script>
 </body>
 </html>
+

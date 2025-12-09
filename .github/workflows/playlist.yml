@@ -8,7 +8,7 @@ on:
   pull_request:
     paths:
       - 'music/**'
-  workflow_dispatch:  # Permite ejecución manual
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -29,12 +29,11 @@ jobs:
         find music -type f -name "*.mp3" | sort
         echo "Total: $(find music -type f -name "*.mp3" | wc -l)"
 
-    - name: Generate playlist.json (CORREGIDO)
+    - name: Generate playlist.json (CON music/)
       run: |
-        # Método 1: Solo nombres de archivo (sin 'music/')
         echo '{ "tracks": [' > playlist.json
-        # -printf '%P' da la ruta RELATIVA (sin 'music/')
-        find music -type f -name "*.mp3" -printf '  "%P"\n' | sort | sed '$!s/$/,/' >> playlist.json
+        # RUTAS CON 'music/'
+        find music -type f -name "*.mp3" -printf '  "music/%P"\n' | sort | sed '$!s/$/,/' >> playlist.json
         echo '] }' >> playlist.json
         
         echo "=== playlist.json generado ==="
@@ -46,7 +45,6 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add playlist.json
         
-        # Solo commit si hay cambios
         if ! git diff --cached --quiet; then
           git commit -m "📻 Auto-update playlist - $(date '+%Y-%m-%d %H:%M')"
           git push

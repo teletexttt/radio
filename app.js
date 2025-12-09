@@ -1,15 +1,11 @@
-// === TELEtext Radio - Versión con display de tiempo ===
+// === TELEtext Radio - Radio en vivo 24hs ===
 
 let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
-let audio;
+let audio = document.getElementById('radioPlayer');
 let playlistLoaded = false;
 let isFirstPlay = true;
-
-// Elementos de la interfaz
-let playPauseBtn;
-let timeDisplay;
 
 // === Cargar playlist ===
 fetch("playlist.json")
@@ -41,13 +37,6 @@ function loadTrack(index) {
   const track = playlist[index];
   const fullPath = track.startsWith('music/') ? track : 'music/' + track;
   
-  if (!audio) {
-    audio = new Audio();
-    audio.crossOrigin = "anonymous";
-    // Configurar eventos de tiempo
-    audio.ontimeupdate = updateTimeDisplay;
-  }
-  
   audio.pause();
   audio.src = fullPath;
   audio.volume = 1;
@@ -60,34 +49,15 @@ function loadTrack(index) {
     } else {
       audio.currentTime = 0;
     }
-    updateTimeDisplay(); // Actualizar display con los nuevos tiempos
   };
   
-  audio.onended = () => {
-    setTimeout(playNextTrack, 500);
-  };
-  
-  audio.onerror = () => {
-    setTimeout(playNextTrack, 2000);
-  };
-}
-
-function updateTimeDisplay() {
-  if (!timeDisplay || !audio) return;
-  
-  const current = formatTime(audio.currentTime);
-  const total = formatTime(audio.duration || 0);
-  timeDisplay.textContent = `${current}/${total}`;
-}
-
-function formatTime(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  audio.onended = () => setTimeout(playNextTrack, 500);
+  audio.onerror = () => setTimeout(playNextTrack, 2000);
 }
 
 function playNextTrack() {
   if (!playlistLoaded || playlist.length === 0) return;
+  
   const nextIndex = (currentIndex + 1) % playlist.length;
   
   // Fade out simple
@@ -99,60 +69,24 @@ function playNextTrack() {
       loadTrack(nextIndex);
       audio.play().then(() => {
         isPlaying = true;
-        playPauseBtn.textContent = "⏸️";
       }).catch(() => playNextTrack());
     }
   }, 50);
 }
 
-// === Inicializar controles ===
-document.addEventListener('DOMContentLoaded', () => {
-  playPauseBtn = document.getElementById('playPauseBtn');
-  timeDisplay = document.getElementById('timeDisplay');
-  
-  if (playPauseBtn) {
-    playPauseBtn.addEventListener('click', togglePlayPause);
-  }
-});
-
-function togglePlayPause() {
-  if (!audio) return;
-  
-  if (isPlaying) {
-    audio.pause();
-    isPlaying = false;
-    playPauseBtn.textContent = "▶️";
-  } else {
-    if (audio.src) {
-      audio.play().then(() => {
-        isPlaying = true;
-        playPauseBtn.textContent = "⏸️";
-      });
-    } else if (playlistLoaded) {
-      loadTrack(currentIndex);
-      audio.play().then(() => {
-        isPlaying = true;
-        playPauseBtn.textContent = "⏸️";
-      });
-    }
-  }
-}
-
-// === Iniciar con clic en página ===
+// === Iniciar con clic en cualquier parte ===
 document.addEventListener('click', () => {
   if (!isPlaying && playlistLoaded) {
-    if (!audio || !audio.src) loadTrack(currentIndex);
-    audio.play().then(() => {
-      isPlaying = true;
-      playPauseBtn.textContent = "⏸️";
-    });
+    if (!audio.src) loadTrack(currentIndex);
+    audio.play().then(() => isPlaying = true);
   }
 }, { once: true });
 
 // === Monitoreo automático ===
 setInterval(() => {
-  if (isPlaying && audio && audio.paused && !audio.ended) {
+  if (isPlaying && audio.paused && !audio.ended) {
     audio.play().catch(() => playNextTrack());
   }
 }, 3000);
+
 

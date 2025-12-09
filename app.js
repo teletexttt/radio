@@ -1,11 +1,11 @@
-// === TELEtext Radio - Sistema SIMPLE y ESTABLE ===
-// Corregido: controles nativos no pausan accidentalmente
+// === TELEtext Radio - Sistema CORREGIDO (sin duplicación) ===
 
 let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
 let audio = new Audio();
 let playlistLoaded = false;
+let hasAttemptedAutoplay = false; // ← NUEVO: evita múltiples intentos
 
 // Usar reproductor nativo si existe (solo para visualización)
 const nativePlayer = document.getElementById('radioPlayer');
@@ -28,9 +28,17 @@ fetch("playlist.json")
     // Mezclar aleatoriamente
     shufflePlaylist();
     
-    // Cargar y reproducir primera canción
+    // Cargar primera canción (SIN autoplay aún)
     if (playlist.length > 0) {
-      loadAndPlayTrack(0);
+      loadTrack(0); // Solo cargar, no reproducir
+      
+      // Esperar 500ms y luego intentar autoplay UNA sola vez
+      setTimeout(() => {
+        if (!hasAttemptedAutoplay) {
+          attemptAutoplay();
+          hasAttemptedAutoplay = true;
+        }
+      }, 500);
     }
   })
   .catch(error => {
@@ -45,11 +53,26 @@ fetch("playlist.json")
     shufflePlaylist();
     
     if (playlist.length > 0) {
-      loadAndPlayTrack(0);
+      loadTrack(0);
+      setTimeout(attemptAutoplay, 500);
     }
   });
 
-// === Mezclar playlist (shuffle simple) ===
+// === Intentar autoplay UNA sola vez ===
+function attemptAutoplay() {
+  if (!playlistLoaded || playlist.length === 0 || isPlaying) return;
+  
+  console.log("🎯 Intentando autoplay...");
+  audio.play().then(() => {
+    isPlaying = true;
+    console.log("▶️ Autoplay exitoso");
+  }).catch(error => {
+    console.log("⏸️ Autoplay bloqueado - Esperando interacción");
+    showPlayInstructions();
+  });
+}
+
+// === Mezclar playlist ===
 function shufflePlaylist() {
   for (let i = playlist.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -58,8 +81,8 @@ function shufflePlaylist() {
   console.log("🔀 Playlist mezclada");
 }
 
-// === Cargar y reproducir canción ===
-function loadAndPlayTrack(index) {
+// === Cargar canción (sin reproducir) ===
+function loadTrack(index) {
   if (!playlistLoaded || index >= playlist.length) return;
   
   currentIndex = index;
@@ -81,6 +104,9 @@ function loadAndPlayTrack(index) {
     nativePlayer.currentTime = 0;
   }
   
+  // Configurar listeners UNA sola vez
+  setupAudioListeners();
+  
   // Cuando se carguen los metadatos, comenzar en punto aleatorio
   audio.addEventListener('loadedmetadata', function onLoaded() {
     audio.removeEventListener('loadedmetadata', onLoaded);
@@ -95,42 +121,30 @@ function loadAndPlayTrack(index) {
         nativePlayer.currentTime = audio.currentTime;
       }
     }
-    
-    // Reproducir audio principal
-    audio.play().then(() => {
-      isPlaying = true;
-      console.log("▶️ Reproduciendo");
-      
-      // Si el reproductor nativo está pausado, reproducirlo también (solo visual)
-      if (nativePlayer && nativePlayer.paused) {
-        nativePlayer.play().catch(() => {
-          // Ignorar errores en reproductor visual
-        });
-      }
-      
-    }).catch(error => {
-      console.log("⏸️ Autoplay bloqueado - Esperando interacción");
-      showPlayInstructions();
-    });
   }, { once: true });
+}
+
+// === Configurar listeners del audio ===
+function setupAudioListeners() {
+  // Remover listeners previos para evitar acumulación
+  audio.removeEventListener('ended', handleTrackEnd);
+  audio.removeEventListener('error', handleAudioError);
   
-  // Manejar final de canción
-  audio.addEventListener('ended', function onEnded() {
-    audio.removeEventListener('ended', onEnded);
-    console.log("✅ Canción terminada");
-    setTimeout(playNextTrack, 500); // Pequeña pausa entre canciones
-  }, { once: true });
-  
-  // Manejar errores
-  audio.addEventListener('error', function onError(e) {
-    audio.removeEventListener('error', onError);
-    console.error("❌ Error cargando canción:", track, audio.error);
-    
-    // Saltar a siguiente canción después de 2 segundos
-    setTimeout(() => {
-      playNextTrack();
-    }, 2000);
-  }, { once: true });
+  // Agregar listeners nuevos
+  audio.addEventListener('ended', handleTrackEnd);
+  audio.addEventListener('error', handleAudioError);
+}
+
+// === Manejar fin de canción ===
+function handleTrackEnd() {
+  console.log("✅ Canción terminada");
+  setTimeout(playNextTrack, 500); // Pequeña pausa entre canciones
+}
+
+// === Manejar errores de audio ===
+function handleAudioError(e) {
+  console.error("❌ Error de audio:", audio.error);
+  setTimeout(playNextTrack, 2000);
 }
 
 // === Reproducir siguiente canción ===
@@ -140,24 +154,20 @@ function playNextTrack() {
   const nextIndex = (currentIndex + 1) % playlist.length;
   console.log(`⏭️ Pasando a canción ${nextIndex + 1}/${playlist.length}`);
   
-  // Pequeño fade out antes de cambiar
-  if (audio.volume > 0) {
-    let volume = audio.volume;
-    const fadeOut = setInterval(() => {
-      volume -= 0.1;
-      audio.volume = Math.max(0, volume);
-      
-      if (volume <= 0) {
-        clearInterval(fadeOut);
-        loadAndPlayTrack(nextIndex);
-      }
-    }, 50);
-  } else {
-    loadAndPlayTrack(nextIndex);
-  }
+  // Cargar y reproducir siguiente canción
+  loadTrack(nextIndex);
+  
+  audio.play().then(() => {
+    isPlaying = true;
+    console.log("▶️ Reproduciendo siguiente canción");
+  }).catch(err => {
+    console.error("❌ Error reproduciendo:", err);
+    // Reintentar con siguiente canción
+    setTimeout(playNextTrack, 1000);
+  });
 }
 
-// === Instrucciones para autoplay bloqueado ===
+// === Mostrar instrucciones para autoplay bloqueado ===
 function showPlayInstructions() {
   if (document.getElementById('playInstructions')) return;
   
@@ -178,7 +188,7 @@ function showPlayInstructions() {
       max-width: 300px;
     ">
       <p style="margin: 0 0 15px 0;">🎧 Presiona PLAY para iniciar la radio</p>
-      <button onclick="startPlayback()" style="
+      <button onclick="startManualPlayback()" style="
         background: #00FF37;
         color: black;
         border: none;
@@ -195,9 +205,9 @@ function showPlayInstructions() {
   document.body.appendChild(instructions);
 }
 
-// === Función global para iniciar reproducción ===
-window.startPlayback = function() {
-  if (playlistLoaded && playlist.length > 0) {
+// === Iniciar reproducción manualmente ===
+window.startManualPlayback = function() {
+  if (playlistLoaded && playlist.length > 0 && !isPlaying) {
     audio.play().then(() => {
       isPlaying = true;
       const instructions = document.getElementById('playInstructions');
@@ -207,9 +217,8 @@ window.startPlayback = function() {
   }
 };
 
-// === Sincronización MEJORADA con controles nativos ===
+// === Sincronización con controles nativos ===
 if (nativePlayer) {
-  // IMPORTANTE: Los controles nativos solo inician reproducción, NO la pausan
   nativePlayer.addEventListener('play', () => {
     if (!isPlaying && playlistLoaded) {
       audio.play().then(() => {
@@ -219,22 +228,11 @@ if (nativePlayer) {
     }
   });
   
-  // ⚠️ CRUCIAL: NO escuchar eventos de pause del control nativo
-  // Esto evita pausas accidentales cuando el usuario toca los controles
-  
   // Solo sincronizar tiempo visualmente
   setInterval(() => {
     if (nativePlayer && audio && isPlaying) {
-      // Mantener el reproductor visual sincronizado
       if (Math.abs(nativePlayer.currentTime - audio.currentTime) > 1) {
         nativePlayer.currentTime = audio.currentTime;
-      }
-      
-      // Si el reproductor visual se pausó (por toque accidental), reanudarlo
-      if (nativePlayer.paused && isPlaying) {
-        nativePlayer.play().catch(() => {
-          // Ignorar errores, es solo visual
-        });
       }
     }
   }, 1000);
@@ -243,7 +241,6 @@ if (nativePlayer) {
 // === Monitoreo de estado ===
 setInterval(() => {
   if (playlistLoaded && isPlaying) {
-    // Si el audio se pausó pero debería estar reproduciendo
     if (audio.paused && !audio.ended) {
       console.warn("⚠️ Audio pausado inesperadamente, reintentando...");
       audio.play().catch(err => {
@@ -252,19 +249,19 @@ setInterval(() => {
       });
     }
     
-    // Si hay error, pasar a siguiente canción
     if (audio.error) {
       console.error("❌ Error detectado, pasando a siguiente canción...");
       playNextTrack();
     }
   }
-}, 3000); // Verificar cada 3 segundos
+}, 3000);
 
-// === Para móviles: permitir iniciar con toque en cualquier lugar ===
+// === Iniciar con toque (para móviles) ===
 document.addEventListener('click', function initPlayback() {
-  if (!isPlaying && playlistLoaded) {
+  if (!isPlaying && playlistLoaded && !hasAttemptedAutoplay) {
     audio.play().then(() => {
       isPlaying = true;
+      hasAttemptedAutoplay = true;
       console.log("▶️ Reproducción iniciada por interacción");
     }).catch(err => {
       console.log("⏸️ Aún esperando interacción específica...");
@@ -272,5 +269,4 @@ document.addEventListener('click', function initPlayback() {
   }
 }, { once: true });
 
-console.log("📻 Radio Teletext - Sistema simple cargado (sin pausas accidentales)");
-
+console.log("📻 Radio Teletext - Sistema sin duplicación cargado");

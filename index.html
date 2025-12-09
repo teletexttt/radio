@@ -4,16 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Precargar fuente Chomsky -->
+    <link rel="preload" href="Chomsky.woff" as="font" type="font/woff" crossorigin>
+    
     <title>Teletext Radio</title>
+    
     <style>
-        /* Cargar Chomsky desde tu archivo convertido */
+        /* Ocultar título hasta que cargue la fuente */
+        .loading-font h1 {
+            visibility: hidden;
+        }
+        
+        .font-loaded h1 {
+            visibility: visible;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Fuente Chomsky */
         @font-face {
             font-family: 'Chomsky';
-            src: url('Chomsky.woff2') format('woff2'),
-                 url('Chomsky.woff') format('woff'),
-                 url('Chomsky.otf') format('opentype');
+            src: url('Chomsky.woff') format('woff');
             font-weight: normal;
             font-style: normal;
+            font-display: block;
         }
         
         body {
@@ -49,7 +63,7 @@
         
         h1 {
             color: #00FF37;
-            font-family: 'Chomsky', serif;
+            font-family: 'Chomsky', 'Times New Roman', serif;
             font-size: 4rem;
             text-shadow: 3px 3px 0 #002FFF,
                          5px 5px 0 rgba(0, 47, 255, 0.5);
@@ -72,6 +86,7 @@
             gap: 30px;
         }
 
+        /* Reproductor nativo - solo visual */
         audio {
             background-color: rgba(255, 255, 255, 0.15);
             border-radius: 15px;
@@ -80,6 +95,8 @@
             width: 100%;
             max-width: 400px;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            /* Prevenir autoplay nativo */
+            preload: none;
         }
 
         audio:hover {
@@ -179,13 +196,14 @@
 
     </style>
 </head>
-<body>
+<body class="loading-font">
     <div class="container">
         <h1>Teletext Radio</h1>
         <p class="subtitle">Radio en vivo las 24 hs.</p>
 
         <div class="player">
-            <audio id="radioPlayer" controls></audio>
+            <!-- Reproductor nativo SOLO visual - preload="none" evita autoplay -->
+            <audio id="radioPlayer" controls preload="none"></audio>
             
             <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
                 <span class="cafecito-heart">♥</span>
@@ -202,20 +220,31 @@
         </div>
     </div>
 
-    <!-- Script principal -->
+    <!-- Script para manejar carga de fuente -->
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const audio = document.getElementById("radioPlayer");
-            audio.volume = 1;
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    console.log("Autoplay bloqueado: el usuario debe presionar Play manualmente.");
-                });
-            }
-        });
+        // Detectar cuando la fuente Chomsky se carga
+        if ('fonts' in document) {
+            document.fonts.load('1em Chomsky').then(() => {
+                document.body.classList.remove('loading-font');
+                document.body.classList.add('font-loaded');
+                console.log('✅ Fuente Chomsky cargada');
+            }).catch(() => {
+                // Si falla, mostrar igual con fallback
+                document.body.classList.remove('loading-font');
+                document.body.classList.add('font-loaded');
+                console.log('⚠️ Usando fallback para Chomsky');
+            });
+        } else {
+            // Para navegadores que no soportan Font Loading API
+            setTimeout(() => {
+                document.body.classList.remove('loading-font');
+                document.body.classList.add('font-loaded');
+            }, 100);
+        }
     </script>
 
+    <!-- ⚠️ NO hay script de autoplay aquí - todo está en app.js -->
+    
     <script src="app.js" defer></script>
 </body>
 </html>

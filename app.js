@@ -101,17 +101,127 @@ function scheduleCrossfade() {
   } else {
     startCrossfade();
   }
-}
-
-// === Crossfade suave con inicio aleatorio ===
+// === Crossfade mejorado - evita cortes ===
 function startCrossfade() {
   if (fadeInProgress || !playlistLoaded) return;
+  
+  console.log("🎛️ Iniciando crossfade...");
   
   index = (index + 1) % playlist.length;
 
   if (index === 0) {
     complexShuffle();
   }
+
+  // Crear NUEVA instancia de audio para evitar problemas
+  nextAudio = new Audio();
+  nextAudio.crossOrigin = "anonymous";
+  nextAudio.volume = 0;
+  
+  // Precargar la siguiente canción ANTES del crossfade
+  nextAudio.src = playlist[index];
+  nextAudio.load();
+
+  // Función interna para iniciar el crossfade cuando esté listo
+  const initiateCrossfade = () => {
+    // Verificar que nextAudio sea válido y tenga datos
+    if (!nextAudio || !nextAudio.duration || nextAudio.duration === Infinity) {
+      console.warn("⚠️ nextAudio no válido, reintentando...");
+      setTimeout(startCrossfade, 1000);
+      return;
+    }
+
+    fadeInProgress = true;
+    
+    // Iniciar reproducción de nextAudio
+    nextAudio.play().catch(error => {
+      console.error("❌ Error reproduciendo nextAudio:", error);
+      fadeInProgress = false;
+      // Reintentar con siguiente canción
+      setTimeout(startCrossfade, 2000);
+      return;
+    });
+
+    let t = 0;
+    const interval = setInterval(() => {
+      t += 0.05;
+      
+      // Crossfade de volúmenes
+      if (audio && audio.volume > 0) {
+        audio.volume = Math.max(0, 1 - t / CROSSFADE_TIME);
+      }
+      
+      if (nextAudio && nextAudio.volume < 1) {
+        nextAudio.volume = Math.min(1, t / CROSSFADE_TIME);
+      }
+
+      // Cuando termine el crossfade
+      if (t >= CROSSFADE_TIME) {
+        clearInterval(interval);
+        fadeInProgress = false;
+        
+        // Transición completa
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+        
+        // Cambiar referencias
+        audio = nextAudio;
+        audio.volume = 1;
+        nextAudio = null;
+        
+        console.log("✅ Crossfade completado a canción:", index + 1);
+        
+        // Programar próximo crossfade con verificación extra
+        setTimeout(() => {
+          if (audio && audio.duration && !audio.paused) {
+            scheduleCrossfade();
+          } else {
+            console.warn("⚠️ Audio no listo para próximo crossfade, reintentando...");
+            setTimeout(scheduleCrossfade, 1000);
+          }
+        }, 500);
+      }
+    }, 50);
+  };
+
+  // Manejadores de eventos para nextAudio
+  const errorHandler = () => {
+    console.error("❌ Error cargando nextAudio, saltando canción...");
+    nextAudio = null;
+    fadeInProgress = false;
+    // Saltar a siguiente canción
+    index = (index + 1) % playlist.length;
+    setTimeout(startCrossfade, 1000);
+  };
+
+  const loadedHandler = () => {
+    // Remover listeners
+    nextAudio.removeEventListener('loadedmetadata', loadedHandler);
+    nextAudio.removeEventListener('error', errorHandler);
+    
+    // Verificar que tenga duración válida
+    if (nextAudio.duration && nextAudio.duration > 0) {
+      // Iniciar crossfade después de asegurar carga
+      setTimeout(initiateCrossfade, 100);
+    } else {
+      errorHandler();
+    }
+  };
+
+  // Agregar listeners
+  nextAudio.addEventListener('loadedmetadata', loadedHandler, { once: true });
+  nextAudio.addEventListener('error', errorHandler, { once: true });
+  
+  // Timeout de seguridad
+  setTimeout(() => {
+    if (fadeInProgress && (!nextAudio || !nextAudio.readyState)) {
+      console.warn("⚠️ Timeout cargando nextAudio, forzando siguiente canción...");
+      errorHandler();
+    }
+  }, 10000); // 10 segundos timeout
+}
 
   // Cargar siguiente canción con inicio aleatorio
   loadTrackWithRandomStart(nextAudio, index);
@@ -223,3 +333,4 @@ audio.addEventListener("seeking", () => {
         setTimeout(scheduleCrossfade, 1000);
     }
 });
+

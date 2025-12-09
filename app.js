@@ -1,13 +1,14 @@
-// === TELEtext Radio - Sistema CORREGIDO (sin duplicación) ===
+// === TELEtext Radio - Sistema CORREGIDO ===
+// Inicio aleatorio SOLO en primera canción
 
 let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
 let audio = new Audio();
 let playlistLoaded = false;
-let hasAttemptedAutoplay = false; // ← NUEVO: evita múltiples intentos
+let isFirstPlay = true; // ← NUEVA VARIABLE: controla inicio aleatorio
 
-// Usar reproductor nativo si existe (solo para visualización)
+// Usar reproductor nativo si existe
 const nativePlayer = document.getElementById('radioPlayer');
 
 // === Cargar playlist ===
@@ -28,49 +29,21 @@ fetch("playlist.json")
     // Mezclar aleatoriamente
     shufflePlaylist();
     
-    // Cargar primera canción (SIN autoplay aún)
+    // Cargar primera canción
     if (playlist.length > 0) {
-      loadTrack(0); // Solo cargar, no reproducir
-      
-      // Esperar 500ms y luego intentar autoplay UNA sola vez
-      setTimeout(() => {
-        if (!hasAttemptedAutoplay) {
-          attemptAutoplay();
-          hasAttemptedAutoplay = true;
-        }
-      }, 500);
+      loadTrack(0);
     }
   })
   .catch(error => {
     console.error("❌ Error cargando playlist:", error);
-    // Playlist de respaldo
-    playlist = [
-      "music/toclimbthecliff.mp3",
-      "music/doomsday.mp3", 
-      "music/lgds.mp3"
-    ];
+    playlist = ["music/toclimbthecliff.mp3", "music/doomsday.mp3"];
     playlistLoaded = true;
     shufflePlaylist();
     
     if (playlist.length > 0) {
       loadTrack(0);
-      setTimeout(attemptAutoplay, 500);
     }
   });
-
-// === Intentar autoplay UNA sola vez ===
-function attemptAutoplay() {
-  if (!playlistLoaded || playlist.length === 0 || isPlaying) return;
-  
-  console.log("🎯 Intentando autoplay...");
-  audio.play().then(() => {
-    isPlaying = true;
-    console.log("▶️ Autoplay exitoso");
-  }).catch(error => {
-    console.log("⏸️ Autoplay bloqueado - Esperando interacción");
-    showPlayInstructions();
-  });
-}
 
 // === Mezclar playlist ===
 function shufflePlaylist() {
@@ -81,56 +54,62 @@ function shufflePlaylist() {
   console.log("🔀 Playlist mezclada");
 }
 
-// === Cargar canción (sin reproducir) ===
+// === Cargar canción ===
 function loadTrack(index) {
   if (!playlistLoaded || index >= playlist.length) return;
   
   currentIndex = index;
   const track = playlist[index];
-  
-  // Asegurar ruta con 'music/'
   const fullPath = track.startsWith('music/') ? track : 'music/' + track;
   
   console.log(`🎵 Cargando: ${track} (${index + 1}/${playlist.length})`);
   
-  // Configurar audio principal
+  // Configurar audio
   audio.src = fullPath;
   audio.volume = 1;
   audio.crossOrigin = "anonymous";
   
-  // Sincronizar con reproductor nativo solo para visualización
+  // Sincronizar con reproductor nativo
   if (nativePlayer) {
     nativePlayer.src = fullPath;
     nativePlayer.currentTime = 0;
   }
   
-  // Configurar listeners UNA sola vez
+  // Configurar listeners
   setupAudioListeners();
   
-  // Cuando se carguen los metadatos, comenzar en punto aleatorio
+  // Cuando se carguen los metadatos
   audio.addEventListener('loadedmetadata', function onLoaded() {
     audio.removeEventListener('loadedmetadata', onLoaded);
     
-    if (audio.duration > 60) {
+    // ⭐⭐ CAMBIO CLAVE: Inicio aleatorio SOLO en primera reproducción ⭐⭐
+    if (isFirstPlay && audio.duration > 60) {
       const randomStart = Math.random() * (audio.duration - 60);
       audio.currentTime = randomStart;
-      console.log(`🎲 Inicia en: ${Math.round(randomStart)}s`);
+      console.log(`🎲 INICIO ALEATORIO (primera canción): ${Math.round(randomStart)}s`);
       
-      // Sincronizar tiempo con reproductor visual
-      if (nativePlayer) {
-        nativePlayer.currentTime = audio.currentTime;
-      }
+      // Marcar que ya no es la primera reproducción
+      isFirstPlay = false;
+    } else {
+      // Canciones siguientes empiezan desde 0:00
+      audio.currentTime = 0;
+      console.log("⏹️ Inicio desde 0:00 (canción siguiente)");
+    }
+    
+    // Sincronizar reproductor visual
+    if (nativePlayer) {
+      nativePlayer.currentTime = audio.currentTime;
     }
   }, { once: true });
 }
 
-// === Configurar listeners del audio ===
+// === Configurar listeners ===
 function setupAudioListeners() {
-  // Remover listeners previos para evitar acumulación
+  // Remover listeners previos
   audio.removeEventListener('ended', handleTrackEnd);
   audio.removeEventListener('error', handleAudioError);
   
-  // Agregar listeners nuevos
+  // Agregar nuevos
   audio.addEventListener('ended', handleTrackEnd);
   audio.addEventListener('error', handleAudioError);
 }
@@ -138,10 +117,10 @@ function setupAudioListeners() {
 // === Manejar fin de canción ===
 function handleTrackEnd() {
   console.log("✅ Canción terminada");
-  setTimeout(playNextTrack, 500); // Pequeña pausa entre canciones
+  setTimeout(playNextTrack, 500);
 }
 
-// === Manejar errores de audio ===
+// === Manejar errores ===
 function handleAudioError(e) {
   console.error("❌ Error de audio:", audio.error);
   setTimeout(playNextTrack, 2000);
@@ -152,67 +131,45 @@ function playNextTrack() {
   if (!playlistLoaded || playlist.length === 0) return;
   
   const nextIndex = (currentIndex + 1) % playlist.length;
-  console.log(`⏭️ Pasando a canción ${nextIndex + 1}/${playlist.length}`);
+  console.log(`⏭️ Siguiente canción: ${nextIndex + 1}/${playlist.length}`);
   
-  // Cargar y reproducir siguiente canción
-  loadTrack(nextIndex);
+  // Pequeño fade out antes de cambiar
+  if (audio.volume > 0) {
+    let volume = audio.volume;
+    const fadeOut = setInterval(() => {
+      volume -= 0.1;
+      audio.volume = Math.max(0, volume);
+      
+      if (volume <= 0) {
+        clearInterval(fadeOut);
+        loadAndPlayTrack(nextIndex);
+      }
+    }, 50);
+  } else {
+    loadAndPlayTrack(nextIndex);
+  }
+}
+
+// === Cargar y reproducir canción ===
+function loadAndPlayTrack(index) {
+  loadTrack(index);
   
+  // Reproducir
   audio.play().then(() => {
     isPlaying = true;
-    console.log("▶️ Reproduciendo siguiente canción");
+    console.log("▶️ Reproduciendo");
   }).catch(err => {
     console.error("❌ Error reproduciendo:", err);
-    // Reintentar con siguiente canción
-    setTimeout(playNextTrack, 1000);
+    setTimeout(() => playNextTrack(), 1000);
   });
 }
 
-// === Mostrar instrucciones para autoplay bloqueado ===
-function showPlayInstructions() {
-  if (document.getElementById('playInstructions')) return;
-  
-  const instructions = document.createElement('div');
-  instructions.id = 'playInstructions';
-  instructions.innerHTML = `
-    <div style="
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.9);
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      z-index: 1000;
-      border: 2px solid #00FF37;
-      max-width: 300px;
-    ">
-      <p style="margin: 0 0 15px 0;">🎧 Presiona PLAY para iniciar la radio</p>
-      <button onclick="startManualPlayback()" style="
-        background: #00FF37;
-        color: black;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: bold;
-        cursor: pointer;
-      ">
-        ▶️ INICIAR RADIO
-      </button>
-    </div>
-  `;
-  
-  document.body.appendChild(instructions);
-}
-
-// === Iniciar reproducción manualmente ===
+// === Iniciar manualmente ===
 window.startManualPlayback = function() {
   if (playlistLoaded && playlist.length > 0 && !isPlaying) {
     audio.play().then(() => {
       isPlaying = true;
-      const instructions = document.getElementById('playInstructions');
-      if (instructions) instructions.remove();
-      console.log("▶️ Reproducción iniciada manualmente");
+      console.log("▶️ Reproducción manual iniciada");
     });
   }
 };
@@ -223,12 +180,12 @@ if (nativePlayer) {
     if (!isPlaying && playlistLoaded) {
       audio.play().then(() => {
         isPlaying = true;
-        console.log("▶️ Reproducción desde control nativo");
+        console.log("▶️ Play desde control nativo");
       });
     }
   });
   
-  // Solo sincronizar tiempo visualmente
+  // Sincronizar tiempo visualmente
   setInterval(() => {
     if (nativePlayer && audio && isPlaying) {
       if (Math.abs(nativePlayer.currentTime - audio.currentTime) > 1) {
@@ -238,11 +195,11 @@ if (nativePlayer) {
   }, 1000);
 }
 
-// === Monitoreo de estado ===
+// === Monitoreo ===
 setInterval(() => {
   if (playlistLoaded && isPlaying) {
     if (audio.paused && !audio.ended) {
-      console.warn("⚠️ Audio pausado inesperadamente, reintentando...");
+      console.warn("⚠️ Audio pausado, reintentando...");
       audio.play().catch(err => {
         console.error("❌ No se pudo reanudar:", err);
         playNextTrack();
@@ -250,23 +207,18 @@ setInterval(() => {
     }
     
     if (audio.error) {
-      console.error("❌ Error detectado, pasando a siguiente canción...");
+      console.error("❌ Error detectado, siguiente canción...");
       playNextTrack();
     }
   }
 }, 3000);
 
-// === Iniciar con toque (para móviles) ===
+// === Iniciar con toque ===
 document.addEventListener('click', function initPlayback() {
-  if (!isPlaying && playlistLoaded && !hasAttemptedAutoplay) {
-    audio.play().then(() => {
-      isPlaying = true;
-      hasAttemptedAutoplay = true;
-      console.log("▶️ Reproducción iniciada por interacción");
-    }).catch(err => {
-      console.log("⏸️ Aún esperando interacción específica...");
-    });
+  if (!isPlaying && playlistLoaded) {
+    loadAndPlayTrack(currentIndex);
   }
 }, { once: true });
 
-console.log("📻 Radio Teletext - Sistema sin duplicación cargado");
+console.log("📻 Radio Teletext - Inicio aleatorio solo en primera canción");
+

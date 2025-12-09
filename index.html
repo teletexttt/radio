@@ -33,6 +33,7 @@
             height: 100vh;
             margin: 0;
             padding: 20px;
+            cursor: pointer; /* Indica que es clickeable */
         }
         
         .container {
@@ -77,21 +78,65 @@
             gap: 30px;
         }
 
-        audio {
-            background-color: rgba(255, 255, 255, 0.15);
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-            width: 100%;
-            max-width: 400px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            preload: none;
+        /* 🔥 OCULTAR completamente el elemento audio */
+        #radioPlayer {
+            display: none;
         }
 
-        audio:hover {
-            background-color: rgba(255, 255, 255, 0.25);
+        /* 🔥 Estilos para controles personalizados */
+        .custom-controls {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .custom-controls:hover {
+            background: rgba(255, 255, 255, 0.25);
             transform: translateY(-2px);
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        .status {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 10px;
         }
 
         .cafecito-btn {
@@ -152,7 +197,7 @@
                 font-size: 1.1rem;
             }
             
-            audio {
+            .custom-controls {
                 width: 100%;
                 min-width: 280px;
             }
@@ -173,6 +218,16 @@
                 padding: 25px 20px;
             }
             
+            .control-buttons {
+                gap: 15px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
             .cafecito-btn {
                 flex-direction: column;
                 gap: 10px;
@@ -187,19 +242,24 @@
         <p class="subtitle">Radio en vivo las 24 hs.</p>
 
         <div class="player">
-            <audio id="radioPlayer" controls preload="none"></audio>
+            <!-- 🔥 Audio oculto, sin controles nativos -->
+            <audio id="radioPlayer" preload="none"></audio>
+            
+            <!-- 🔥 Controles personalizados -->
+            <div class="custom-controls">
+                <div class="control-buttons">
+                    <button class="control-btn" id="playPauseBtn">▶️</button>
+                    <button class="control-btn" id="nextBtn">⏭️</button>
+                </div>
+                <div class="status" id="statusIndicator">
+                    Presiona play para comenzar
+                </div>
+            </div>
             
             <a href='https://cafecito.app/ripgordon' rel='noopener' target='_blank' class="cafecito-btn">
                 <span class="cafecito-heart">♥</span>
                 <span class="cafecito-text">apoya este proyecto</span>
             </a>
-        </div>
-
-        <div id="controls" style="display:none;">
-            <button id="playPauseBtn">▶️</button>
-            <div id="progressContainer" style="width:100%;height:5px;background:rgba(255,255,255,0.3);margin-top:10px;">
-                <div id="progressBar" style="height:5px;width:0;background:white;"></div>
-            </div>
         </div>
     </div>
 

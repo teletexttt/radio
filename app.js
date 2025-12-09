@@ -4,12 +4,11 @@
 let playlist = [];
 let currentIndex = 0;
 let isPlaying = false;
-let audio = new Audio();
 let playlistLoaded = false;
-let isFirstPlay = true; // ← NUEVA VARIABLE: controla inicio aleatorio
+let isFirstPlay = true;
 
-// Usar reproductor nativo si existe
-const nativePlayer = document.getElementById('radioPlayer');
+// Usar reproductor nativo (elemento <audio> del DOM)
+const audio = document.getElementById('radioPlayer');
 
 // === Cargar playlist ===
 fetch("playlist.json")
@@ -69,12 +68,6 @@ function loadTrack(index) {
   audio.volume = 1;
   audio.crossOrigin = "anonymous";
   
-  // Sincronizar con reproductor nativo
-  if (nativePlayer) {
-    nativePlayer.src = fullPath;
-    nativePlayer.currentTime = 0;
-  }
-  
   // Configurar listeners
   setupAudioListeners();
   
@@ -94,11 +87,6 @@ function loadTrack(index) {
       // Canciones siguientes empiezan desde 0:00
       audio.currentTime = 0;
       console.log("⏹️ Inicio desde 0:00 (canción siguiente)");
-    }
-    
-    // Sincronizar reproductor visual
-    if (nativePlayer) {
-      nativePlayer.currentTime = audio.currentTime;
     }
   }, { once: true });
 }
@@ -174,27 +162,6 @@ window.startManualPlayback = function() {
   }
 };
 
-// === Sincronización con controles nativos ===
-if (nativePlayer) {
-  nativePlayer.addEventListener('play', () => {
-    if (!isPlaying && playlistLoaded) {
-      audio.play().then(() => {
-        isPlaying = true;
-        console.log("▶️ Play desde control nativo");
-      });
-    }
-  });
-  
-  // Sincronizar tiempo visualmente
-  setInterval(() => {
-    if (nativePlayer && audio && isPlaying) {
-      if (Math.abs(nativePlayer.currentTime - audio.currentTime) > 1) {
-        nativePlayer.currentTime = audio.currentTime;
-      }
-    }
-  }, 1000);
-}
-
 // === Monitoreo ===
 setInterval(() => {
   if (playlistLoaded && isPlaying) {
@@ -221,4 +188,3 @@ document.addEventListener('click', function initPlayback() {
 }, { once: true });
 
 console.log("📻 Radio Teletext - Inicio aleatorio solo en primera canción");
-

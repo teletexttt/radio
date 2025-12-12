@@ -25,10 +25,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             padding: 20px;
             cursor: pointer;
+            position: relative;
+            flex-direction: column;
         }
         
         .container {
@@ -100,6 +102,29 @@
             color: rgba(255, 255, 255, 0.95);
         }
         
+        /* FOOTER ESTILOS */
+        .footer {
+            color: #39ff14;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            padding: 20px;
+            margin: 20px 0 0 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-top: 1px solid rgba(57, 255, 20, 0.2);
+            font-weight: 400;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-sizing: border-box;
+        }
+        
+        .footer-content {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 30px 25px;
@@ -114,6 +139,17 @@
                 max-width: 320px;
                 padding: 14px 14px;
             }
+            
+            .footer {
+                font-size: 13px;
+                padding: 15px;
+                margin: 15px 0 0 0;
+            }
+            
+            body {
+                padding: 15px;
+                min-height: calc(100vh - 30px);
+            }
         }
         
         @media (max-width: 480px) {
@@ -123,6 +159,17 @@
             
             .container {
                 padding: 25px 20px;
+            }
+            
+            .footer {
+                font-size: 12px;
+                padding: 12px;
+                margin: 12px 0 0 0;
+            }
+            
+            body {
+                padding: 10px;
+                min-height: calc(100vh - 20px);
             }
         }
         
@@ -144,17 +191,13 @@
         </a>
     </div>
 
+    <!-- FOOTER AGREGADO -->
+    <footer class="footer">
+        <div class="footer-content">
+            © 2025 teletexttt. Patagonia Argentina.
+        </div>
+    </footer>
+
     <script src="app.js"></script>
-     
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-

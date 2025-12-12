@@ -15,6 +15,16 @@
             font-display: swap;
         }
         
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+        
         body {
             background-image: url('ff.jpg');
             background-size: cover;
@@ -23,14 +33,21 @@
             color: white;
             font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             cursor: pointer;
             position: relative;
-            flex-direction: column;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
         }
         
         .container {
@@ -102,21 +119,20 @@
             color: rgba(255, 255, 255, 0.95);
         }
         
-        /* FOOTER ESTILOS */
+        /* FOOTER ESTILOS - FIJADO AL PIE */
         .footer {
             color: #39ff14;
             text-align: center;
             font-family: Arial, sans-serif;
             font-size: 14px;
             padding: 20px;
-            margin: 20px 0 0 0;
             width: 100%;
             background-color: rgba(0, 0, 0, 0.7);
             border-top: 1px solid rgba(57, 255, 20, 0.2);
             font-weight: 400;
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
-            box-sizing: border-box;
+            flex-shrink: 0;
         }
         
         .footer-content {
@@ -143,12 +159,10 @@
             .footer {
                 font-size: 13px;
                 padding: 15px;
-                margin: 15px 0 0 0;
             }
             
-            body {
+            .main-content {
                 padding: 15px;
-                min-height: calc(100vh - 30px);
             }
         }
         
@@ -164,12 +178,10 @@
             .footer {
                 font-size: 12px;
                 padding: 12px;
-                margin: 12px 0 0 0;
             }
             
-            body {
+            .main-content {
                 padding: 10px;
-                min-height: calc(100vh - 20px);
             }
         }
         
@@ -180,18 +192,20 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Teletext Radio</h1>
-        <p class="subtitle">Radio Online</p>
-        
-        <audio id="radioPlayer"></audio>
-        
-        <a href='https://cafecito.app/teletext' rel='noopener' target='_blank' class="cafecito-btn">
-            <span class="cafecito-text">🌹 Apoya este poyecto</span>
-        </a>
+    <div class="main-content">
+        <div class="container">
+            <h1>Teletext Radio</h1>
+            <p class="subtitle">Radio Online</p>
+            
+            <audio id="radioPlayer"></audio>
+            
+            <a href='https://cafecito.app/teletext' rel='noopener' target='_blank' class="cafecito-btn">
+                <span class="cafecito-text">🌹 Apoya este poyecto</span>
+            </a>
+        </div>
     </div>
 
-    <!-- FOOTER AGREGADO -->
+    <!-- FOOTER FIJADO AL PIE -->
     <footer class="footer">
         <div class="footer-content">
             © 2025 teletexttt. Patagonia Argentina.

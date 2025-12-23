@@ -7,7 +7,6 @@
     <link rel="preload" href="Chomsky.otf" as="font" type="font/otf" crossorigin>
     <title>Teletext Radio</title>
     
-    <!-- Metaetiquetas para vista previa en redes sociales -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://teletexttt.github.io/radio/">
     <meta property="og:title" content="Teletext Radio">
@@ -56,7 +55,7 @@
             min-height: 100vh;
         }
         
-        /* REPRODUCTOR FIJO SUPERIOR (ESTILO NTS) */
+        /* REPRODUCTOR FIJO SUPERIOR */
         .fixed-player {
             position: fixed;
             top: 0;
@@ -161,13 +160,13 @@
         }
         
         .share-button:hover {
-            border-color = '#00FF37';
-            color = '#00FF37';
+            border-color: #00FF37;
+            color: #00FF37;
         }
         
         /* CONTENIDO PRINCIPAL */
         .main-content {
-            padding-top: 60px; /* Altura del reproductor fijo */
+            padding-top: 60px;
             min-height: 100vh;
         }
         
@@ -217,7 +216,7 @@
             font-weight: 300;
         }
         
-        /* SECTIONS GENERAL STYLES */
+        /* SECTIONS */
         .content-section {
             background: rgba(15, 15, 15, 0.92);
             padding: 80px 20px;
@@ -237,7 +236,7 @@
             color: #00FF37;
         }
         
-        /* NOW PLAYING SECTION */
+        /* NOW PLAYING */
         .now-playing {
             max-width: 1000px;
             margin: 0 auto;
@@ -272,7 +271,7 @@
             color: rgba(255, 255, 255, 0.6);
         }
         
-        /* SCHEDULE SECTION */
+        /* SCHEDULE */
         .schedule-section {
             max-width: 1200px;
             margin: 0 auto;
@@ -319,7 +318,7 @@
             line-height: 1.5;
         }
         
-        /* COLLECTIONS SECTION */
+        /* COLLECTIONS */
         .collections-section {
             max-width: 1200px;
             margin: 0 auto;
@@ -373,7 +372,7 @@
             margin-bottom: 20px;
         }
         
-        /* INFO SECTION */
+        /* INFO */
         .info-section {
             max-width: 1000px;
             margin: 0 auto;
@@ -417,7 +416,7 @@
             transform: translateY(-2px);
         }
         
-        /* FOOTER (ESTILO NTS) */
+        /* FOOTER */
         .footer {
             background: rgba(10, 10, 10, 0.98);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -465,7 +464,7 @@
             color: #00FF37;
         }
         
-        /* SPONSORS SECTION EN FOOTER */
+        /* SPONSORS */
         .sponsors-section {
             text-align: center;
             padding: 30px 0;
@@ -612,7 +611,6 @@
             }
         }
         
-        /* Audio oculto */
         #radioPlayer {
             display: none;
         }
@@ -656,7 +654,7 @@
             </div>
         </section>
 
-        <!-- NOW PLAYING SECTION -->
+        <!-- NOW PLAYING -->
         <section class="content-section">
             <div class="now-playing">
                 <h2 class="section-title">EN VIVO <span>AHORA</span></h2>
@@ -668,27 +666,27 @@
             </div>
         </section>
 
-        <!-- SCHEDULE SECTION -->
+        <!-- SCHEDULE -->
         <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
             <div class="schedule-section">
                 <h2 class="section-title">PROGRAMACIÓN <span>DIARIA</span></h2>
                 <div class="schedule-grid">
-                    <!-- Las tarjetas de horario se generarán con JavaScript -->
+                    <!-- Tarjetas generadas por JS -->
                 </div>
             </div>
         </section>
 
-        <!-- COLLECTIONS SECTION -->
+        <!-- COLLECTIONS -->
         <section class="content-section">
             <div class="collections-section">
                 <h2 class="section-title">COLECCIONES <span>MUSICALES</span></h2>
                 <div class="collections-grid">
-                    <!-- Las tarjetas de colecciones se generarán con JavaScript -->
+                    <!-- Tarjetas generadas por JS -->
                 </div>
             </div>
         </section>
 
-        <!-- INFO SECTION -->
+        <!-- INFO -->
         <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
             <div class="info-section">
                 <h2 class="section-title">INFORMACIÓN <span>& APOYO</span></h2>
@@ -732,7 +730,7 @@
                 </div>
             </div>
             
-            <!-- SECCIÓN DE PATROCINADORES CON ASCII ART -->
+            <!-- PATROCINADORES -->
             <div class="sponsors-section">
                 <div class="sponsors-title">Patrocina</div>
                 <div class="sponsors-container">
@@ -780,7 +778,7 @@
         </footer>
     </div>
 
-    <!-- ELEMENTO DE AUDIO OCULTO -->
+    <!-- AUDIO -->
     <audio id="radioPlayer"></audio>
 
     <script>
@@ -1021,17 +1019,17 @@
                 playCurrentTrack();
             }
             
-            // ✅ FUNCIÓN DE AUDIO SIMPLE Y ROBUSTA (COMO TU APP.JS ANTIGUO)
+            // ✅ FUNCIÓN DE AUDIO CORREGIDA - FLUJO CONTINUO
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
                 console.log('🎵 Reproduciendo:', track);
                 
-                // ✅ USA EL MISMO ELEMENTO AUDIO (NO crear nuevo)
+                // ✅ USA EL MISMO ELEMENTO AUDIO
                 audioPlayer.src = track;
                 
-                // ✅ INICIO ALEATORIO (como radio real)
+                // ✅ INICIO ALEATORIO
                 audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
                     audioPlayer.removeEventListener('loadedmetadata', onMetadata);
                     
@@ -1041,22 +1039,29 @@
                         console.log(`⏱️ Inicio aleatorio: ${Math.floor(randomStart)}s`);
                     }
                     
-                    audioPlayer.play().then(() => {
-                        isPlaying = true;
-                        updatePlayButton();
-                    }).catch(e => {
-                        console.error('Error play:', e);
-                        setTimeout(playNextTrack, 1000);
-                    });
+                    // ✅ REPRODUCIR INMEDIATAMENTE SI LA RADIO ESTÁ ENCENDIDA
+                    if (isPlaying) {
+                        audioPlayer.play().catch(e => {
+                            console.error('Error play:', e);
+                            // ✅ SI FALLA, PASAR A LA SIGUIENTE INMEDIATAMENTE
+                            playNextTrack();
+                        });
+                    }
                 }, { once: true });
                 
-                // ✅ ERROR SIMPLE (como antes)
-                audioPlayer.onerror = function() {
-                    console.error('Error audio, siguiente canción');
-                    setTimeout(playNextTrack, 1000);
+                // ✅ MANEJADOR DE FIN DE CANCIÓN - FLUJO CONTINUO
+                audioPlayer.onended = function() {
+                    console.log('⏭️ Siguiente canción (flujo continuo)');
+                    playNextTrack(); // ✅ PASO INMEDIATO, SIN PAUSA
                 };
                 
-                // Si ya está cargado (caché), disparar manualmente
+                // ✅ ERROR SIMPLE
+                audioPlayer.onerror = function() {
+                    console.error('Error audio, siguiente canción');
+                    playNextTrack(); // ✅ SIGUIENTE INMEDIATAMENTE
+                };
+                
+                // Si ya está cargado, disparar manualmente
                 if (audioPlayer.readyState >= 1) {
                     audioPlayer.dispatchEvent(new Event('loadedmetadata'));
                 }
@@ -1067,10 +1072,12 @@
                     playPath.setAttribute('opacity', '0');
                     pausePath1.setAttribute('opacity', '1');
                     pausePath2.setAttribute('opacity', '1');
+                    playButton.setAttribute('aria-label', 'Pausar');
                 } else {
                     playPath.setAttribute('opacity', '1');
                     pausePath1.setAttribute('opacity', '0');
                     pausePath2.setAttribute('opacity', '0');
+                    playButton.setAttribute('aria-label', 'Reproducir');
                 }
             }
             
@@ -1105,26 +1112,44 @@
                 }
             }
             
+            // ✅ CONTROL DE PLAY/PAUSE CORREGIDO
             playButton.addEventListener('click', function() {
-                if (!isPlaying) {
-                    if (currentPlaylist.length === 0) {
-                        loadCurrentPlaylist().then(() => {
-                            currentTrackIndex = 0;
-                            playCurrentTrack();
-                        });
-                    } else {
-                        playCurrentTrack();
-                    }
-                } else {
+                if (isPlaying) {
+                    // PAUSA MANUAL: detener reproducción pero mantener estado de flujo
                     audioPlayer.pause();
                     isPlaying = false;
                     updatePlayButton();
+                } else {
+                    // PLAY/RESUME: iniciar o reanudar flujo
+                    if (!audioPlayer.src || audioPlayer.ended) {
+                        // Si no hay fuente o terminó, empezar desde el inicio
+                        if (currentPlaylist.length === 0) {
+                            loadCurrentPlaylist().then(() => {
+                                currentTrackIndex = 0;
+                                isPlaying = true;
+                                updatePlayButton();
+                                playCurrentTrack();
+                            });
+                        } else {
+                            isPlaying = true;
+                            updatePlayButton();
+                            playCurrentTrack();
+                        }
+                    } else {
+                        // Reanudar donde estaba
+                        audioPlayer.play().then(() => {
+                            isPlaying = true;
+                            updatePlayButton();
+                        }).catch(e => {
+                            console.error('Error al reanudar:', e);
+                            // Si falla al reanudar, empezar siguiente
+                            playNextTrack();
+                        });
+                    }
                 }
             });
             
             shareButton.addEventListener('click', shareRadio);
-            
-            // Los event listeners están en la función playCurrentTrack
             
             updateDisplayInfo();
             generateScheduleCards();

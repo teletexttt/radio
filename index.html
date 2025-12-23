@@ -999,24 +999,26 @@
                 return Math.abs(hash);
             }
             
-            // ✅ CALCULA ÍNDICE INICIAL - TRANSMISIÓN CONTINUA EN EL TIEMPO
+            // ✅ CALCULA ÍNDICE INICIAL - TRANSMISIÓN CONTINUA EN EL TIEMPO (CORREGIDO)
             function calcularIndiceInicial(lista) {
                 if (!lista || lista.length === 0) return 0;
                 
                 const ahora = getArgentinaTime();
                 
-                // 1. EPOCH FIJO: 1 de enero 2025, 00:00 hora Argentina
-                // Nota: 31 Dic 2024, 03:00 UTC = 1 Ene 2025, 00:00 Argentina (UTC-3)
-                const epoch = new Date(Date.UTC(2024, 11, 31, 3, 0, 0)); // Año, Mes (0-index), Día, Hora, Min, Seg
+                // 1. EPOCH: 1 de enero 2025, 00:00 hora Argentina
+                const epoch = new Date(2025, 0, 1, 0, 0, 0); // Año, Mes (0-index), Día, Hora, Min, Seg
                 
-                // 2. SEGUNDOS TRANSCURRIDOS desde epoch
-                const segundosTranscurridos = Math.floor((ahora - epoch) / 1000);
+                // 2. DIFERENCIA EN MILISEGUNDOS desde epoch
+                const milisegundosTranscurridos = ahora - epoch;
                 
-                // 3. DURACIÓN PROMEDIO por canción (4 minutos = 240 segundos)
-                const segundosPorCancion = 240;
+                // Si es negativo (fecha anterior al epoch), usar 0
+                if (milisegundosTranscurridos <= 0) return 0;
+                
+                // 3. DURACIÓN PROMEDIO por canción (4 minutos = 240000 ms)
+                const msPorCancion = 240 * 1000;
                 
                 // 4. POSICIÓN CONTINUA en el tiempo (avanza 1 canción cada ~4 min)
-                const posicionContinua = Math.floor(segundosTranscurridos / segundosPorCancion);
+                const posicionContinua = Math.floor(milisegundosTranscurridos / msPorCancion);
                 
                 // 5. HASH de la playlist actual (cambia si cambian las canciones)
                 const hashPlaylist = calcularHashPlaylist(lista);
@@ -1024,7 +1026,7 @@
                 // 6. COMBINACIÓN determinística
                 const indiceFinal = (posicionContinua + hashPlaylist) % lista.length;
                 
-                console.log(`📻 Índice por transmisión continua: ${indiceFinal}/${lista.length} (posTemp:${posicionContinua}, hash:${hashPlaylist}, segs:${segundosTranscurridos})`);
+                console.log(`📻 Índice por transmisión continua: ${indiceFinal}/${lista.length} (posTemp:${posicionContinua}, hash:${hashPlaylist}, ms:${milisegundosTranscurridos})`);
                 return indiceFinal;
             }
             

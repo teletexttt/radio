@@ -41,9 +41,14 @@ function loadTrack(index) {
   audio.src = fullPath;
   audio.volume = 1;
   
-  // Inicio aleatorio solo en primera canción
+  // SOLO inicio aleatorio si NO hay estado guardado
   audio.onloadedmetadata = () => {
-    if (isFirstPlay && audio.duration > 60) {
+    const saved = localStorage.getItem('radio_state');
+    
+    if (saved) {
+      // Ya tenemos tiempo guardado, mantenerlo
+      localStorage.removeItem('radio_state');
+    } else if (isFirstPlay && audio.duration > 60) {
       audio.currentTime = Math.random() * (audio.duration - 60);
       isFirstPlay = false;
     } else {
@@ -88,5 +93,6 @@ setInterval(() => {
     audio.play().catch(() => playNextTrack());
   }
 }, 3000);
+
 
 

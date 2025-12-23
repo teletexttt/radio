@@ -982,6 +982,45 @@
                 });
             }
             
+            // ✅ CALCULA HASH SIMPLE DE PLAYLIST (AGNÓSTICO)
+            function calcularHashPlaylist(lista) {
+                let hash = 0;
+                if (!lista || !Array.isArray(lista)) return hash;
+                
+                for (let i = 0; i < lista.length; i++) {
+                    const track = lista[i];
+                    if (typeof track === 'string') {
+                        for (let j = 0; j < track.length; j++) {
+                            hash = (hash << 5) - hash + track.charCodeAt(j);
+                            hash |= 0; // Convertir a entero 32-bit
+                        }
+                    }
+                }
+                return Math.abs(hash);
+            }
+            
+            // ✅ CALCULA ÍNDICE INICIAL INTELIGENTE
+            function calcularIndiceInicial(lista) {
+                if (!lista || lista.length === 0) return 0;
+                
+                // 1. Segundos transcurridos hoy (hora Argentina)
+                const ahora = getArgentinaTime();
+                const segundosHoy = ahora.getHours() * 3600 + ahora.getMinutes() * 60 + ahora.getSeconds();
+                
+                // 2. Hash de la playlist actual (cambia si cambian las canciones)
+                const hashPlaylist = calcularHashPlaylist(lista);
+                
+                // 3. Combinación determinística pero variable
+                const indiceBase = (segundosHoy + hashPlaylist) % lista.length;
+                
+                // 4. Añadir variación pequeña (±1) para no ser completamente predecible
+                const variacion = (segundosHoy % 3) - 1; // -1, 0, o 1
+                let indiceFinal = (indiceBase + variacion + lista.length) % lista.length;
+                
+                console.log(`📻 Índice inicial calculado: ${indiceFinal}/${lista.length} (segundos:${segundosHoy}, hash:${hashPlaylist}, var:${variacion})`);
+                return indiceFinal;
+            }
+            
             async function loadCurrentPlaylist() {
                 try {
                     const response = await fetch('playlist.json');
@@ -1001,14 +1040,22 @@
                         currentPlaylist = [];
                     }
                     
+                    // ✅ CALCULAR ÍNDICE INICIAL INTELIGENTE
+                    if (currentPlaylist.length > 0) {
+                        currentTrackIndex = calcularIndiceInicial(currentPlaylist);
+                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, empezando en índice ${currentTrackIndex}`);
+                    }
+                    
                 } catch (error) {
                     console.log('Error cargando playlist:', error);
                     currentPlaylist = [];
+                    currentTrackIndex = 0;
                 }
                 
                 if (currentPlaylist.length === 0) {
                     console.warn('Playlist vacía, usando fallback');
                     currentPlaylist = ['jazzcartel.mp3'];
+                    currentTrackIndex = 0;
                 }
             }
             
@@ -1019,46 +1066,46 @@
                 playCurrentTrack();
             }
             
-            // ✅ FUNCIÓN DE AUDIO CORREGIDA - FLUJO CONTINUO
+            // ✅ FUNCIÓN DE AUDIO - FLUJO CONTINUO
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
                 console.log('🎵 Reproduciendo:', track);
                 
-                // ✅ USA EL MISMO ELEMENTO AUDIO
+                // USA EL MISMO ELEMENTO AUDIO
                 audioPlayer.src = track;
                 
-                // ✅ INICIO ALEATORIO
+                // INICIO ALEATORIO DENTRO DE LA CANCIÓN
                 audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
                     audioPlayer.removeEventListener('loadedmetadata', onMetadata);
                     
                     if (audioPlayer.duration > 30) {
                         const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
                         audioPlayer.currentTime = randomStart;
-                        console.log(`⏱️ Inicio aleatorio: ${Math.floor(randomStart)}s`);
+                        console.log(`⏱️ Inicio aleatorio en canción: ${Math.floor(randomStart)}s`);
                     }
                     
-                    // ✅ REPRODUCIR INMEDIATAMENTE SI LA RADIO ESTÁ ENCENDIDA
+                    // REPRODUCIR INMEDIATAMENTE SI LA RADIO ESTÁ ENCENDIDA
                     if (isPlaying) {
                         audioPlayer.play().catch(e => {
                             console.error('Error play:', e);
-                            // ✅ SI FALLA, PASAR A LA SIGUIENTE INMEDIATAMENTE
+                            // SI FALLA, PASAR A LA SIGUIENTE INMEDIATAMENTE
                             playNextTrack();
                         });
                     }
                 }, { once: true });
                 
-                // ✅ MANEJADOR DE FIN DE CANCIÓN - FLUJO CONTINUO
+                // MANEJADOR DE FIN DE CANCIÓN - FLUJO CONTINUO
                 audioPlayer.onended = function() {
                     console.log('⏭️ Siguiente canción (flujo continuo)');
-                    playNextTrack(); // ✅ PASO INMEDIATO, SIN PAUSA
+                    playNextTrack(); // PASO INMEDIATO, SIN PAUSA
                 };
                 
-                // ✅ ERROR SIMPLE
+                // ERROR SIMPLE
                 audioPlayer.onerror = function() {
                     console.error('Error audio, siguiente canción');
-                    playNextTrack(); // ✅ SIGUIENTE INMEDIATAMENTE
+                    playNextTrack(); // SIGUIENTE INMEDIATAMENTE
                 };
                 
                 // Si ya está cargado, disparar manualmente
@@ -1106,26 +1153,25 @@
                 
                 if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
                     loadCurrentPlaylist().then(() => {
-                        currentTrackIndex = 0;
+                        // ✅ AL CAMBIAR HORARIO, MANTENER ÍNDICE INTELIGENTE
+                        currentTrackIndex = calcularIndiceInicial(currentPlaylist);
                         playCurrentTrack();
                     });
                 }
             }
             
-            // ✅ CONTROL DE PLAY/PAUSE CORREGIDO
+            // CONTROL DE PLAY/PAUSE
             playButton.addEventListener('click', function() {
                 if (isPlaying) {
-                    // PAUSA MANUAL: detener reproducción pero mantener estado de flujo
+                    // PAUSA MANUAL
                     audioPlayer.pause();
                     isPlaying = false;
                     updatePlayButton();
                 } else {
-                    // PLAY/RESUME: iniciar o reanudar flujo
+                    // PLAY/RESUME
                     if (!audioPlayer.src || audioPlayer.ended) {
-                        // Si no hay fuente o terminó, empezar desde el inicio
                         if (currentPlaylist.length === 0) {
                             loadCurrentPlaylist().then(() => {
-                                currentTrackIndex = 0;
                                 isPlaying = true;
                                 updatePlayButton();
                                 playCurrentTrack();
@@ -1136,13 +1182,12 @@
                             playCurrentTrack();
                         }
                     } else {
-                        // Reanudar donde estaba
+                        // REANUDAR DONDE ESTABA
                         audioPlayer.play().then(() => {
                             isPlaying = true;
                             updatePlayButton();
                         }).catch(e => {
                             console.error('Error al reanudar:', e);
-                            // Si falla al reanudar, empezar siguiente
                             playNextTrack();
                         });
                     }
@@ -1151,6 +1196,7 @@
             
             shareButton.addEventListener('click', shareRadio);
             
+            // INICIALIZAR
             updateDisplayInfo();
             generateScheduleCards();
             generateCollectionCards();

@@ -518,6 +518,10 @@
             border: 1px solid rgba(0, 255, 55, 0.2);
             white-space: pre;
             display: inline-block;
+            min-height: 60px; /* ✅ Misma altura para todos */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .copyright {
@@ -580,6 +584,7 @@
             .ascii-art {
                 font-size: 8px;
                 padding: 6px;
+                min-height: 50px;
             }
         }
         
@@ -733,9 +738,12 @@
                 <div class="sponsors-container">
                     <div class="sponsor-item">
                         <div class="ascii-art">
- /\_/\  
-( o.o ) 
- > ^ <  
+████████╗
+██╔═════╝
+███████╗ 
+╚════██║ 
+███████║ 
+╚══════╝ 
                         </div>
                         <div class="sponsor-name">Orto Galeria</div>
                     </div>
@@ -779,7 +787,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const playButton = document.getElementById('radioPlayButton');
             const shareButton = document.getElementById('shareRadioButton');
-            const audioPlayer = document.getElementById('radioPlayer');
+            let audioPlayer = document.getElementById('radioPlayer'); // ✅ Cambiado a 'let'
             const playPath = document.getElementById('playPath');
             const pausePath1 = document.getElementById('pausePath1');
             const pausePath2 = document.getElementById('pausePath2');
@@ -976,7 +984,6 @@
                 });
             }
             
-            // ✅ FUNCIÓN MODIFICADA: USA TU PLAYLIST.JSON ACTUAL
             async function loadCurrentPlaylist() {
                 try {
                     const response = await fetch('playlist.json');
@@ -1014,21 +1021,61 @@
                 playCurrentTrack();
             }
             
+            // ✅ FUNCIÓN MODIFICADA: INICIO ALEATORIO
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
-                console.log('🎵 Reproduciendo:', track);
+                console.log('🎵 Cargando:', track);
                 
-                audioPlayer.src = track;
+                // Pausar y limpiar
+                audioPlayer.pause();
                 
-                audioPlayer.play().then(() => {
-                    isPlaying = true;
-                    updatePlayButton();
-                }).catch(error => {
-                    console.error('Error al reproducir:', error);
+                // Crear NUEVO elemento de audio
+                const newAudio = new Audio();
+                newAudio.src = track;
+                newAudio.volume = 0.8;
+                
+                newAudio.onloadedmetadata = function() {
+                    // ✅ INICIO ALEATORIO PARA RADIO REAL
+                    if (newAudio.duration && newAudio.duration > 30) {
+                        const maxRandomTime = newAudio.duration * 0.8;
+                        const minRandomTime = newAudio.duration * 0.1;
+                        const randomTime = Math.random() * (maxRandomTime - minRandomTime) + minRandomTime;
+                        
+                        newAudio.currentTime = randomTime;
+                        console.log(`⏱️ Iniciando en: ${Math.floor(randomTime)}s de ${Math.floor(newAudio.duration)}s`);
+                    }
+                    
+                    // Reemplazar el elemento viejo
+                    if (audioPlayer.parentNode) {
+                        audioPlayer.parentNode.replaceChild(newAudio, audioPlayer);
+                    }
+                    audioPlayer = newAudio;
+                    audioPlayer.id = 'radioPlayer';
+                    
+                    // Configurar eventos
+                    audioPlayer.onended = playNextTrack;
+                    audioPlayer.onerror = function() {
+                        console.error('Error en audio');
+                        setTimeout(playNextTrack, 1000);
+                    };
+                    
+                    // Reproducir si estaba en play
+                    if (isPlaying) {
+                        audioPlayer.play().catch(e => console.log('Error play:', e));
+                    }
+                };
+                
+                newAudio.onerror = function() {
+                    console.error('❌ No se pudo cargar');
                     setTimeout(playNextTrack, 1000);
-                });
+                };
+                
+                // Si ya está cargado (caché), forzar evento
+                if (newAudio.readyState >= 1) {
+                    newAudio.onloadedmetadata();
+                }
             }
             
             function updatePlayButton() {
@@ -1093,11 +1140,7 @@
             
             shareButton.addEventListener('click', shareRadio);
             
-            audioPlayer.addEventListener('ended', playNextTrack);
-            audioPlayer.addEventListener('error', function() {
-                console.error('Error en audio, siguiente canción');
-                setTimeout(playNextTrack, 1000);
-            });
+            // Los event listeners están en la función playCurrentTrack
             
             updateDisplayInfo();
             generateScheduleCards();

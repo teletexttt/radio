@@ -161,8 +161,8 @@
         }
         
         .share-button:hover {
-            border-color: #00FF37;
-            color: #00FF37;
+            border-color = '#00FF37';
+            color = '#00FF37';
         }
         
         /* CONTENIDO PRINCIPAL */
@@ -1021,72 +1021,44 @@
                 playCurrentTrack();
             }
             
-            // ✅ FUNCIÓN CORREGIDA: INICIO ALEATORIO SIN ERRORES
+            // ✅ FUNCIÓN DE AUDIO SIMPLE Y ROBUSTA (COMO TU APP.JS ANTIGUO)
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
-                console.log('🎵 Cargando:', track);
+                console.log('🎵 Reproduciendo:', track);
                 
-                // Pausar audio actual
-                audioPlayer.pause();
+                // ✅ USA EL MISMO ELEMENTO AUDIO (NO crear nuevo)
+                audioPlayer.src = track;
                 
-                // Crear NUEVO elemento de audio
-                const newAudio = new Audio();
-                newAudio.src = track;
-                newAudio.volume = 0.8;
-                
-                // ✅ MANEJADOR PRINCIPAL DE CARGA
-                newAudio.addEventListener('loadedmetadata', function() {
-                    console.log('✅ Audio cargado, duración:', Math.floor(newAudio.duration), 'segundos');
+                // ✅ INICIO ALEATORIO (como radio real)
+                audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
+                    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
                     
-                    // INICIO ALEATORIO
-                    if (newAudio.duration && newAudio.duration > 30) {
-                        const maxRandomTime = newAudio.duration * 0.8;
-                        const minRandomTime = newAudio.duration * 0.1;
-                        const randomTime = Math.random() * (maxRandomTime - minRandomTime) + minRandomTime;
-                        
-                        newAudio.currentTime = randomTime;
-                        console.log(`⏱️ Iniciando en: ${Math.floor(randomTime)}s`);
+                    if (audioPlayer.duration > 30) {
+                        const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
+                        audioPlayer.currentTime = randomStart;
+                        console.log(`⏱️ Inicio aleatorio: ${Math.floor(randomStart)}s`);
                     }
                     
-                    // Reemplazar elemento de audio
-                    if (audioPlayer.parentNode) {
-                        audioPlayer.parentNode.replaceChild(newAudio, audioPlayer);
-                    }
-                    audioPlayer = newAudio;
-                    audioPlayer.id = 'radioPlayer';
-                    
-                    // Configurar eventos del nuevo audio
-                    audioPlayer.onended = playNextTrack;
-                    audioPlayer.onerror = function() {
-                        console.error('❌ Error durante reproducción');
+                    audioPlayer.play().then(() => {
+                        isPlaying = true;
+                        updatePlayButton();
+                    }).catch(e => {
+                        console.error('Error play:', e);
                         setTimeout(playNextTrack, 1000);
-                    };
-                    
-                    // Reproducir
-                    if (isPlaying) {
-                        audioPlayer.play().catch(e => {
-                            console.error('Error play:', e);
-                            setTimeout(playNextTrack, 1000);
-                        });
-                    }
-                });
+                    });
+                }, { once: true });
                 
-                // ✅ MANEJADOR DE ERROR DE CARGA (solo si falla la carga)
-                newAudio.addEventListener('error', function(e) {
-                    console.error('❌ Error cargando archivo:', track, 'Código:', newAudio.error?.code);
-                    
-                    // Intentar siguiente canción después de 2 segundos
-                    setTimeout(() => {
-                        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-                        playCurrentTrack();
-                    }, 2000);
-                });
+                // ✅ ERROR SIMPLE (como antes)
+                audioPlayer.onerror = function() {
+                    console.error('Error audio, siguiente canción');
+                    setTimeout(playNextTrack, 1000);
+                };
                 
-                // ✅ Si ya está en caché, forzar la carga
-                if (newAudio.readyState >= 1) {
-                    newAudio.dispatchEvent(new Event('loadedmetadata'));
+                // Si ya está cargado (caché), disparar manualmente
+                if (audioPlayer.readyState >= 1) {
+                    audioPlayer.dispatchEvent(new Event('loadedmetadata'));
                 }
             }
             

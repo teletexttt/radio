@@ -1,4 +1,4 @@
-// === TELEtext Radio - Radio en vivo 24hs ===
+// === TELEtext Radio - Radio sincronizada 24/7 ===
 
 let playlist = [];
 let currentIndex = 0;
@@ -15,103 +15,113 @@ function getArgentinaTime() {
     return new Date(now.getTime() + offsetDiff * 60000);
 }
 
-// === CALCULAR ÍNDICE POR TIEMPO REAL ===
-function calcularIndicePorTiempo() {
-    if (!playlist || playlist.length === 0) return 0;
+// === CALCULAR CANCIÓN Y POSICIÓN EXACTA ===
+function calcularCancionYPosicion() {
+    if (!playlist || playlist.length === 0) return { index: 0, position: 0 };
     
     const ahora = getArgentinaTime();
     const epoch = new Date(2025, 0, 1, 0, 0, 0); // 1 Ene 2025, 00:00 Argentina
     
-    const milisegundosTranscurridos = ahora - epoch;
-    if (milisegundosTranscurridos <= 0) return 0;
+    // Segundos transcurridos desde epoch
+    const segundosTranscurridos = (ahora - epoch) / 1000;
+    if (segundosTranscurridos <= 0) return { index: 0, position: 0 };
     
-    const msPorCancion = 240 * 1000; // 4 minutos por canción
-    const posicionContinua = Math.floor(milisegundosTranscurridos / msPorCancion);
+    // Calcular ciclo total de playlist
+    const duracionTotalPlaylist = playlist.reduce((sum, track) => sum + (track.duration || 300), 0);
+    const ciclosCompletos = Math.floor(segundosTranscurridos / duracionTotalPlaylist);
+    const segundosEnCicloActual = segundosTranscurridos - (ciclosCompletos * duracionTotalPlaylist);
     
-    // Hash de playlist para variar inicio
-    let hash = 0;
+    // Encontrar canción actual y posición exacta
+    let tiempoAcumulado = 0;
     for (let i = 0; i < playlist.length; i++) {
-        const track = playlist[i];
-        if (typeof track === 'string') {
-            for (let j = 0; j < track.length; j++) {
-                hash = (hash << 5) - hash + track.charCodeAt(j);
-                hash |= 0;
+        const duracionCancion = playlist[i].duration || 300;
+        
+        if (segundosEnCicloActual < tiempoAcumulado + duracionCancion) {
+            const posicionEnCancion = segundosEnCicloActual - tiempoAcumulado;
+            
+            // Verificar que la posición sea válida
+            if (posicionEnCancion >= 0 && posicionEnCancion < duracionCancion - 5) {
+                console.log(`📻 Sincronizado: Canción ${i+1}/${playlist.length}, posición ${Math.floor(posicionEnCancion)}s`);
+                return { index: i, position: posicionEnCancion };
+            } else {
+                // Si está en los últimos 5 segundos, pasar a la siguiente
+                return { index: (i + 1) % playlist.length, position: 0 };
             }
         }
+        tiempoAcumulado += duracionCancion;
     }
     
-    const indiceFinal = (posicionContinua + Math.abs(hash)) % playlist.length;
-    console.log(`📻 Índice por tiempo: ${indiceFinal}/${playlist.length}`);
-    return indiceFinal;
-}
-
-// === CALCULAR POSICIÓN EN CANCIÓN ===
-function calcularPosicionEnCancion() {
-    const ahora = getArgentinaTime();
-    const epoch = new Date(2025, 0, 1, 0, 0, 0);
-    const milisegundosTranscurridos = ahora - epoch;
-    
-    if (milisegundosTranscurridos <= 0) return 0;
-    
-    const msPorCancion = 240 * 1000; // 4 minutos
-    const posicionContinua = milisegundosTranscurridos / msPorCancion;
-    const fraccionCancion = posicionContinua % 1;
-    
-    return fraccionCancion; // 0.0 = inicio, 0.5 = mitad, 0.99 = casi fin
+    return { index: 0, position: 0 };
 }
 
 // === Cargar playlist ===
 fetch("playlist.json")
   .then(response => response.json())
   .then(data => {
-    playlist = data.tracks || ["music/toclimbthecliff.mp3", "music/doomsday.mp3"];
+    playlist = data.tracks || [];
+    
+    // Si es formato antiguo (array de strings), convertir
+    if (playlist.length > 0 && typeof playlist[0] === 'string') {
+        playlist = playlist.map(file => ({
+            file: file,
+            path: file.startsWith('music/') ? file : 'music/' + file,
+            duration: 300 // duración por defecto
+        }));
+    }
+    
     playlistLoaded = true;
     
-    // CALCULAR ÍNDICE POR TIEMPO REAL
-    currentIndex = calcularIndicePorTiempo();
-    loadTrack(currentIndex);
+    // CALCULAR POSICIÓN EXACTA
+    const { index, position } = calcularCancionYPosicion();
+    currentIndex = index;
+    
+    // Cargar canción con posición exacta
+    setTimeout(() => loadTrack(currentIndex, position), 100);
   })
   .catch(() => {
-    playlist = ["music/toclimbthecliff.mp3", "music/doomsday.mp3"];
+    playlist = [
+        { file: "toclimbthecliff.mp3", path: "music/toclimbthecliff.mp3", duration: 300 },
+        { file: "doomsday.mp3", path: "music/doomsday.mp3", duration: 300 }
+    ];
     playlistLoaded = true;
-    currentIndex = calcularIndicePorTiempo();
-    loadTrack(currentIndex);
+    
+    const { index, position } = calcularCancionYPosicion();
+    currentIndex = index;
+    setTimeout(() => loadTrack(currentIndex, position), 100);
   });
 
-function loadTrack(index) {
+function loadTrack(index, startPosition = 0) {
   if (!playlistLoaded || index >= playlist.length) return;
   
   currentIndex = index;
   const track = playlist[index];
-  const fullPath = track.startsWith('music/') ? track : 'music/' + track;
+  const fullPath = track.path || (track.file.startsWith('music/') ? track.file : 'music/' + track.file);
   
   audio.pause();
   audio.src = fullPath;
   audio.volume = 1;
   
-  // POSICIÓN SINCRONIZADA EN TIEMPO REAL
+  // POSICIÓN EXACTA SINCRONIZADA
   audio.onloadedmetadata = () => {
-    const duracionTotal = audio.duration;
+    const duracionTotal = track.duration || audio.duration || 300;
     
-    if (duracionTotal > 30) {
-        // 1. CALCULAR POSICIÓN EXACTA EN LA CANCIÓN
-        const fraccion = calcularPosicionEnCancion();
-        let posicionSegundos = fraccion * duracionTotal;
+    if (duracionTotal > 10) {
+        // Validar posición de inicio
+        let posicionSegundos = Math.min(Math.max(startPosition, 0), duracionTotal - 5);
         
-        // 2. LIMITAR: no empezar en los últimos 30 segundos
-        const maxPosicion = duracionTotal - 30;
-        if (posicionSegundos > maxPosicion) {
-            posicionSegundos = maxPosicion;
-        }
-        
-        // 3. MARGEN SEGURO: no empezar antes de 10 segundos
-        const minPosicion = 10;
-        if (posicionSegundos < minPosicion) {
-            posicionSegundos = minPosicion;
+        // Si la posición es muy cercana al final, pasar a siguiente canción
+        if (posicionSegundos > duracionTotal - 5) {
+            playNextTrack();
+            return;
         }
         
         audio.currentTime = posicionSegundos;
-        console.log(`⏱️ Posición sincronizada: ${Math.floor(posicionSegundos)}s/${Math.floor(duracionTotal)}s`);
+        console.log(`⏱️ Canción: ${track.file}, Posición: ${Math.floor(posicionSegundos)}s/${Math.floor(duracionTotal)}s`);
+        
+        // Auto-play si estaba reproduciendo
+        if (isPlaying) {
+            audio.play().catch(e => console.log("Auto-play bloqueado:", e));
+        }
     }
   };
   
@@ -130,7 +140,7 @@ function playNextTrack() {
       audio.volume -= 0.1;
     } else {
       clearInterval(fadeOut);
-      loadTrack(nextIndex);
+      loadTrack(nextIndex, 0); // Iniciar desde 0
       audio.play().then(() => {
         isPlaying = true;
       }).catch(() => playNextTrack());
@@ -157,7 +167,9 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // PLAY
                 if (!audio.src) {
-                    loadTrack(currentIndex);
+                    const { index, position } = calcularCancionYPosicion();
+                    currentIndex = index;
+                    loadTrack(currentIndex, position);
                 }
                 audio.play().then(() => {
                     isPlaying = true;
@@ -177,15 +189,40 @@ setInterval(() => {
   }
 }, 3000);
 
+// === Sincronización periódica (cada 30 segundos) ===
+setInterval(() => {
+  if (playlistLoaded && playlist.length > 0) {
+    const { index, position } = calcularCancionYPosicion();
+    
+    // Si la canción calculada es diferente a la actual
+    if (index !== currentIndex) {
+      console.log("🔄 Sincronizando con emisión...");
+      currentIndex = index;
+      loadTrack(currentIndex, position);
+    }
+    // Si es la misma canción pero con desfase > 10 segundos
+    else if (isPlaying && audio.currentTime) {
+      const desfase = Math.abs(audio.currentTime - position);
+      if (desfase > 10) {
+        console.log(`🔄 Corrigiendo desfase: ${Math.floor(desfase)}s`);
+        audio.currentTime = position;
+      }
+    }
+  }
+}, 30000); // 30 segundos
+
 // === Iniciar con clic en cualquier parte ===
 document.addEventListener('click', () => {
   if (!isPlaying && playlistLoaded) {
-    if (!audio.src) loadTrack(currentIndex);
+    const { index, position } = calcularCancionYPosicion();
+    currentIndex = index;
+    
+    if (!audio.src) loadTrack(currentIndex, position);
     audio.play().then(() => isPlaying = true);
   }
 }, { once: true });
 
-// === INTERFAZ DE PROGRAMACIÓN ===
+// === INTERFAZ DE PROGRAMACIÓN (sin cambios) ===
 document.addEventListener('DOMContentLoaded', function() {
     // Actualizar "En vivo ahora"
     function updateCurrentShow() {
@@ -311,4 +348,4 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateCurrentShow, 60000);
 });
 
-console.log("📻 Teletext Radio cargado - Transmisión en vivo 24/7");
+console.log("📻 Teletext Radio - Emisión sincronizada 24/7 cargada");

@@ -4,103 +4,271 @@
   src: url('Chomsky.otf') format('opentype');
 }
 
-html, body {
-  height: 100%;
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: #000 url('ff.jpg') no-repeat center center fixed;
   background-size: cover;
-  color: white;
-  font-family: Arial, sans-serif;
+  background-attachment: fixed;
+  color: #ffffff;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* === PLAYER FIJO === */
+.fixed-player {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  padding: 12px 20px;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.station-logo {
+  font-family: 'Chomsky', serif;
+  font-size: 1.8rem;
+  color: #00FF37;
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+.live-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #ff0000;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.current-show {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.player-center {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.play-button {
+  background: #00FF37;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #000;
+  transition: all 0.2s ease;
+}
+
+.play-button:hover {
+  background: #39ff14;
+  transform: scale(1.05);
+}
+
+.share-button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-button:hover {
+  border-color: #00FF37;
+  color: #00FF37;
+}
+
+/* === CONTENIDO PRINCIPAL === */
+.main-content {
+  padding-top: 80px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
   text-align: center;
 }
 
-h1 {
-  color: rgb(0, 0, 0);
+.hero-section {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.hero-title {
   font-family: 'Chomsky', serif;
-  text-shadow: 2px 2px 0px rgb(255, 255, 255);
-  margin: 0;
-  font-size: 2.5rem;
+  font-size: 4rem;
+  color: #00FF37;
+  margin-bottom: 20px;
+  text-shadow: 3px 3px 0 #002FFF,
+               6px 6px 0 rgba(0, 47, 255, 0.4);
 }
 
-p {
-  margin-top: 0.5rem;
-  font-size: 1.1rem;
+.hero-subtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: 500px;
+  margin: 0 auto 40px;
 }
 
-.container {
-  background-color: rgba(0, 0, 0, 0.45);
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+/* === SECCIONES BÁSICAS === */
+.content-section {
+  background: rgba(15, 15, 15, 0.92);
+  padding: 40px 20px;
+  margin: 20px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.player {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
+.section-title {
+  font-size: 2rem;
+  margin-bottom: 30px;
+  color: #ffffff;
 }
 
-/* === REPRODUCTOR === */
-audio {
-  width: 100%;
-  max-width: 320px;
-  outline: none;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-  transition: background 0.3s ease;
-  pointer-events: auto;
+.section-title span {
+  color: #00FF37;
 }
 
-audio:hover {
-  background-color: rgba(255, 255, 255, 0.18);
+/* === NOW PLAYING === */
+.current-time-block {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
-/* Simula radio en vivo (sin minutos visibles) */
-audio::-webkit-media-controls-current-time-display,
-audio::-webkit-media-controls-time-remaining-display {
-  display: none !important;
-}
-
-/* === BOTÓN COLABORAR === */
-#donate-btn {
-  padding: 10px 24px;
+.time-title {
   font-size: 1rem;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  background: linear-gradient(90deg, #7a00ff, #b600ff);
-  color: white;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.time-name {
+  font-size: 1.8rem;
+  color: #00FF37;
+  margin-bottom: 10px;
+}
+
+.time-range {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* === GRIDS SIMPLES === */
+.schedule-grid,
+.collections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.schedule-card,
+.collection-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
 }
 
-#donate-btn:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 0 15px rgba(182, 0, 255, 0.6);
+.schedule-card:hover,
+.collection-card:hover {
+  border-color: rgba(0, 255, 55, 0.3);
+  transform: translateY(-3px);
+}
+
+/* === FOOTER SIMPLE === */
+.footer {
+  background: rgba(10, 10, 10, 0.98);
+  padding: 40px 20px;
+  margin-top: 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+}
+
+.footer-links {
+  list-style: none;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: #00FF37;
 }
 
 /* === RESPONSIVE === */
-@media (max-width: 600px) {
-  h1 {
-    font-size: 1.8rem;
+@media (max-width: 768px) {
+  .fixed-player {
+    padding: 10px 15px;
+    height: 55px;
   }
-  .container {
-    width: 90%;
-    padding: 1.5rem;
+  
+  .hero-title {
+    font-size: 2.8rem;
   }
-  audio {
-    max-width: 90%;
+  
+  .current-show {
+    display: none;
   }
+  
+  .schedule-grid,
+  .collections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+#radioPlayer {
+  display: none;
 }

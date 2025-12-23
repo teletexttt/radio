@@ -999,25 +999,32 @@
                 return Math.abs(hash);
             }
             
-            // ✅ CALCULA ÍNDICE INICIAL INTELIGENTE
+            // ✅ CALCULA ÍNDICE INICIAL - TRANSMISIÓN CONTINUA EN EL TIEMPO
             function calcularIndiceInicial(lista) {
                 if (!lista || lista.length === 0) return 0;
                 
-                // 1. Segundos transcurridos hoy (hora Argentina)
                 const ahora = getArgentinaTime();
-                const segundosHoy = ahora.getHours() * 3600 + ahora.getMinutes() * 60 + ahora.getSeconds();
                 
-                // 2. Hash de la playlist actual (cambia si cambian las canciones)
+                // 1. EPOCH FIJO: 1 de enero 2025, 00:00 hora Argentina
+                // Nota: 31 Dic 2024, 03:00 UTC = 1 Ene 2025, 00:00 Argentina (UTC-3)
+                const epoch = new Date(Date.UTC(2024, 11, 31, 3, 0, 0)); // Año, Mes (0-index), Día, Hora, Min, Seg
+                
+                // 2. SEGUNDOS TRANSCURRIDOS desde epoch
+                const segundosTranscurridos = Math.floor((ahora - epoch) / 1000);
+                
+                // 3. DURACIÓN PROMEDIO por canción (4 minutos = 240 segundos)
+                const segundosPorCancion = 240;
+                
+                // 4. POSICIÓN CONTINUA en el tiempo (avanza 1 canción cada ~4 min)
+                const posicionContinua = Math.floor(segundosTranscurridos / segundosPorCancion);
+                
+                // 5. HASH de la playlist actual (cambia si cambian las canciones)
                 const hashPlaylist = calcularHashPlaylist(lista);
                 
-                // 3. Combinación determinística pero variable
-                const indiceBase = (segundosHoy + hashPlaylist) % lista.length;
+                // 6. COMBINACIÓN determinística
+                const indiceFinal = (posicionContinua + hashPlaylist) % lista.length;
                 
-                // 4. Añadir variación pequeña (±1) para no ser completamente predecible
-                const variacion = (segundosHoy % 3) - 1; // -1, 0, o 1
-                let indiceFinal = (indiceBase + variacion + lista.length) % lista.length;
-                
-                console.log(`📻 Índice inicial calculado: ${indiceFinal}/${lista.length} (segundos:${segundosHoy}, hash:${hashPlaylist}, var:${variacion})`);
+                console.log(`📻 Índice por transmisión continua: ${indiceFinal}/${lista.length} (posTemp:${posicionContinua}, hash:${hashPlaylist}, segs:${segundosTranscurridos})`);
                 return indiceFinal;
             }
             
@@ -1040,10 +1047,10 @@
                         currentPlaylist = [];
                     }
                     
-                    // ✅ CALCULAR ÍNDICE INICIAL INTELIGENTE
+                    // ✅ CALCULAR ÍNDICE INICIAL POR TRANSMISIÓN CONTINUA
                     if (currentPlaylist.length > 0) {
                         currentTrackIndex = calcularIndiceInicial(currentPlaylist);
-                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, empezando en índice ${currentTrackIndex}`);
+                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, posición continua: ${currentTrackIndex}`);
                     }
                     
                 } catch (error) {
@@ -1153,7 +1160,7 @@
                 
                 if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
                     loadCurrentPlaylist().then(() => {
-                        // ✅ AL CAMBIAR HORARIO, MANTENER ÍNDICE INTELIGENTE
+                        // ✅ AL CAMBIAR HORARIO, MANTENER POSICIÓN CONTINUA
                         currentTrackIndex = calcularIndiceInicial(currentPlaylist);
                         playCurrentTrack();
                     });

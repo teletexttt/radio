@@ -1,787 +1,314 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="preload" href="Chomsky.otf" as="font" type="font/otf" crossorigin>
-    <title>Teletext Radio</title>
+// === TELEtext Radio - Radio en vivo 24hs ===
+
+let playlist = [];
+let currentIndex = 0;
+let isPlaying = false;
+let audio = document.getElementById('radioPlayer');
+let playlistLoaded = false;
+
+// === HORA ARGENTINA ===
+function getArgentinaTime() {
+    const now = new Date();
+    const argentinaOffset = -3 * 60; // UTC-3
+    const localOffset = now.getTimezoneOffset();
+    const offsetDiff = argentinaOffset + localOffset;
+    return new Date(now.getTime() + offsetDiff * 60000);
+}
+
+// === CALCULAR ÍNDICE POR TIEMPO REAL ===
+function calcularIndicePorTiempo() {
+    if (!playlist || playlist.length === 0) return 0;
     
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://teletexttt.github.io/radio/">
-    <meta property="og:title" content="Teletext Radio">
-    <meta property="og:description" content="Patagonia Argentina">
-    <meta property="og:image" content="https://teletexttt.github.io/radio/social-preview.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Vista previa de Teletext Radio">
+    const ahora = getArgentinaTime();
+    const epoch = new Date(2025, 0, 1, 0, 0, 0); // 1 Ene 2025, 00:00 Argentina
     
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@teletextlab">
-    <meta name="twitter:creator" content="@teletextlab">
-    <meta name="twitter:title" content="Teletext Radio">
-    <meta name="twitter:description" content="Patagonia Argentina">
-    <meta name="twitter:image" content="https://teletexttt.github.io/radio/social-preview.png">
-    <meta name="twitter:image:alt" content="Vista previa de Teletext Radio">
+    const milisegundosTranscurridos = ahora - epoch;
+    if (milisegundosTranscurridos <= 0) return 0;
     
-    <style>
-        @font-face {
-            font-family: 'Chomsky';
-            src: url('Chomsky.otf') format('opentype');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        body {
-            background-image: url('ff.jpg');
-            background-size: cover;
-            background-position: center;
-            background-color: #000;
-            background-attachment: fixed;
-            color: #ffffff;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-        
-        /* REPRODUCTOR FIJO SUPERIOR */
-        .fixed-player {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(10, 10, 10, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 1000;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 60px;
-        }
-        
-        .player-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex: 1;
-        }
-        
-        .station-logo {
-            font-family: 'Chomsky', serif;
-            font-size: 1.8rem;
-            color: #00FF37;
-            text-decoration: none;
-            letter-spacing: 1px;
-        }
-        
-        .live-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
-        
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #ff0000;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
-        
-        .current-show {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.9);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 300px;
-        }
-        
-        .player-center {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .play-button {
-            background: #00FF37;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: #000;
-            transition: all 0.2s ease;
-        }
-        
-        .play-button:hover {
-            background: #39ff14;
-            transform: scale(1.05);
-        }
-        
-        .share-button {
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: rgba(255, 255, 255, 0.8);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
-        }
-        
-        .share-button:hover {
-            border-color: #00FF37;
-            color: #00FF37;
-        }
-        
-        /* CONTENIDO PRINCIPAL */
-        .main-content {
-            padding-top: 60px;
-            min-height: 100vh;
-        }
-        
-        /* HERO SECTION */
-        .hero-section {
-            min-height: 70vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 40px 20px;
-            position: relative;
-        }
-        
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-        }
-        
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 800px;
-        }
-        
-        .hero-title {
-            font-family: 'Chomsky', serif;
-            font-size: 5rem;
-            color: #00FF37;
-            margin-bottom: 20px;
-            text-shadow: 3px 3px 0 #002FFF,
-                         6px 6px 0 rgba(0, 47, 255, 0.4);
-            letter-spacing: 3px;
-            line-height: 1;
-        }
-        
-        .hero-subtitle {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.85);
-            max-width: 500px;
-            margin: 0 auto 40px;
-            font-weight: 300;
-        }
-        
-        /* SECTIONS */
-        .content-section {
-            background: rgba(15, 15, 15, 0.92);
-            padding: 80px 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .section-title {
-            font-size: 2.5rem;
-            font-weight: 300;
-            margin-bottom: 50px;
-            text-align: center;
-            color: #ffffff;
-            letter-spacing: 1px;
-        }
-        
-        .section-title span {
-            color: #00FF37;
-        }
-        
-        /* NOW PLAYING */
-        .now-playing {
-            max-width: 1000px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        
-        .current-time-block {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .time-title {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        .time-name {
-            font-size: 2.2rem;
-            color: #00FF37;
-            margin-bottom: 15px;
-            font-weight: 300;
-        }
-        
-        .time-range {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        /* SCHEDULE */
-        .schedule-section {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .schedule-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        
-        .schedule-card {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .schedule-card:hover {
-            border-color: rgba(0, 255, 55, 0.3);
-            background: rgba(255, 255, 255, 0.05);
-            transform: translateY(-5px);
-        }
-        
-        .schedule-time {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-        
-        .schedule-name {
-            font-size: 1.3rem;
-            color: #ffffff;
-            margin-bottom: 8px;
-        }
-        
-        .schedule-desc {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.5);
-            line-height: 1.5;
-        }
-        
-        /* COLLECTIONS */
-        .collections-section {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .collections-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-        
-        .collection-card {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-        }
-        
-        .collection-card:hover {
-            border-color: rgba(0, 255, 55, 0.4);
-            transform: translateY(-5px);
-        }
-        
-        .collection-header {
-            padding: 25px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .collection-name {
-            font-size: 1.4rem;
-            color: #ffffff;
-            margin-bottom: 10px;
-        }
-        
-        .collection-meta {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.5);
-            display: flex;
-            gap: 15px;
-        }
-        
-        .collection-body {
-            padding: 25px;
-        }
-        
-        .collection-desc {
-            font-size: 0.95rem;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-        
-        /* INFO */
-        .info-section {
-            max-width: 1000px;
-            margin: 0 auto;
-            text-align: center;
-        }
-        
-        .info-content {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 10px;
-            padding: 40px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .info-text {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 30px;
-            line-height: 1.7;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .cafecito-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 28px;
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-        
-        .cafecito-link:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: #00FF37;
-            transform: translateY(-2px);
-        }
-        
-        /* FOOTER */
-        .footer {
-            background: rgba(10, 10, 10, 0.98);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 50px 20px 30px;
-        }
-        
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            margin-bottom: 40px;
-        }
-        
-        .footer-column {
-            text-align: left;
-        }
-        
-        .footer-title {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 20px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        
-        .footer-links {
-            list-style: none;
-        }
-        
-        .footer-links li {
-            margin-bottom: 12px;
-        }
-        
-        .footer-links a {
-            color: rgba(255, 255, 255, 0.6);
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: color 0.2s ease;
-        }
-        
-        .footer-links a:hover {
-            color: #00FF37;
-        }
-        
-        /* SPONSORS */
-        .sponsors-section {
-            text-align: center;
-            padding: 30px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            margin: 30px 0;
-        }
-        
-        .sponsors-title {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        .sponsors-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 25px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        
-        .sponsor-item {
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        
-        .sponsor-item:hover {
-            transform: translateY(-3px);
-        }
-        
-        .sponsor-name {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 8px;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .ascii-art {
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            line-height: 1.2;
-            color: #00FF37;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid rgba(0, 255, 55, 0.2);
-            white-space: pre;
-            display: inline-block;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .copyright {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.85rem;
-            padding-top: 30px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .fixed-player {
-                padding: 10px 15px;
-                height: 55px;
-            }
-            
-            .station-logo {
-                font-size: 1.5rem;
-            }
-            
-            .current-show {
-                max-width: 150px;
-                font-size: 0.85rem;
-            }
-            
-            .hero-title {
-                font-size: 3.5rem;
-            }
-            
-            .main-content {
-                padding-top: 55px;
-            }
-            
-            .content-section {
-                padding: 60px 20px;
-            }
-            
-            .section-title {
-                font-size: 2rem;
-            }
-            
-            .collections-grid,
-            .schedule-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .footer-content {
-                grid-template-columns: 1fr;
-                gap: 30px;
-                text-align: center;
-            }
-            
-            .sponsors-container {
-                gap: 15px;
-            }
-            
-            .ascii-art {
-                font-size: 8px;
-                padding: 6px;
-                min-height: 50px;
+    const msPorCancion = 240 * 1000; // 4 minutos por canción
+    const posicionContinua = Math.floor(milisegundosTranscurridos / msPorCancion);
+    
+    // Hash de playlist para variar inicio
+    let hash = 0;
+    for (let i = 0; i < playlist.length; i++) {
+        const track = playlist[i];
+        if (typeof track === 'string') {
+            for (let j = 0; j < track.length; j++) {
+                hash = (hash << 5) - hash + track.charCodeAt(j);
+                hash |= 0;
             }
         }
-        
-        @media (max-width: 480px) {
-            .hero-title {
-                font-size: 2.8rem;
-            }
-            
-            .player-left {
-                gap: 10px;
-            }
-            
-            .current-show {
-                display: none;
-            }
-            
-            .time-name {
-                font-size: 1.8rem;
-            }
-            
-            .sponsors-container {
-                flex-direction: column;
-                align-items: center;
-                gap: 20px;
-            }
-        }
-        
-        #radioPlayer {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <!-- REPRODUCTOR FIJO SUPERIOR -->
-    <div class="fixed-player">
-        <div class="player-left">
-            <a href="#" class="station-logo">TXT</a>
-            <div class="live-status">
-                <span class="live-dot"></span>
-                <span class="live-text">EN VIVO</span>
-            </div>
-            <div class="current-show" id="currentShow">Cargando programación...</div>
-        </div>
-        
-        <div class="player-center">
-            <button class="play-button" id="radioPlayButton" aria-label="Reproducir/Pausar">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                    <path id="playPath" d="M5 4L15 10L5 16V4Z"/>
-                    <path id="pausePath1" d="M5 4H9V16H5V4Z" opacity="0"/>
-                    <path id="pausePath2" d="M11 4H15V16H11V4Z" opacity="0"/>
-                </svg>
-            </button>
-            <button class="share-button" id="shareRadioButton" aria-label="Compartir radio" title="Copiar enlace">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.19C16.5 7.69 17.21 8 18 8C19.66 8 21 6.66 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.81C7.5 9.31 6.79 9 6 9C4.34 9 3 10.34 3 12C3 13.66 4.34 15 6 15C6.79 15 7.5 14.69 8.04 14.19L15.16 18.35C15.11 18.56 15.08 18.78 15.08 19C15.08 20.61 16.39 21.92 18 21.92C19.61 21.92 20.92 20.61 20.92 19C20.92 17.39 19.61 16.08 18 16.08Z"/>
-                </svg>
-            </button>
-        </div>
-    </div>
+    }
+    
+    const indiceFinal = (posicionContinua + Math.abs(hash)) % playlist.length;
+    console.log(`📻 Índice por tiempo: ${indiceFinal}/${playlist.length}`);
+    return indiceFinal;
+}
 
-    <!-- CONTENIDO PRINCIPAL -->
-    <div class="main-content">
-        <!-- HERO SECTION -->
-        <section class="hero-section">
-            <div class="hero-content">
-                <h1 class="hero-title">Teletext Radio</h1>
-                <p class="hero-subtitle">Txt es una Radio Online creada por amantes de la música para amantes de la música.</p>
-            </div>
-        </section>
+// === CALCULAR POSICIÓN EN CANCIÓN ===
+function calcularPosicionEnCancion() {
+    const ahora = getArgentinaTime();
+    const epoch = new Date(2025, 0, 1, 0, 0, 0);
+    const milisegundosTranscurridos = ahora - epoch;
+    
+    if (milisegundosTranscurridos <= 0) return 0;
+    
+    const msPorCancion = 240 * 1000; // 4 minutos
+    const posicionContinua = milisegundosTranscurridos / msPorCancion;
+    const fraccionCancion = posicionContinua % 1;
+    
+    return fraccionCancion; // 0.0 = inicio, 0.5 = mitad, 0.99 = casi fin
+}
 
-        <!-- NOW PLAYING -->
-        <section class="content-section">
-            <div class="now-playing">
-                <h2 class="section-title">EN VIVO <span>AHORA</span></h2>
-                <div class="current-time-block">
-                    <div class="time-title">Estás escuchando</div>
-                    <div class="time-name" id="currentTimeName">Cargando...</div>
-                    <div class="time-range" id="currentTimeRange">--:-- -- --:-- --</div>
-                </div>
-            </div>
-        </section>
+// === Cargar playlist ===
+fetch("playlist.json")
+  .then(response => response.json())
+  .then(data => {
+    playlist = data.tracks || ["music/toclimbthecliff.mp3", "music/doomsday.mp3"];
+    playlistLoaded = true;
+    
+    // CALCULAR ÍNDICE POR TIEMPO REAL
+    currentIndex = calcularIndicePorTiempo();
+    loadTrack(currentIndex);
+  })
+  .catch(() => {
+    playlist = ["music/toclimbthecliff.mp3", "music/doomsday.mp3"];
+    playlistLoaded = true;
+    currentIndex = calcularIndicePorTiempo();
+    loadTrack(currentIndex);
+  });
 
-        <!-- SCHEDULE -->
-        <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
-            <div class="schedule-section">
-                <h2 class="section-title">PROGRAMACIÓN <span>DIARIA</span></h2>
-                <div class="schedule-grid">
-                    <!-- Tarjetas generadas por JS -->
-                </div>
-            </div>
-        </section>
+function loadTrack(index) {
+  if (!playlistLoaded || index >= playlist.length) return;
+  
+  currentIndex = index;
+  const track = playlist[index];
+  const fullPath = track.startsWith('music/') ? track : 'music/' + track;
+  
+  audio.pause();
+  audio.src = fullPath;
+  audio.volume = 1;
+  
+  // POSICIÓN SINCRONIZADA EN TIEMPO REAL
+  audio.onloadedmetadata = () => {
+    const duracionTotal = audio.duration;
+    
+    if (duracionTotal > 30) {
+        // 1. CALCULAR POSICIÓN EXACTA EN LA CANCIÓN
+        const fraccion = calcularPosicionEnCancion();
+        let posicionSegundos = fraccion * duracionTotal;
+        
+        // 2. LIMITAR: no empezar en los últimos 30 segundos
+        const maxPosicion = duracionTotal - 30;
+        if (posicionSegundos > maxPosicion) {
+            posicionSegundos = maxPosicion;
+        }
+        
+        // 3. MARGEN SEGURO: no empezar antes de 10 segundos
+        const minPosicion = 10;
+        if (posicionSegundos < minPosicion) {
+            posicionSegundos = minPosicion;
+        }
+        
+        audio.currentTime = posicionSegundos;
+        console.log(`⏱️ Posición sincronizada: ${Math.floor(posicionSegundos)}s/${Math.floor(duracionTotal)}s`);
+    }
+  };
+  
+  audio.onended = () => setTimeout(playNextTrack, 500);
+  audio.onerror = () => setTimeout(playNextTrack, 2000);
+}
 
-        <!-- COLLECTIONS -->
-        <section class="content-section">
-            <div class="collections-section">
-                <h2 class="section-title">COLECCIONES <span>MUSICALES</span></h2>
-                <div class="collections-grid">
-                    <!-- Tarjetas generadas por JS -->
-                </div>
-            </div>
-        </section>
+function playNextTrack() {
+  if (!playlistLoaded || playlist.length === 0) return;
+  
+  const nextIndex = (currentIndex + 1) % playlist.length;
+  
+  // Fade out simple
+  const fadeOut = setInterval(() => {
+    if (audio.volume > 0.1) {
+      audio.volume -= 0.1;
+    } else {
+      clearInterval(fadeOut);
+      loadTrack(nextIndex);
+      audio.play().then(() => {
+        isPlaying = true;
+      }).catch(() => playNextTrack());
+    }
+  }, 50);
+}
 
-        <!-- INFO -->
-        <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
-            <div class="info-section">
-                <h2 class="section-title">INFORMACIÓN <span>& APOYO</span></h2>
-                <div class="info-content">
-                    <p class="info-text">
-                        Teletext Radio es una plataforma independiente que transmite música las 24 horas, con sede en la Patagonia Argentina. 
-                        Nuestro objetivo es ofrecer una experiencia auditiva única, combinando programación automática con selecciones curadas.
-                    </p>
-                    <a href='https://cafecito.app/teletext' class="cafecito-link" target="_blank" rel="noopener">
-                        <span>🌹 Apoya este proyecto en Cafecito</span>
-                    </a>
-                </div>
-            </div>
-        </section>
+// === Botón de play/pause ===
+document.addEventListener('DOMContentLoaded', function() {
+    const playButton = document.getElementById('radioPlayButton');
+    const playPath = document.getElementById('playPath');
+    const pausePath1 = document.getElementById('pausePath1');
+    const pausePath2 = document.getElementById('pausePath2');
+    
+    if (playButton) {
+        playButton.addEventListener('click', function() {
+            if (isPlaying) {
+                // PAUSA
+                audio.pause();
+                isPlaying = false;
+                playPath.setAttribute('opacity', '1');
+                pausePath1.setAttribute('opacity', '0');
+                pausePath2.setAttribute('opacity', '0');
+            } else {
+                // PLAY
+                if (!audio.src) {
+                    loadTrack(currentIndex);
+                }
+                audio.play().then(() => {
+                    isPlaying = true;
+                    playPath.setAttribute('opacity', '0');
+                    pausePath1.setAttribute('opacity', '1');
+                    pausePath2.setAttribute('opacity', '1');
+                });
+            }
+        });
+    }
+});
 
-        <!-- FOOTER -->
-        <footer class="footer">
-            <div class="footer-content">
-                <div class="footer-column">
-                    <h3 class="footer-title">Teletext Radio</h3>
-                    <ul class="footer-links">
-                        <li><a href="#now-playing">En Vivo</a></li>
-                        <li><a href="#schedule">Programación</a></li>
-                        <li><a href="#collections">Colecciones</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h3 class="footer-title">Contacto</h3>
-                    <ul class="footer-links">
-                        <li><a href="https://www.instagram.com/teletextradio/" target="_blank" rel="noopener">Instagram</a></li>
-                        <li><a href="mailto:rteletextradio@gmail.com">Email</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h3 class="footer-title">Enlaces</h3>
-                    <ul class="footer-links">
-                        <li><a href="https://cafecito.app/teletext" target="_blank" rel="noopener">Apoyar en Cafecito</a></li>
-                    </ul>
-                </div>
-            </div>
+// === Monitoreo automático ===
+setInterval(() => {
+  if (isPlaying && audio.paused && !audio.ended) {
+    audio.play().catch(() => playNextTrack());
+  }
+}, 3000);
+
+// === Iniciar con clic en cualquier parte ===
+document.addEventListener('click', () => {
+  if (!isPlaying && playlistLoaded) {
+    if (!audio.src) loadTrack(currentIndex);
+    audio.play().then(() => isPlaying = true);
+  }
+}, { once: true });
+
+// === INTERFAZ DE PROGRAMACIÓN ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar "En vivo ahora"
+    function updateCurrentShow() {
+        const currentShow = document.getElementById('currentShow');
+        const currentTimeName = document.getElementById('currentTimeName');
+        const currentTimeRange = document.getElementById('currentTimeRange');
+        
+        if (currentShow && currentTimeName) {
+            // Horarios simulados
+            const ahora = getArgentinaTime();
+            const hora = ahora.getHours();
+            let programa = "", horario = "";
             
-            <!-- PATROCINADORES -->
-            <div class="sponsors-section">
-                <div class="sponsors-title">Patrocina</div>
-                <div class="sponsors-container">
-                    <div class="sponsor-item">
-                        <div class="ascii-art">
-████████╗
-██╔═════╝
-███████╗ 
-╚════██║ 
-███████║ 
-╚══════╝ 
-                        </div>
-                        <div class="sponsor-name">Orto Galeria</div>
+            if (hora >= 1 && hora < 6) {
+                programa = "Madrugada txt";
+                horario = "01:00 - 06:00";
+            } else if (hora >= 6 && hora < 12) {
+                programa = "Telesoft";
+                horario = "06:00 - 12:00";
+            } else if (hora >= 12 && hora < 16) {
+                programa = "Radio 404";
+                horario = "12:00 - 16:00";
+            } else if (hora >= 16 && hora < 20) {
+                programa = "Floppy Disk";
+                horario = "16:00 - 20:00";
+            } else {
+                programa = "Piratas Informáticos";
+                horario = "20:00 - 01:00";
+            }
+            
+            currentShow.textContent = programa;
+            if (currentTimeName) currentTimeName.textContent = programa;
+            if (currentTimeRange) currentTimeRange.textContent = horario;
+        }
+    }
+    
+    // Generar programación
+    function generateSchedule() {
+        const scheduleGrid = document.querySelector('.schedule-grid');
+        if (!scheduleGrid) return;
+        
+        const schedules = [
+            { time: "01:00 - 06:00", name: "Madrugada txt", desc: "Sonidos atmosféricos y experimentales" },
+            { time: "06:00 - 12:00", name: "Telesoft", desc: "Programa matutino con energía y ritmos" },
+            { time: "12:00 - 16:00", name: "Radio 404", desc: "Ritmos variados y selecciones especiales" },
+            { time: "16:00 - 20:00", name: "Floppy Disk", desc: "Transición hacia la noche" },
+            { time: "20:00 - 01:00", name: "Piratas Informáticos", desc: "Sesiones extendidas nocturnas" }
+        ];
+        
+        scheduleGrid.innerHTML = '';
+        schedules.forEach(schedule => {
+            const card = document.createElement('div');
+            card.className = 'schedule-card';
+            card.innerHTML = `
+                <div class="schedule-time">${schedule.time}</div>
+                <div class="schedule-name">${schedule.name}</div>
+                <div class="schedule-desc">${schedule.desc}</div>
+            `;
+            scheduleGrid.appendChild(card);
+        });
+    }
+    
+    // Generar colecciones
+    function generateCollections() {
+        const collectionsGrid = document.querySelector('.collections-grid');
+        if (!collectionsGrid) return;
+        
+        const collections = [
+            { name: "Madrugada txt", tracks: 24, desc: "Selección atmosférica para las primeras horas" },
+            { name: "Telesoft", tracks: 32, desc: "Energía y ritmos para comenzar el día" },
+            { name: "Radio 404", tracks: 28, desc: "Ritmos variados característicos" },
+            { name: "Floppy Disk", tracks: 30, desc: "Transición hacia la noche con sonidos profundos" },
+            { name: "Piratas Informáticos", tracks: 35, desc: "Sesiones extendidas y atmósferas nocturnas" }
+        ];
+        
+        collectionsGrid.innerHTML = '';
+        collections.forEach(collection => {
+            const card = document.createElement('div');
+            card.className = 'collection-card';
+            card.innerHTML = `
+                <div class="collection-header">
+                    <div class="collection-name">${collection.name}</div>
+                    <div class="collection-meta">
+                        <span>${collection.tracks} tracks</span>
                     </div>
+                </div>
+                <div class="collection-body">
+                    <div class="collection-desc">${collection.desc}</div>
+                </div>
+            `;
+            collectionsGrid.appendChild(card);
+        });
+    }
+    
+    // Botón compartir
+    const shareButton = document.getElementById('shareRadioButton');
+    if (shareButton) {
+        shareButton.addEventListener('click', function() {
+            const url = window.location.href;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    const originalHTML = shareButton.innerHTML;
+                    shareButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                    shareButton.style.borderColor = '#00FF37';
+                    shareButton.style.color = '#00FF37';
                     
-                    <div class="sponsor-item">
-                        <div class="ascii-art">
- ██████╗ 
-██╔══██╗
-██████╔╝
-██╔══██╗
-██████╔╝
-╚═════╝ 
-                        </div>
-                        <div class="sponsor-name">Teletextlab</div>
-                    </div>
-                    
-                    <div class="sponsor-item">
-                        <div class="ascii-art">
-██████╗ 
-██╔══██╗
-██████╔╝
-██╔══██╗
-██████╔╝
-╚═════╝ 
-                        </div>
-                        <div class="sponsor-name">Cyberespacio</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="copyright">
-                © 2025 Teletextlab. Patagonia Argentina. Todos los derechos reservados.
-            </div>
-        </footer>
-    </div>
+                    setTimeout(() => {
+                        shareButton.innerHTML = originalHTML;
+                        shareButton.style.borderColor = '';
+                        shareButton.style.color = '';
+                    }, 2000);
+                });
+            }
+        });
+    }
+    
+    // Inicializar interfaz
+    updateCurrentShow();
+    generateSchedule();
+    generateCollections();
+    
+    // Actualizar cada minuto
+    setInterval(updateCurrentShow, 60000);
+});
 
-    <!-- AUDIO -->
-    <audio id="radioPlayer"></audio>
-
-    <!-- APP.JS SEPARADO -->
-    <script src="app.js"></script>
-</body>
-</html>
+console.log("📻 Teletext Radio cargado - Transmisión en vivo 24/7");

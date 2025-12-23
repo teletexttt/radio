@@ -723,57 +723,60 @@
                     <h3 class="footer-title">Enlaces</h3>
                     <ul class="footer-links">
                         <li><a href="https://cafecito.app/teletext" target="_blank" rel="noopener">Apoyar en Cafecito</a></li>
-                        <!-- Código en GitHub removido -->
                     </ul>
                 </div>
             </div>
             
-           <!-- SECCIÓN DE PATROCINADORES CON ASCII ART -->
-<div class="sponsors-section">
-    <div class="sponsors-title">Patrocinadores</div>
-    <div class="sponsors-container">
-        <div class="sponsor-item">
-            <div class="ascii-art">
+            <!-- SECCIÓN DE PATROCINADORES CON ASCII ART -->
+            <div class="sponsors-section">
+                <div class="sponsors-title">Patrocina</div>
+                <div class="sponsors-container">
+                    <div class="sponsor-item">
+                        <div class="ascii-art">
  /\_/\  
 ( o.o ) 
  > ^ <  
-            </div>
-            <div class="sponsor-name">Orto Galeria</div>
-        </div>
-        
-        <div class="sponsor-item">
-            <div class="ascii-art">
+                        </div>
+                        <div class="sponsor-name">Orto Galeria</div>
+                    </div>
+                    
+                    <div class="sponsor-item">
+                        <div class="ascii-art">
  ██████╗ 
 ██╔══██╗
 ██████╔╝
 ██╔══██╗
 ██████╔╝
 ╚═════╝ 
-            </div>
-            <div class="sponsor-name">Teletextlab</div>
-        </div>
-        
-        <div class="sponsor-item">
-            <div class="ascii-art">
+                        </div>
+                        <div class="sponsor-name">Teletextlab</div>
+                    </div>
+                    
+                    <div class="sponsor-item">
+                        <div class="ascii-art">
 ██████╗ 
 ██╔══██╗
 ██████╔╝
 ██╔══██╗
 ██████╔╝
 ╚═════╝ 
+                        </div>
+                        <div class="sponsor-name">Cyberespacio</div>
+                    </div>
+                </div>
             </div>
-            <div class="sponsor-name">Cyberespacio</div>
-        </div>
+            
+            <div class="copyright">
+                © 2025 Teletextlab. Patagonia Argentina. Todos los derechos reservados.
+            </div>
+        </footer>
     </div>
-</div>
 
     <!-- ELEMENTO DE AUDIO OCULTO -->
     <audio id="radioPlayer"></audio>
 
     <script>
-        // Código JavaScript completo para el reproductor
         document.addEventListener('DOMContentLoaded', function() {
-            // Elementos del DOM
             const playButton = document.getElementById('radioPlayButton');
             const shareButton = document.getElementById('shareRadioButton');
             const audioPlayer = document.getElementById('radioPlayer');
@@ -786,48 +789,34 @@
             const scheduleGrid = document.querySelector('.schedule-grid');
             const collectionsGrid = document.querySelector('.collections-grid');
             
-            // Variables de estado
             let isPlaying = false;
             let currentPlaylist = [];
             let currentTrackIndex = 0;
             let currentSchedule = null;
             
-            // NOMBRES PERSONALIZADOS DE PROGRAMAS (Tus nombres)
             const programNames = {
                 "madrugada": "Madrugada txt",
                 "mañana": "Telesoft", 
                 "tarde": "Radio 404",
                 "mediatarde": "Floppy Disk",
-                "noche": "Piratas Informáticos",
-                "viernes_20_22": "Trasnoche Teletext",
-                "viernes_22_01": "Trasnoche Teletext",
-                "sabado_20_22": "Trasnoche Teletext",
-                "sabado_22_01": "Trasnoche Teletext"
+                "noche": "Piratas Informáticos"
             };
             
-            // Descripciones personalizadas para cada programa
             const programDescriptions = {
-                "madrugada": "Sonidos atmosféricos y experimentales para las primeras horas del día. Una selección cuidadosa para acompañar la madrugada.",
-                "mañana": "Programa matutino con energía y ritmos para comenzar el día. Mezcla de géneros para despertar los sentidos.",
-                "tarde": "Ritmos variados y selecciones especiales para acompañar la tarde. Desde electrónica suave hasta grooves profundos.",
-                "mediatarde": "Transición hacia la noche con sonidos más atmosféricos y pausados. Perfecto para el atardecer.",
-                "noche": "Sesiones extendidas y atmósferas nocturnas para terminar el día. Programación especial para la noche.",
-                "viernes_20_22": "Programación especial de los viernes. Primera parte de la trasnoche con selecciones exclusivas.",
-                "viernes_22_01": "Continuación de la programación especial de viernes. Segunda parte con sesiones extendidas.",
-                "sabado_20_22": "Especial de sábados por la noche. Primera parte con música seleccionada para el fin de semana.",
-                "sabado_22_01": "Cierre del especial de sábados. Segunda parte con las mejores selecciones para terminar la noche."
+                "madrugada": "Sonidos atmosféricos y experimentales para las primeras horas del día.",
+                "mañana": "Programa matutino con energía y ritmos para comenzar el día.",
+                "tarde": "Ritmos variados y selecciones especiales para acompañar la tarde.",
+                "mediatarde": "Transición hacia la noche con sonidos más atmosféricos.",
+                "noche": "Sesiones extendidas y atmósferas nocturnas para terminar el día."
             };
             
-            // Datos de programación (con nombres personalizados)
             const scheduleData = {
-                "timeZone": "America/Argentina/Buenos_Aires",
                 "schedules": [
                     {
                         "name": "madrugada",
                         "displayName": "Madrugada txt",
                         "start": "01:00",
                         "end": "06:00",
-                        "folder": "music/madrugada/",
                         "description": programDescriptions.madrugada
                     },
                     {
@@ -835,7 +824,6 @@
                         "displayName": "Telesoft",
                         "start": "06:00",
                         "end": "12:00",
-                        "folder": "music/mañana/",
                         "description": programDescriptions.mañana
                     },
                     {
@@ -843,7 +831,6 @@
                         "displayName": "Radio 404",
                         "start": "12:00",
                         "end": "16:00",
-                        "folder": "music/tarde/",
                         "description": programDescriptions.tarde
                     },
                     {
@@ -851,7 +838,6 @@
                         "displayName": "Floppy Disk",
                         "start": "16:00",
                         "end": "20:00",
-                        "folder": "music/mediatarde/",
                         "description": programDescriptions.mediatarde
                     },
                     {
@@ -859,100 +845,52 @@
                         "displayName": "Piratas Informáticos",
                         "start": "20:00",
                         "end": "01:00",
-                        "folder": "music/noche/",
                         "description": programDescriptions.noche
-                    }
-                ],
-                "specialSchedules": [
-                    {
-                        "days": [5],
-                        "name": "viernes_20_22",
-                        "displayName": "Trasnoche Teletext",
-                        "start": "20:00",
-                        "end": "22:00",
-                        "folder": "music/especiales/viernes_20_22/",
-                        "description": programDescriptions.viernes_20_22
-                    },
-                    {
-                        "days": [5],
-                        "name": "viernes_22_01",
-                        "displayName": "Trasnoche Teletext",
-                        "start": "22:00",
-                        "end": "01:00",
-                        "folder": "music/especiales/viernes_22_01/",
-                        "description": programDescriptions.viernes_22_01
-                    },
-                    {
-                        "days": [6],
-                        "name": "sabado_20_22",
-                        "displayName": "Trasnoche Teletext",
-                        "start": "20:00",
-                        "end": "22:00",
-                        "folder": "music/especiales/sabado_20_22/",
-                        "description": programDescriptions.sabado_20_22
-                    },
-                    {
-                        "days": [6],
-                        "name": "sabado_22_01",
-                        "displayName": "Trasnoche Teletext",
-                        "start": "22:00",
-                        "end": "01:00",
-                        "folder": "music/especiales/sabado_22_01/",
-                        "description": programDescriptions.sabado_22_01
                     }
                 ]
             };
             
-            // Datos de colecciones (actualizados con nombres de programas)
             const collectionsData = [
                 {
                     "name": "Madrugada txt",
                     "folder": "madrugada",
                     "tracks": 24,
-                    "description": "Selección atmosférica para las primeras horas del día. Sonidos ambientales y experimentales que definen el programa Madrugada txt."
+                    "description": "Selección atmosférica para las primeras horas del día."
                 },
                 {
                     "name": "Telesoft",
                     "folder": "mañana",
                     "tracks": 32,
-                    "description": "Energía y ritmos para comenzar el día con buen pie. La esencia del programa Telesoft en una colección especial."
+                    "description": "Energía y ritmos para comenzar el día con buen pie."
                 },
                 {
                     "name": "Radio 404",
                     "folder": "tarde",
                     "tracks": 28,
-                    "description": "Ritmos variados que caracterizan al programa Radio 404. Desde electrónica suave hasta grooves para la tarde."
+                    "description": "Ritmos variados que caracterizan al programa Radio 404."
                 },
                 {
                     "name": "Floppy Disk",
                     "folder": "mediatarde",
                     "tracks": 30,
-                    "description": "Transición hacia la noche con sonidos más profundos. La selección oficial del programa Floppy Disk."
+                    "description": "Transición hacia la noche con sonidos más profundos."
                 },
                 {
                     "name": "Piratas Informáticos",
                     "folder": "noche",
                     "tracks": 35,
-                    "description": "Sesiones extendidas y atmósferas nocturnas del programa Piratas Informáticos. Perfecto para terminar el día."
-                },
-                {
-                    "name": "Trasnoche Teletext",
-                    "folder": "especiales",
-                    "tracks": 48,
-                    "description": "Programación exclusiva de los fines de semana. Todas las sesiones especiales del programa Trasnoche Teletext."
+                    "description": "Sesiones extendidas y atmósferas nocturnas."
                 }
             ];
             
-            // Obtener hora de Argentina (UTC-3)
             function getArgentinaTime() {
                 const now = new Date();
-                const argentinaOffset = -3 * 60; // UTC-3 en minutos
+                const argentinaOffset = -3 * 60;
                 const localOffset = now.getTimezoneOffset();
                 const offsetDiff = argentinaOffset + localOffset;
                 return new Date(now.getTime() + offsetDiff * 60000);
             }
             
-            // Formatear hora para mostrar
             function formatTimeForDisplay(timeStr) {
                 const [hours, minutes] = timeStr.split(':').map(Number);
                 const period = hours >= 12 ? 'PM' : 'AM';
@@ -960,43 +898,16 @@
                 return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
             }
             
-            // Determinar franja horaria actual
             function getCurrentSchedule() {
                 const now = getArgentinaTime();
-                const currentDay = now.getDay(); // 0=domingo, 5=viernes, 6=sábado
                 const currentHour = now.getHours();
                 const currentMinute = now.getMinutes();
                 const currentTime = currentHour * 60 + currentMinute;
                 
-                // Primero verificar horarios especiales (viernes y sábado)
-                if (currentDay === 5 || currentDay === 6) {
-                    for (const special of scheduleData.specialSchedules) {
-                        if (special.days.includes(currentDay)) {
-                            const startTime = parseInt(special.start.split(':')[0]) * 60 + parseInt(special.start.split(':')[1]);
-                            let endTime = parseInt(special.end.split(':')[0]) * 60 + parseInt(special.end.split(':')[1]);
-                            
-                            // Manejar horarios que pasan de medianoche
-                            if (endTime < startTime) {
-                                endTime += 24 * 60;
-                                const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
-                                if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
-                                    return special;
-                                }
-                            } else {
-                                if (currentTime >= startTime && currentTime < endTime) {
-                                    return special;
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Si no es horario especial, usar horarios regulares
                 for (const regular of scheduleData.schedules) {
                     const startTime = parseInt(regular.start.split(':')[0]) * 60 + parseInt(regular.start.split(':')[1]);
                     let endTime = parseInt(regular.end.split(':')[0]) * 60 + parseInt(regular.end.split(':')[1]);
                     
-                    // Manejar horarios que pasan de medianoche (noche: 20:00-01:00)
                     if (endTime < startTime) {
                         endTime += 24 * 60;
                         const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
@@ -1010,32 +921,22 @@
                     }
                 }
                 
-                // Si no encuentra ninguna franja, usar la primera como default
                 return scheduleData.schedules[0];
             }
             
-            // Actualizar información en pantalla
             function updateDisplayInfo() {
                 currentSchedule = getCurrentSchedule();
-                
-                // Usar el nombre personalizado del programa
                 const displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
-                const programDesc = programDescriptions[currentSchedule.name] || currentSchedule.description || 'Programación automática';
                 
-                // Actualizar elementos
                 currentShow.textContent = displayName;
                 currentTimeName.textContent = displayName;
                 currentTimeRange.textContent = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
             }
             
-            // Generar tarjetas de programación
             function generateScheduleCards() {
                 scheduleGrid.innerHTML = '';
                 
-                // Combinar horarios regulares y especiales para mostrar
-                const allSchedules = [...scheduleData.schedules];
-                
-                allSchedules.forEach(schedule => {
+                scheduleData.schedules.forEach(schedule => {
                     const card = document.createElement('div');
                     card.className = 'schedule-card';
                     
@@ -1050,25 +951,8 @@
                     
                     scheduleGrid.appendChild(card);
                 });
-                
-                // También agregar horarios especiales si es necesario
-                const specialCards = document.createElement('div');
-                specialCards.className = 'schedule-card';
-                specialCards.style.gridColumn = '1 / -1';
-                specialCards.style.textAlign = 'center';
-                specialCards.style.background = 'rgba(0, 255, 55, 0.05)';
-                specialCards.style.borderColor = 'rgba(0, 255, 55, 0.2)';
-                
-                specialCards.innerHTML = `
-                    <div class="schedule-time">Viernes 20:00 - Sábado 01:00 & Sábado 20:00 - Domingo 01:00</div>
-                    <div class="schedule-name">Trasnoche Teletext</div>
-                    <div class="schedule-desc">Programación especial los fines de semana con sesiones exclusivas y selecciones especiales.</div>
-                `;
-                
-                scheduleGrid.appendChild(specialCards);
             }
             
-            // Generar tarjetas de colecciones
             function generateCollectionCards() {
                 collectionsGrid.innerHTML = '';
                 
@@ -1081,7 +965,6 @@
                             <div class="collection-name">${collection.name}</div>
                             <div class="collection-meta">
                                 <span>${collection.tracks} tracks</span>
-                                <span>${collection.folder}</span>
                             </div>
                         </div>
                         <div class="collection-body">
@@ -1093,45 +976,37 @@
                 });
             }
             
-            // Cargar playlist de la carpeta actual
+            // ✅ FUNCIÓN MODIFICADA: USA TU PLAYLIST.JSON ACTUAL
             async function loadCurrentPlaylist() {
-                currentSchedule = getCurrentSchedule();
-                
                 try {
-                    // Intentar cargar el playlist.json de la carpeta
-                    const response = await fetch(`${currentSchedule.folder}playlist.json`);
+                    const response = await fetch('playlist.json');
                     if (!response.ok) throw new Error('No playlist.json found');
                     
                     const data = await response.json();
-                    currentPlaylist = data.tracks || [];
                     
-                    // Si no hay tracks en el JSON, escanear la carpeta
-                    if (currentPlaylist.length === 0) {
-                        await scanFolderForMP3s();
+                    if (data.tracks && Array.isArray(data.tracks)) {
+                        currentPlaylist = data.tracks.map(item => {
+                            if (typeof item === 'string') return item;
+                            if (item.file) return item.file;
+                            return null;
+                        }).filter(Boolean);
+                    } else if (Array.isArray(data)) {
+                        currentPlaylist = data;
+                    } else {
+                        currentPlaylist = [];
                     }
+                    
                 } catch (error) {
-                    console.log('Cargando playlist falló, escaneando carpeta:', error);
-                    await scanFolderForMP3s();
+                    console.log('Error cargando playlist:', error);
+                    currentPlaylist = [];
                 }
                 
-                // Si aún no hay tracks, usar emergency.mp3
                 if (currentPlaylist.length === 0) {
-                    currentPlaylist = ["music/emergency.mp3"];
+                    console.warn('Playlist vacía, usando fallback');
+                    currentPlaylist = ['jazzcartel.mp3'];
                 }
             }
             
-            // Escanear carpeta para archivos MP3
-            async function scanFolderForMP3s() {
-                try {
-                    // Esta es una simulación - en producción necesitarías un listado real del servidor
-                    // Por ahora, asumimos que hay al menos un archivo
-                    currentPlaylist = [`${currentSchedule.folder}tracksample.mp3`];
-                } catch (error) {
-                    console.error('Error escaneando carpeta:', error);
-                }
-            }
-            
-            // Reproducir siguiente canción
             function playNextTrack() {
                 if (currentPlaylist.length === 0) return;
                 
@@ -1139,11 +1014,12 @@
                 playCurrentTrack();
             }
             
-            // Reproducir canción actual
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
+                console.log('🎵 Reproduciendo:', track);
+                
                 audioPlayer.src = track;
                 
                 audioPlayer.play().then(() => {
@@ -1151,109 +1027,58 @@
                     updatePlayButton();
                 }).catch(error => {
                     console.error('Error al reproducir:', error);
-                    // Intentar siguiente canción si falla
                     setTimeout(playNextTrack, 1000);
                 });
             }
             
-            // Actualizar botón play/pause
             function updatePlayButton() {
                 if (isPlaying) {
-                    // Mostrar ícono de pausa
                     playPath.setAttribute('opacity', '0');
                     pausePath1.setAttribute('opacity', '1');
                     pausePath2.setAttribute('opacity', '1');
-                    playButton.setAttribute('aria-label', 'Pausar');
                 } else {
-                    // Mostrar ícono de play
                     playPath.setAttribute('opacity', '1');
                     pausePath1.setAttribute('opacity', '0');
                     pausePath2.setAttribute('opacity', '0');
-                    playButton.setAttribute('aria-label', 'Reproducir');
                 }
             }
             
-            // Función para compartir
             function shareRadio() {
-                const url = 'https://www.txtradio.site';
+                const url = window.location.href;
                 
-                if (navigator.clipboard && navigator.clipboard.writeText) {
+                if (navigator.clipboard) {
                     navigator.clipboard.writeText(url).then(() => {
-                        // Mostrar confirmación temporal
                         const originalHTML = shareButton.innerHTML;
                         shareButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
                         shareButton.style.borderColor = '#00FF37';
                         shareButton.style.color = '#00FF37';
-                        shareButton.title = '¡Enlace copiado!';
                         
                         setTimeout(() => {
                             shareButton.innerHTML = originalHTML;
                             shareButton.style.borderColor = '';
                             shareButton.style.color = '';
-                            shareButton.title = 'Copiar enlace';
                         }, 2000);
-                    }).catch(err => {
-                        console.error('Error al copiar:', err);
-                        fallbackCopy(url);
                     });
-                } else {
-                    fallbackCopy(url);
                 }
             }
             
-            // Fallback para navegadores antiguos
-            function fallbackCopy(text) {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                
-                try {
-                    document.execCommand('copy');
-                    // Mostrar confirmación
-                    const originalHTML = shareButton.innerHTML;
-                    shareButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-                    shareButton.style.borderColor = '#00FF37';
-                    shareButton.style.color = '#00FF37';
-                    shareButton.title = '¡Enlace copiado!';
-                    
-                    setTimeout(() => {
-                        shareButton.innerHTML = originalHTML;
-                        shareButton.style.borderColor = '';
-                        shareButton.style.color = '';
-                        shareButton.title = 'Copiar enlace';
-                    }, 2000);
-                } catch (err) {
-                    console.error('Fallback copy failed:', err);
-                    alert('No se pudo copiar el enlace. Por favor, cópialo manualmente: ' + text);
-                }
-                
-                document.body.removeChild(textArea);
-            }
-            
-            // Verificar cambios de franja horaria cada minuto
             function checkScheduleChange() {
                 const oldSchedule = currentSchedule ? currentSchedule.name : null;
                 updateDisplayInfo();
                 
-                if (currentSchedule && oldSchedule !== currentSchedule.name) {
-                    // Si cambió la franja horaria y está reproduciendo, cambiar de playlist
-                    if (isPlaying) {
-                        loadCurrentPlaylist().then(() => {
-                            currentTrackIndex = 0;
-                            playCurrentTrack();
-                        });
-                    }
+                if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
+                    loadCurrentPlaylist().then(() => {
+                        currentTrackIndex = 0;
+                        playCurrentTrack();
+                    });
                 }
             }
             
-            // Event Listeners
             playButton.addEventListener('click', function() {
                 if (!isPlaying) {
-                    // Si es la primera vez, cargar playlist y empezar
                     if (currentPlaylist.length === 0) {
                         loadCurrentPlaylist().then(() => {
+                            currentTrackIndex = 0;
                             playCurrentTrack();
                         });
                     } else {
@@ -1270,21 +1095,16 @@
             
             audioPlayer.addEventListener('ended', playNextTrack);
             audioPlayer.addEventListener('error', function() {
-                console.error('Error en reproducción de audio');
-                // Intentar siguiente canción
+                console.error('Error en audio, siguiente canción');
                 setTimeout(playNextTrack, 1000);
             });
             
-            // Inicializar
             updateDisplayInfo();
             generateScheduleCards();
             generateCollectionCards();
             loadCurrentPlaylist();
             
-            // Verificar cambios de horario cada 60 segundos
             setInterval(checkScheduleChange, 60000);
-            
-            // Actualizar display cada minuto también
             setInterval(updateDisplayInfo, 60000);
         });
     </script>

@@ -518,7 +518,7 @@
             border: 1px solid rgba(0, 255, 55, 0.2);
             white-space: pre;
             display: inline-block;
-            min-height: 60px; /* ✅ Misma altura para todos */
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -787,7 +787,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const playButton = document.getElementById('radioPlayButton');
             const shareButton = document.getElementById('shareRadioButton');
-            let audioPlayer = document.getElementById('radioPlayer'); // ✅ Cambiado a 'let'
+            let audioPlayer = document.getElementById('radioPlayer');
             const playPath = document.getElementById('playPath');
             const pausePath1 = document.getElementById('pausePath1');
             const pausePath2 = document.getElementById('pausePath2');
@@ -1021,14 +1021,14 @@
                 playCurrentTrack();
             }
             
-            // ✅ FUNCIÓN MODIFICADA: INICIO ALEATORIO
+            // ✅ FUNCIÓN CORREGIDA: INICIO ALEATORIO SIN ERRORES
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
                 console.log('🎵 Cargando:', track);
                 
-                // Pausar y limpiar
+                // Pausar audio actual
                 audioPlayer.pause();
                 
                 // Crear NUEVO elemento de audio
@@ -1036,45 +1036,57 @@
                 newAudio.src = track;
                 newAudio.volume = 0.8;
                 
-                newAudio.onloadedmetadata = function() {
-                    // ✅ INICIO ALEATORIO PARA RADIO REAL
+                // ✅ MANEJADOR PRINCIPAL DE CARGA
+                newAudio.addEventListener('loadedmetadata', function() {
+                    console.log('✅ Audio cargado, duración:', Math.floor(newAudio.duration), 'segundos');
+                    
+                    // INICIO ALEATORIO
                     if (newAudio.duration && newAudio.duration > 30) {
                         const maxRandomTime = newAudio.duration * 0.8;
                         const minRandomTime = newAudio.duration * 0.1;
                         const randomTime = Math.random() * (maxRandomTime - minRandomTime) + minRandomTime;
                         
                         newAudio.currentTime = randomTime;
-                        console.log(`⏱️ Iniciando en: ${Math.floor(randomTime)}s de ${Math.floor(newAudio.duration)}s`);
+                        console.log(`⏱️ Iniciando en: ${Math.floor(randomTime)}s`);
                     }
                     
-                    // Reemplazar el elemento viejo
+                    // Reemplazar elemento de audio
                     if (audioPlayer.parentNode) {
                         audioPlayer.parentNode.replaceChild(newAudio, audioPlayer);
                     }
                     audioPlayer = newAudio;
                     audioPlayer.id = 'radioPlayer';
                     
-                    // Configurar eventos
+                    // Configurar eventos del nuevo audio
                     audioPlayer.onended = playNextTrack;
                     audioPlayer.onerror = function() {
-                        console.error('Error en audio');
+                        console.error('❌ Error durante reproducción');
                         setTimeout(playNextTrack, 1000);
                     };
                     
-                    // Reproducir si estaba en play
+                    // Reproducir
                     if (isPlaying) {
-                        audioPlayer.play().catch(e => console.log('Error play:', e));
+                        audioPlayer.play().catch(e => {
+                            console.error('Error play:', e);
+                            setTimeout(playNextTrack, 1000);
+                        });
                     }
-                };
+                });
                 
-                newAudio.onerror = function() {
-                    console.error('❌ No se pudo cargar');
-                    setTimeout(playNextTrack, 1000);
-                };
+                // ✅ MANEJADOR DE ERROR DE CARGA (solo si falla la carga)
+                newAudio.addEventListener('error', function(e) {
+                    console.error('❌ Error cargando archivo:', track, 'Código:', newAudio.error?.code);
+                    
+                    // Intentar siguiente canción después de 2 segundos
+                    setTimeout(() => {
+                        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+                        playCurrentTrack();
+                    }, 2000);
+                });
                 
-                // Si ya está cargado (caché), forzar evento
+                // ✅ Si ya está en caché, forzar la carga
                 if (newAudio.readyState >= 1) {
-                    newAudio.onloadedmetadata();
+                    newAudio.dispatchEvent(new Event('loadedmetadata'));
                 }
             }
             

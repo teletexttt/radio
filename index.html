@@ -1000,35 +1000,36 @@
             }
             
             // ✅ CALCULA ÍNDICE INICIAL - TRANSMISIÓN CONTINUA EN EL TIEMPO (CORREGIDO)
-            function calcularIndiceInicial(lista) {
-                if (!lista || lista.length === 0) return 0;
-                
-                const ahora = getArgentinaTime();
-                
-                // 1. EPOCH: 1 de enero 2025, 00:00 hora Argentina
-                const epoch = new Date(2025, 0, 1, 0, 0, 0); // Año, Mes (0-index), Día, Hora, Min, Seg
-                
-                // 2. DIFERENCIA EN MILISEGUNDOS desde epoch
-                const milisegundosTranscurridos = ahora - epoch;
-                
-                // Si es negativo (fecha anterior al epoch), usar 0
-                if (milisegundosTranscurridos <= 0) return 0;
-                
-                // 3. DURACIÓN PROMEDIO por canción (4 minutos = 240000 ms)
-                const msPorCancion = 240 * 1000;
-                
-                // 4. POSICIÓN CONTINUA en el tiempo (avanza 1 canción cada ~4 min)
-                const posicionContinua = Math.floor(milisegundosTranscurridos / msPorCancion);
-                
-                // 5. HASH de la playlist actual (cambia si cambian las canciones)
-                const hashPlaylist = calcularHashPlaylist(lista);
-                
-                // 6. COMBINACIÓN determinística
-                const indiceFinal = (posicionContinua + hashPlaylist) % lista.length;
-                
-                console.log(`📻 Índice por transmisión continua: ${indiceFinal}/${lista.length} (posTemp:${posicionContinua}, hash:${hashPlaylist}, ms:${milisegundosTranscurridos})`);
-                return indiceFinal;
-            }
+            
+function calcularIndiceInicial(lista) {
+    if (!lista || lista.length === 0) return 0;
+    
+    const ahora = getArgentinaTime();
+    
+    // 1. EPOCH: 1 de enero 2025, 00:00 hora Argentina
+    const epoch = new Date(2025, 0, 1, 0, 0, 0); // Año, Mes (0-index), Día, Hora, Min, Seg
+    
+    // 2. DIFERENCIA EN MILISEGUNDOS desde epoch
+    const milisegundosTranscurridos = ahora - epoch;
+    
+    // Si es negativo (fecha anterior al epoch), usar 0
+    if (milisegundosTranscurridos <= 0) return 0;
+    
+    // 3. DURACIÓN PROMEDIO por canción (4 minutos = 240000 ms)
+    const msPorCancion = 240 * 1000;
+    
+    // 4. POSICIÓN CONTINUA en el tiempo (avanza 1 canción cada ~4 min)
+    const posicionContinua = Math.floor(milisegundosTranscurridos / msPorCancion);
+    
+    // 5. HASH de la playlist actual (cambia si cambian las canciones)
+    const hashPlaylist = calcularHashPlaylist(lista);
+    
+    // 6. COMBINACIÓN determinística
+    const indiceFinal = (posicionContinua + hashPlaylist) % lista.length;
+    
+    console.log(`📻 Índice por transmisión continua: ${indiceFinal}/${lista.length} (posTemp:${posicionContinua}, hash:${hashPlaylist}, ms:${milisegundosTranscurridos})`);
+    return indiceFinal;
+}
             
             async function loadCurrentPlaylist() {
                 try {
@@ -1217,3 +1218,4 @@
     </script>
 </body>
 </html>
+

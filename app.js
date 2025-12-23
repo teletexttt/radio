@@ -41,18 +41,22 @@ function loadTrack(index) {
   audio.src = fullPath;
   audio.volume = 1;
   
-  // SOLO inicio aleatorio si NO hay estado guardado
+  // CORRECCIÓN: Canciones empiezan desde el principio
   audio.onloadedmetadata = () => {
     const saved = localStorage.getItem('radio_state');
     
     if (saved) {
-      // Ya tenemos tiempo guardado, mantenerlo
-      localStorage.removeItem('radio_state');
+        // Caso especial: recuperando después de F5
+        const state = JSON.parse(saved);
+        audio.currentTime = state.currentTime || 0;
+        localStorage.removeItem('radio_state');
     } else if (isFirstPlay && audio.duration > 60) {
-      audio.currentTime = Math.random() * (audio.duration - 60);
-      isFirstPlay = false;
+        // Solo primera canción de la sesión empieza aleatorio
+        audio.currentTime = Math.random() * (audio.duration - 60);
+        isFirstPlay = false;
     } else {
-      audio.currentTime = 0;
+        // NORMAL: todas las canciones empiezan desde 0
+        audio.currentTime = 0;
     }
   };
   
@@ -93,6 +97,51 @@ setInterval(() => {
     audio.play().catch(() => playNextTrack());
   }
 }, 3000);
+
+// === SOLUCIÓN PARA F5 - PERSISTENCIA ===
+window.addEventListener('beforeunload', () => {
+    if (isPlaying) {
+        localStorage.setItem('radio_state', JSON.stringify({
+            playing: true,
+            index: currentIndex,
+            playlist: playlist,
+            currentTime: audio.currentTime,
+            src: audio.src
+        }));
+    } else {
+        localStorage.removeItem('radio_state');
+    }
+});
+
+window.addEventListener('load', () => {
+    const saved = localStorage.getItem('radio_state');
+    if (!saved) return;
+    
+    const state = JSON.parse(saved);
+    
+    if (state.playlist && state.playlist.length > 0) {
+        playlist = state.playlist;
+        currentIndex = state.index || 0;
+        
+        if (state.src && playlistLoaded) {
+            audio.src = state.src;
+            audio.currentTime = state.currentTime || 0;
+            
+            audio.play().then(() => {
+                isPlaying = true;
+                isFirstPlay = false;
+            }).catch(e => {
+                document.addEventListener('click', () => {
+                    audio.play().then(() => isPlaying = true);
+                }, { once: true });
+            });
+        }
+    }
+});
+
+audio.addEventListener('ended', () => {
+    localStorage.removeItem('radio_state');
+});
 
 
 

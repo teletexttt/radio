@@ -799,6 +799,8 @@
             let currentPlaylist = [];
             let currentTrackIndex = 0;
             let currentSchedule = null;
+            let currentTrackPlaying = null;
+            let audioHandlersInitialized = false;
             
             const programNames = {
                 "madrugada": "Madrugada txt",
@@ -864,17 +866,22 @@
                 return new Date(now.getTime() + offsetDiff * 60000);
             }
             
-            // ======= DETECCIÓN NAVIDEÑA (NUEVA) =======
+            // ======= DETECCIÓN NAVIDEÑA CORREGIDA =======
             function getFaseNavidad() {
                 const ahora = getArgentinaTime();
                 const mes = ahora.getMonth();  // 11 = Diciembre
                 const dia = ahora.getDate();
                 const hora = ahora.getHours();
                 
-                // 24-25 de Diciembre
-                if (mes === 11 && dia === 24 && hora >= 20) return 'clasicos';
-                if (mes === 11 && dia === 25 && hora < 3) return 'electronica';
-                return null; // No es navidad
+                // Período navideño: 20-24 de diciembre, 20:00-23:59
+                // Y 25 de diciembre hasta las 03:00
+                if (mes === 11) { // Diciembre
+                    // 20-24 de diciembre desde las 20:00
+                    if (dia >= 20 && dia <= 24 && hora >= 20) return 'clasicos';
+                    // 25 de diciembre 00:00-02:59
+                    if (dia === 25 && hora < 3) return 'electronica';
+                }
+                return null;
             }
             
             function formatTimeForDisplay(timeStr) {
@@ -915,13 +922,27 @@
                 
                 // TÍTULO ESPECIAL NAVIDEÑO
                 const faseNavidad = getFaseNavidad();
-                const displayName = (faseNavidad === 'clasicos' || faseNavidad === 'electronica') 
-                    ? 'Especial txt'  // ← Título navideño
-                    : currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name; // ← Título normal
+                let displayName;
+                let timeRangeText;
+                
+                if (faseNavidad === 'clasicos' || faseNavidad === 'electronica') {
+                    // MODO NAVIDEÑO
+                    displayName = 'Especial txt';
+                    
+                    if (faseNavidad === 'clasicos') {
+                        timeRangeText = '20:00 PM - 00:00 AM (Clásicos Navideños)';
+                    } else {
+                        timeRangeText = '00:00 AM - 03:00 AM (Electrónica Navideña)';
+                    }
+                } else {
+                    // MODO NORMAL
+                    displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
+                    timeRangeText = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
+                }
                 
                 currentShow.textContent = displayName;
                 currentTimeName.textContent = displayName;
-                currentTimeRange.textContent = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
+                currentTimeRange.textContent = timeRangeText;
             }
             
             function generateScheduleCards() {
@@ -931,8 +952,18 @@
                     const card = document.createElement('div');
                     card.className = 'schedule-card';
                     
-                    const displayName = schedule.displayName || programNames[schedule.name] || schedule.name;
-                    const description = schedule.description || programDescriptions[schedule.name] || 'Programación automática';
+                    const faseNavidad = getFaseNavidad();
+                    let displayName = schedule.displayName || programNames[schedule.name] || schedule.name;
+                    let description = schedule.description || programDescriptions[schedule.name] || 'Programación automática';
+                    
+                    // Mostrar "Especial txt" durante navidad en el horario 20:00-01:00
+                    if ((faseNavidad === 'clasicos' || faseNavidad === 'electronica') && 
+                        schedule.start === '20:00' && schedule.end === '01:00') {
+                        displayName = 'Especial txt';
+                        description = faseNavidad === 'clasicos' 
+                            ? 'Canciones navideñas clásicas en versión original' 
+                            : 'Remixes electrónicos de villancicos tradicionales';
+                    }
                     
                     card.innerHTML = `
                         <div class="schedule-time">${formatTimeForDisplay(schedule.start)} - ${formatTimeForDisplay(schedule.end)}</div>
@@ -1000,7 +1031,6 @@
                 });
             }
             
-            // ✅ CALCULA HASH SIMPLE DE PLAYLIST (AGNÓSTICO)
             function calcularHashPlaylist(lista) {
                 let hash = 0;
                 if (!lista || !Array.isArray(lista)) return hash;
@@ -1010,48 +1040,33 @@
                     if (typeof track === 'string') {
                         for (let j = 0; j < track.length; j++) {
                             hash = (hash << 5) - hash + track.charCodeAt(j);
-                            hash |= 0; // Convertir a entero 32-bit
+                            hash |= 0;
                         }
                     }
                 }
                 return Math.abs(hash);
             }
             
-            // ✅ CALCULA ÍNDICE INICIAL - TRANSMISIÓN CONTINUA EN EL TIEMPO (CORREGIDO)
             function calcularIndiceInicial(lista) {
                 if (!lista || lista.length === 0) return 0;
                 
                 const ahora = getArgentinaTime();
-                
-                // 1. EPOCH: 1 de enero 2025, 00:00 hora Argentina
-                const epoch = new Date(2025, 0, 1, 0, 0, 0); // Año, Mes (0-index), Día, Hora, Min, Seg
-                
-                // 2. DIFERENCIA EN MILISEGUNDOS desde epoch
+                const epoch = new Date(2025, 0, 1, 0, 0, 0);
                 const milisegundosTranscurridos = ahora - epoch;
                 
-                // Si es negativo (fecha anterior al epoch), usar 0
                 if (milisegundosTranscurridos <= 0) return 0;
                 
-                // 3. DURACIÓN PROMEDIO por canción (4 minutos = 240000 ms)
                 const msPorCancion = 240 * 1000;
-                
-                // 4. POSICIÓN CONTINUA en el tiempo (avanza 1 canción cada ~4 min)
                 const posicionContinua = Math.floor(milisegundosTranscurridos / msPorCancion);
-                
-                // 5. HASH de la playlist actual (cambia si cambian las canciones)
                 const hashPlaylist = calcularHashPlaylist(lista);
-                
-                // 6. COMBINACIÓN determinística
                 const indiceFinal = (posicionContinua + hashPlaylist) % lista.length;
                 
-                console.log(`📻 Índice por transmisión continua: ${indiceFinal}/${lista.length} (posTemp:${posicionContinua}, hash:${hashPlaylist}, ms:${milisegundosTranscurridos})`);
+                console.log(`📻 Índice: ${indiceFinal}/${lista.length}`);
                 return indiceFinal;
             }
             
-            // ======= CARGA DE PLAYLIST (MODIFICADA PARA NAVIDAD) =======
             async function loadCurrentPlaylist() {
                 try {
-                    // DETECTAR FASE NAVIDEÑA
                     const fase = getFaseNavidad();
                     let archivoPlaylist;
                     
@@ -1060,7 +1075,7 @@
                     } else if (fase === 'electronica') {
                         archivoPlaylist = 'playlist_navidad_electronica.json';
                     } else {
-                        archivoPlaylist = 'playlist.json'; // Normal
+                        archivoPlaylist = 'playlist.json';
                     }
                     
                     console.log(`🎵 Cargando: ${archivoPlaylist} ${fase ? '(' + fase + ')' : ''}`);
@@ -1082,10 +1097,9 @@
                         currentPlaylist = [];
                     }
                     
-                    // ✅ CALCULAR ÍNDICE INICIAL POR TRANSMISIÓN CONTINUA
                     if (currentPlaylist.length > 0) {
                         currentTrackIndex = calcularIndiceInicial(currentPlaylist);
-                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, posición: ${currentTrackIndex}`);
+                        console.log(`🎯 Playlist: ${currentPlaylist.length} canciones, posición: ${currentTrackIndex}`);
                     }
                     
                 } catch (error) {
@@ -1105,69 +1119,70 @@
                 if (currentPlaylist.length === 0) return;
                 
                 currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-                playCurrentTrack();
+                console.log(`⏭️ Siguiente canción: ${currentTrackIndex}`);
+                
+                setTimeout(() => {
+                    playCurrentTrack();
+                }, 50);
             }
             
-            // ✅ FUNCIÓN DE AUDIO - FLUJO CONTINUO
+            // ======= FUNCIÓN DE AUDIO CORREGIDA (SIN SALTO) =======
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
-                console.log('🎵 Reproduciendo:', track);
                 
-                // USA EL MISMO ELEMENTO AUDIO
-                audioPlayer.src = track;
-                
-                // INICIO ALEATORIO DENTRO DE LA CANCIÓN (solo para archivos locales)
-                if (track.includes('.mp3') || track.includes('.ogg') || track.includes('.wav')) {
-                   audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
-    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
-    
-    // VERIFICAR SI ES NUEVA CANCIÓN O RECARGA
-    const esRecarga = (audioPlayer.currentTime > 0); // Si ya tenía tiempo, es recarga
-    
-    if (audioPlayer.duration > 30 && esRecarga) {
-        // SOLO inicio aleatorio si es RECARGA de la misma canción
-        const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
-        audioPlayer.currentTime = randomStart;
-        console.log(`⏱️ Recarga - Inicio aleatorio: ${Math.floor(randomStart)}s`);
-    } else {
-        // NUEVA canción empieza desde 0
-        audioPlayer.currentTime = 0;
-        console.log(`⏱️ Nueva canción - Inicio en 0s`);
-    }
-                        
-                        // REPRODUCIR INMEDIATAMENTE SI LA RADIO ESTÁ ENCENDIDA
-                        if (isPlaying) {
-                            audioPlayer.play().catch(e => {
-                                console.error('Error play:', e);
-                                // SI FALLA, PASAR A LA SIGUIENTE INMEDIATAMENTE
-                                playNextTrack();
-                            });
-                        }
-                    }, { once: true });
-                } else {
-                    // Para streams directos, reproducir inmediatamente
-                    if (isPlaying) {
-                        audioPlayer.play().catch(e => {
-                            console.error('Error play stream:', e);
-                        });
-                    }
+                if (currentTrackPlaying === track && !audioPlayer.paused) {
+                    console.log('⏭️ Ya está sonando esta canción');
+                    return;
                 }
                 
-                // MANEJADOR DE FIN DE CANCIÓN - FLUJO CONTINUO
+                currentTrackPlaying = track;
+                console.log('🎵 Reproduciendo:', track);
+                
+                audioPlayer.onended = null;
+                audioPlayer.onerror = null;
+                
+                audioPlayer.src = track;
+                
+                audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
+                    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
+                    
+                    const esRecargaPagina = performance.navigation.type === 1;
+                    const lastTrack = sessionStorage.getItem('lastTrack');
+                    
+                    if (audioPlayer.duration > 30 && esRecargaPagina && lastTrack === track) {
+                        const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
+                        audioPlayer.currentTime = randomStart;
+                        console.log(`⏱️ Inicio aleatorio: ${Math.floor(randomStart)}s`);
+                    } else {
+                        audioPlayer.currentTime = 0;
+                        console.log(`⏱️ Inicio desde 0s`);
+                    }
+                    
+                    sessionStorage.setItem('lastTrack', track);
+                    
+                    if (isPlaying) {
+                        const playPromise = audioPlayer.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => {
+                                console.error('❌ Error al reproducir:', e);
+                                setTimeout(playNextTrack, 1000);
+                            });
+                        }
+                    }
+                }, { once: true });
+                
                 audioPlayer.onended = function() {
-                    console.log('⏭️ Siguiente canción (flujo continuo)');
-                    playNextTrack(); // PASO INMEDIATO, SIN PAUSA
+                    console.log('⏭️ Canción terminó, siguiente...');
+                    setTimeout(playNextTrack, 100);
                 };
                 
-                // ERROR SIMPLE
                 audioPlayer.onerror = function() {
-                    console.error('Error audio, siguiente canción');
-                    playNextTrack(); // SIGUIENTE INMEDIATAMENTE
+                    console.error('❌ Error en canción, siguiente...');
+                    setTimeout(playNextTrack, 500);
                 };
                 
-                // Si ya está cargado, disparar manualmente
                 if (audioPlayer.readyState >= 1) {
                     audioPlayer.dispatchEvent(new Event('loadedmetadata'));
                 }
@@ -1212,22 +1227,18 @@
                 
                 if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
                     loadCurrentPlaylist().then(() => {
-                        // ✅ AL CAMBIAR HORARIO, MANTENER POSICIÓN CONTINUA
                         currentTrackIndex = calcularIndiceInicial(currentPlaylist);
                         playCurrentTrack();
                     });
                 }
             }
             
-            // CONTROL DE PLAY/PAUSE
             playButton.addEventListener('click', function() {
                 if (isPlaying) {
-                    // PAUSA MANUAL
                     audioPlayer.pause();
                     isPlaying = false;
                     updatePlayButton();
                 } else {
-                    // PLAY/RESUME
                     if (!audioPlayer.src || audioPlayer.ended) {
                         if (currentPlaylist.length === 0) {
                             loadCurrentPlaylist().then(() => {
@@ -1241,7 +1252,6 @@
                             playCurrentTrack();
                         }
                     } else {
-                        // REANUDAR DONDE ESTABA
                         audioPlayer.play().then(() => {
                             isPlaying = true;
                             updatePlayButton();
@@ -1255,7 +1265,6 @@
             
             shareButton.addEventListener('click', shareRadio);
             
-            // INICIALIZAR
             updateDisplayInfo();
             generateScheduleCards();
             generateNovedades();
@@ -1264,7 +1273,6 @@
             setInterval(checkScheduleChange, 60000);
             setInterval(updateDisplayInfo, 60000);
             
-            // ======= VERIFICACIÓN NAVIDEÑA (NUEVA) =======
             let faseActual = 'normal';
             setInterval(() => {
                 const nuevaFase = getFaseNavidad() || 'normal';
@@ -1282,4 +1290,5 @@
     </script>
 </body>
 </html>
+
 

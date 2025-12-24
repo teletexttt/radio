@@ -25,7 +25,6 @@
     <meta name="twitter:image:alt" content="Vista previa de Teletext Radio">
     
     <style>
-        /* TODO TU CSS ORIGINAL SE MANTIENE IGUAL */
         @font-face {
             font-family: 'Chomsky';
             src: url('Chomsky.otf') format('opentype');
@@ -56,8 +55,561 @@
             min-height: 100vh;
         }
         
-        /* TODO TU CSS CONTINÚA IGUAL... */
-        /* ... (todo el CSS original sin cambios) ... */
+        /* REPRODUCTOR FIJO SUPERIOR */
+        .fixed-player {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 60px;
+        }
+        
+        .player-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+        }
+        
+        .station-logo {
+            font-family: 'Chomsky', serif;
+            font-size: 1.8rem;
+            color: #00FF37;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+        
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        
+        .current-show {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 300px;
+        }
+        
+        .player-center {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .play-button {
+            background: #00FF37;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #000;
+            transition: all 0.2s ease;
+        }
+        
+        .play-button:hover {
+            background: #39ff14;
+            transform: scale(1.05);
+        }
+        
+        .share-button {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .share-button:hover {
+            border-color: #00FF37;
+            color: #00FF37;
+        }
+        
+        /* CONTENIDO PRINCIPAL */
+        .main-content {
+            padding-top: 60px;
+            min-height: 100vh;
+        }
+        
+        /* HERO SECTION */
+        .hero-section {
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+        }
+        
+        .hero-title {
+            font-family: 'Chomsky', serif;
+            font-size: 5rem;
+            color: #00FF37;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0 #002FFF,
+                         6px 6px 0 rgba(0, 47, 255, 0.4);
+            letter-spacing: 3px;
+            line-height: 1;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.85);
+            max-width: 500px;
+            margin: 0 auto 40px;
+            font-weight: 300;
+        }
+        
+        /* SECTIONS */
+        .content-section {
+            background: rgba(15, 15, 15, 0.92);
+            padding: 80px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 50px;
+            text-align: center;
+            color: #ffffff;
+            letter-spacing: 1px;
+        }
+        
+        .section-title span {
+            color: #00FF37;
+        }
+        
+        /* NOW PLAYING */
+        .now-playing {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .current-time-block {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .time-title {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .time-name {
+            font-size: 2.2rem;
+            color: #00FF37;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+        
+        .time-range {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* SCHEDULE */
+        .schedule-section {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .schedule-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .schedule-card:hover {
+            border-color: rgba(0, 255, 55, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-5px);
+        }
+        
+        .schedule-time {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .schedule-name {
+            font-size: 1.3rem;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+        
+        .schedule-desc {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
+        }
+        
+        /* COLLECTIONS */
+        .collections-section {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .collections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .collection-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .collection-card:hover {
+            border-color: rgba(0, 255, 55, 0.4);
+            transform: translateY(-5px);
+        }
+        
+        .collection-header {
+            padding: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .collection-name {
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        
+        .collection-meta {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            gap: 15px;
+        }
+        
+        .collection-body {
+            padding: 25px;
+        }
+        
+        .collection-desc {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        /* INFO */
+        .info-section {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .info-content {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .info-text {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            line-height: 1.7;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .cafecito-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 28px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        .cafecito-link:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #00FF37;
+            transform: translateY(-2px);
+        }
+        
+        /* FOOTER */
+        .footer {
+            background: rgba(10, 10, 10, 0.98);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 50px 20px 30px;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-column {
+            text-align: left;
+        }
+        
+        .footer-title {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+        
+        .footer-links a:hover {
+            color: #00FF37;
+        }
+        
+        /* SPONSORS */
+        .sponsors-section {
+            text-align: center;
+            padding: 30px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin: 30px 0;
+        }
+        
+        .sponsors-title {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .sponsors-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .sponsor-item {
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .sponsor-item:hover {
+            transform: translateY(-3px);
+        }
+        
+        .sponsor-name {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .ascii-art {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.2;
+            color: #00FF37;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 255, 55, 0.2);
+            white-space: pre;
+            display: inline-block;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .copyright {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.85rem;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .fixed-player {
+                padding: 10px 15px;
+                height: 55px;
+            }
+            
+            .station-logo {
+                font-size: 1.5rem;
+            }
+            
+            .current-show {
+                max-width: 150px;
+                font-size: 0.85rem;
+            }
+            
+            .hero-title {
+                font-size: 3.5rem;
+            }
+            
+            .main-content {
+                padding-top: 55px;
+            }
+            
+            .content-section {
+                padding: 60px 20px;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .collections-grid,
+            .schedule-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                text-align: center;
+            }
+            
+            .sponsors-container {
+                gap: 15px;
+            }
+            
+            .ascii-art {
+                font-size: 8px;
+                padding: 6px;
+                min-height: 50px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero-title {
+                font-size: 2.8rem;
+            }
+            
+            .player-left {
+                gap: 10px;
+            }
+            
+            .current-show {
+                display: none;
+            }
+            
+            .time-name {
+                font-size: 1.8rem;
+            }
+            
+            .sponsors-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 20px;
+            }
+        }
         
         #radioPlayer {
             display: none;
@@ -124,10 +676,10 @@
             </div>
         </section>
 
-        <!-- COLLECTIONS -->
+        <!-- NOVEDADES -->
         <section class="content-section">
             <div class="collections-section">
-                <h2 class="section-title">COLECCIONES <span>MUSICALES</span></h2>
+                <h2 class="section-title">NOVEDADES <span>TXT</span></h2>
                 <div class="collections-grid">
                     <!-- Tarjetas generadas por JS -->
                 </div>
@@ -158,7 +710,7 @@
                     <ul class="footer-links">
                         <li><a href="#now-playing">En Vivo</a></li>
                         <li><a href="#schedule">Programación</a></li>
-                        <li><a href="#collections">Colecciones</a></li>
+                        <li><a href="#collections">Novedades</a></li>
                     </ul>
                 </div>
                 
@@ -304,58 +856,12 @@
                 ]
             };
             
-            const collectionsData = [
-                {
-                    "name": "Madrugada txt",
-                    "folder": "madrugada",
-                    "tracks": 24,
-                    "description": "Selección atmosférica para las primeras horas del día."
-                },
-                {
-                    "name": "Telesoft",
-                    "folder": "mañana",
-                    "tracks": 32,
-                    "description": "Energía y ritmos para comenzar el día con buen pie."
-                },
-                {
-                    "name": "Radio 404",
-                    "folder": "tarde",
-                    "tracks": 28,
-                    "description": "Ritmos variados que caracterizan al programa Radio 404."
-                },
-                {
-                    "name": "Floppy Disk",
-                    "folder": "mediatarde",
-                    "tracks": 30,
-                    "description": "Transición hacia la noche con sonidos más profundos."
-                },
-                {
-                    "name": "Piratas Informáticos",
-                    "folder": "noche",
-                    "tracks": 35,
-                    "description": "Sesiones extendidas y atmósferas nocturnas."
-                }
-            ];
-            
             function getArgentinaTime() {
                 const now = new Date();
                 const argentinaOffset = -3 * 60;
                 const localOffset = now.getTimezoneOffset();
                 const offsetDiff = argentinaOffset + localOffset;
                 return new Date(now.getTime() + offsetDiff * 60000);
-            }
-            
-            // ======= DETECCIÓN NAVIDEÑA (NUEVA) =======
-            function getFaseNavidad() {
-                const ahora = getArgentinaTime();
-                if (ahora.getMonth() !== 11) return null; // No es diciembre
-                
-                const dia = ahora.getDate();
-                const hora = ahora.getHours();
-                
-                if (dia === 24 && hora >= 20) return 'clasicos';
-                if (dia === 25 && hora < 3) return 'electronica';
-                return null;
             }
             
             function formatTimeForDisplay(timeStr) {
@@ -420,25 +926,58 @@
                 });
             }
             
-            function generateCollectionCards() {
-                collectionsGrid.innerHTML = '';
+            function generateNovedades() {
+                const collectionsGrid = document.querySelector('.collections-grid');
+                if (!collectionsGrid) return;
                 
-                collectionsData.forEach(collection => {
+                const novedades = [
+                    { 
+                        name: "Lanzamiento txt", 
+                        desc: "Nueva compilación de sonidos atmosféricos",
+                        date: "DIC 2024"
+                    },
+                    { 
+                        name: "Radio 404 Live", 
+                        desc: "Sesión en vivo desde el estudio principal",
+                        date: "NOV 2024"
+                    },
+                    { 
+                        name: "Floppy Disk Vol.2", 
+                        desc: "Segunda entrega de la serie digital",
+                        date: "OCT 2024"
+                    },
+                    { 
+                        name: "Madrugada Sessions", 
+                        desc: "Grabaciones exclusivas de 2AM a 6AM",
+                        date: "SEP 2024"
+                    },
+                    { 
+                        name: "Telesoft Remixes", 
+                        desc: "Reinterpretaciones del programa matutino",
+                        date: "AGO 2024"
+                    },
+                    { 
+                        name: "Piratas Archive", 
+                        desc: "Material de archivo restaurado digitalmente",
+                        date: "JUL 2024"
+                    }
+                ];
+                
+                collectionsGrid.innerHTML = '';
+                novedades.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'collection-card';
-                    
                     card.innerHTML = `
                         <div class="collection-header">
-                            <div class="collection-name">${collection.name}</div>
+                            <div class="collection-name">${item.name}</div>
                             <div class="collection-meta">
-                                <span>${collection.tracks} tracks</span>
+                                <span>${item.date}</span>
                             </div>
                         </div>
                         <div class="collection-body">
-                            <div class="collection-desc">${collection.description}</div>
+                            <div class="collection-desc">${item.desc}</div>
                         </div>
                     `;
-                    
                     collectionsGrid.appendChild(card);
                 });
             }
@@ -491,18 +1030,10 @@
                 return indiceFinal;
             }
             
-            // ======= CARGA DE PLAYLIST (MODIFICADA PARA NAVIDAD) =======
             async function loadCurrentPlaylist() {
-                const fase = getFaseNavidad();
-                const archivo = fase === 'clasicos' ? 'playlist_navidad_clasicos.json' :
-                               fase === 'electronica' ? 'playlist_navidad_electronica.json' :
-                               'playlist.json';
-                
-                console.log(`🎵 Cargando playlist: ${archivo} ${fase ? '(' + fase + ')' : ''}`);
-                
                 try {
-                    const response = await fetch(archivo);
-                    if (!response.ok) throw new Error(`No se pudo cargar ${archivo}`);
+                    const response = await fetch('playlist.json');
+                    if (!response.ok) throw new Error('No playlist.json found');
                     
                     const data = await response.json();
                     
@@ -521,7 +1052,7 @@
                     // ✅ CALCULAR ÍNDICE INICIAL POR TRANSMISIÓN CONTINUA
                     if (currentPlaylist.length > 0) {
                         currentTrackIndex = calcularIndiceInicial(currentPlaylist);
-                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, posición: ${currentTrackIndex}`);
+                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, posición continua: ${currentTrackIndex}`);
                     }
                     
                 } catch (error) {
@@ -532,7 +1063,7 @@
                 
                 if (currentPlaylist.length === 0) {
                     console.warn('Playlist vacía, usando fallback');
-                    currentPlaylist = ['https://stream.teletextradio.com/live'];
+                    currentPlaylist = ['https://stream.teletextradio.com/live']; // URL de stream por defecto
                     currentTrackIndex = 0;
                 }
             }
@@ -686,27 +1217,17 @@
             // INICIALIZAR
             updateDisplayInfo();
             generateScheduleCards();
-            generateCollectionCards();
+            generateNovedades();
             loadCurrentPlaylist();
             
             setInterval(checkScheduleChange, 60000);
             setInterval(updateDisplayInfo, 60000);
-            
-            // ======= VERIFICACIÓN NAVIDEÑA (NUEVA) =======
-            let faseActual = 'normal';
-            setInterval(() => {
-                const nuevaFase = getFaseNavidad() || 'normal';
-                if (nuevaFase !== faseActual) {
-                    console.log(`🎄 Cambio de fase: ${faseActual} → ${nuevaFase}`);
-                    faseActual = nuevaFase;
-                    loadCurrentPlaylist().then(() => {
-                        if (isPlaying && currentPlaylist.length > 0) {
-                            playCurrentTrack();
-                        }
-                    });
-                }
-            }, 60000); // Verificar cada minuto
         });
     </script>
 </body>
 </html>
+
+
+
+
+

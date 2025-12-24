@@ -160,8 +160,8 @@
         }
         
         .share-button:hover {
-            border-color: #00FF37;
-            color: #00FF37;
+            border-color = '#00FF37';
+            color = '#00FF37';
         }
         
         /* CONTENIDO PRINCIPAL */
@@ -211,7 +211,7 @@
         .hero-subtitle {
             font-size: 1.2rem;
             color: rgba(255, 255, 255, 0.85);
-            max-width: 500px;
+            max-width = 500px;
             margin: 0 auto 40px;
             font-weight: 300;
         }
@@ -864,6 +864,19 @@
                 return new Date(now.getTime() + offsetDiff * 60000);
             }
             
+            // ======= DETECCIÓN NAVIDEÑA (NUEVA) =======
+            function getFaseNavidad() {
+                const ahora = getArgentinaTime();
+                const mes = ahora.getMonth();  // 11 = Diciembre
+                const dia = ahora.getDate();
+                const hora = ahora.getHours();
+                
+                // 24-25 de Diciembre
+                if (mes === 11 && dia === 24 && hora >= 20) return 'clasicos';
+                if (mes === 11 && dia === 25 && hora < 3) return 'electronica';
+                return null; // No es navidad
+            }
+            
             function formatTimeForDisplay(timeStr) {
                 const [hours, minutes] = timeStr.split(':').map(Number);
                 const period = hours >= 12 ? 'PM' : 'AM';
@@ -1030,10 +1043,25 @@
                 return indiceFinal;
             }
             
+            // ======= CARGA DE PLAYLIST (MODIFICADA PARA NAVIDAD) =======
             async function loadCurrentPlaylist() {
                 try {
-                    const response = await fetch('playlist.json');
-                    if (!response.ok) throw new Error('No playlist.json found');
+                    // DETECTAR FASE NAVIDEÑA
+                    const fase = getFaseNavidad();
+                    let archivoPlaylist;
+                    
+                    if (fase === 'clasicos') {
+                        archivoPlaylist = 'playlist_navidad_clasicos.json';
+                    } else if (fase === 'electronica') {
+                        archivoPlaylist = 'playlist_navidad_electronica.json';
+                    } else {
+                        archivoPlaylist = 'playlist.json'; // Normal
+                    }
+                    
+                    console.log(`🎵 Cargando: ${archivoPlaylist} ${fase ? '(' + fase + ')' : ''}`);
+                    
+                    const response = await fetch(archivoPlaylist);
+                    if (!response.ok) throw new Error('No playlist encontrada');
                     
                     const data = await response.json();
                     
@@ -1052,7 +1080,7 @@
                     // ✅ CALCULAR ÍNDICE INICIAL POR TRANSMISIÓN CONTINUA
                     if (currentPlaylist.length > 0) {
                         currentTrackIndex = calcularIndiceInicial(currentPlaylist);
-                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, posición continua: ${currentTrackIndex}`);
+                        console.log(`🎯 Playlist cargada: ${currentPlaylist.length} canciones, posición: ${currentTrackIndex}`);
                     }
                     
                 } catch (error) {
@@ -1063,7 +1091,7 @@
                 
                 if (currentPlaylist.length === 0) {
                     console.warn('Playlist vacía, usando fallback');
-                    currentPlaylist = ['https://stream.teletextradio.com/live']; // URL de stream por defecto
+                    currentPlaylist = ['https://stream.teletextradio.com/live'];
                     currentTrackIndex = 0;
                 }
             }
@@ -1222,12 +1250,22 @@
             
             setInterval(checkScheduleChange, 60000);
             setInterval(updateDisplayInfo, 60000);
+            
+            // ======= VERIFICACIÓN NAVIDEÑA (NUEVA) =======
+            let faseActual = 'normal';
+            setInterval(() => {
+                const nuevaFase = getFaseNavidad() || 'normal';
+                if (nuevaFase !== faseActual) {
+                    console.log(`🎄 Cambio: ${faseActual} → ${nuevaFase}`);
+                    faseActual = nuevaFase;
+                    loadCurrentPlaylist().then(() => {
+                        if (isPlaying && currentPlaylist.length > 0) {
+                            playCurrentTrack();
+                        }
+                    });
+                }
+            }, 60000);
         });
     </script>
 </body>
 </html>
-
-
-
-
-

@@ -817,14 +817,17 @@
             };
             
             const scheduleData = {
-                "schedules": [
-                    {
-                        "name": "madrugada",
-                        "displayName": "Madrugada txt",
-                        "start": "01:00",
-                        "end": "06:00",
-                        "description": programDescriptions.madrugada
-                    },
+            "schedules": [
+        // ... tus otros horarios actuales (madrugada, mañana, tarde, mediatarde, noche)
+        {
+            "name": "especiales",
+            "displayName": "Especiales txt",  // ← NUEVO PROGRAMA
+            "start": "20:00",
+            "end": "01:00",
+            "description": "Selecciones especiales y temáticas."
+        }
+    ]
+};
                     {
                         "name": "mañana",
                         "displayName": "Telesoft",
@@ -1272,4 +1275,5 @@
     </script>
 </body>
 </html>
+
 

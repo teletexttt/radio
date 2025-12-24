@@ -106,17 +106,22 @@ function loadTrack(index, startPosition = 0) {
     const duracionTotal = track.duration || audio.duration || 300;
     
     if (duracionTotal > 10) {
-        // Validar posición de inicio
-        let posicionSegundos = Math.min(Math.max(startPosition, 0), duracionTotal - 5);
+        // ✅ CORRECCIÓN: Si startPosition es 0 (canción siguiente), usar 0
+        // Si startPosition tiene valor (canción actual), usar posición sincronizada
         
-        // Si la posición es muy cercana al final, pasar a siguiente canción
-        if (posicionSegundos > duracionTotal - 5) {
-            playNextTrack();
-            return;
+        let posicionSegundos;
+        
+        if (startPosition === 0) {
+            // CANCIÓN SIGUIENTE: siempre empieza desde 0
+            posicionSegundos = 0;
+            console.log(`▶️ Canción siguiente: ${track.file}, inicio desde 0s`);
+        } else {
+            // CANCIÓN ACTUAL: usar posición sincronizada
+            posicionSegundos = Math.min(Math.max(startPosition, 10), duracionTotal - 5);
+            console.log(`⏱️ Canción actual: ${track.file}, posición: ${Math.floor(posicionSegundos)}s`);
         }
         
         audio.currentTime = posicionSegundos;
-        console.log(`⏱️ Canción: ${track.file}, Posición: ${Math.floor(posicionSegundos)}s/${Math.floor(duracionTotal)}s`);
         
         // Auto-play si estaba reproduciendo
         if (isPlaying) {
@@ -134,13 +139,15 @@ function playNextTrack() {
   
   const nextIndex = (currentIndex + 1) % playlist.length;
   
+  console.log(`⏭️ Reproduciendo siguiente canción: ${nextIndex+1}/${playlist.length}`);
+  
   // Fade out simple
   const fadeOut = setInterval(() => {
     if (audio.volume > 0.1) {
       audio.volume -= 0.1;
     } else {
       clearInterval(fadeOut);
-      loadTrack(nextIndex, 0); // Iniciar desde 0
+      loadTrack(nextIndex, 0); // ✅ Iniciar desde 0
       audio.play().then(() => {
         isPlaying = true;
       }).catch(() => playNextTrack());
@@ -348,4 +355,4 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateCurrentShow, 60000);
 });
 
-console.log("📻 Teletext Radio - Emisión sincronizada 24/7 cargada");
+console.log("📻 Teletext Radio - Cada canción siguiente empieza desde 0");

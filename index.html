@@ -912,8 +912,11 @@
             
             function updateDisplayInfo() {
                 currentSchedule = getCurrentSchedule();
-                const displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
-                
+                // TÍTULO ESPECIAL NAVIDEÑO
+                const faseNavidad = getFaseNavidad();
+                const displayName = (faseNavidad === 'clasicos' || faseNavidad === 'electronica') 
+                 ? 'Especial txt'  // ← Título navideño
+                : currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name; // ← Título normal
                 currentShow.textContent = displayName;
                 currentTimeName.textContent = displayName;
                 currentTimeRange.textContent = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
@@ -1269,3 +1272,4 @@
     </script>
 </body>
 </html>
+

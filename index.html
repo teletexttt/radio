@@ -160,8 +160,8 @@
         }
         
         .share-button:hover {
-            border-color = '#00FF37';
-            color = '#00FF37';
+            border-color: #00FF37;
+            color: #00FF37;
         }
         
         /* CONTENIDO PRINCIPAL */
@@ -211,7 +211,7 @@
         .hero-subtitle {
             font-size: 1.2rem;
             color: rgba(255, 255, 255, 0.85);
-            max-width = 500px;
+            max-width: 500px;
             margin: 0 auto 40px;
             font-weight: 300;
         }
@@ -817,17 +817,14 @@
             };
             
             const scheduleData = {
-            "schedules": [
-        // ... tus otros horarios actuales (madrugada, mañana, tarde, mediatarde, noche)
-        {
-            "name": "especiales",
-            "displayName": "Especiales txt",  // ← NUEVO PROGRAMA
-            "start": "20:00",
-            "end": "01:00",
-            "description": "Selecciones especiales y temáticas."
-        }
-    ]
-};
+                "schedules": [
+                    {
+                        "name": "madrugada",
+                        "displayName": "Madrugada txt",
+                        "start": "01:00",
+                        "end": "06:00",
+                        "description": programDescriptions.madrugada
+                    },
                     {
                         "name": "mañana",
                         "displayName": "Telesoft",
@@ -915,11 +912,13 @@
             
             function updateDisplayInfo() {
                 currentSchedule = getCurrentSchedule();
+                
                 // TÍTULO ESPECIAL NAVIDEÑO
                 const faseNavidad = getFaseNavidad();
                 const displayName = (faseNavidad === 'clasicos' || faseNavidad === 'electronica') 
-                 ? 'Especial txt'  // ← Título navideño
-                : currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name; // ← Título normal
+                    ? 'Especial txt'  // ← Título navideño
+                    : currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name; // ← Título normal
+                
                 currentShow.textContent = displayName;
                 currentTimeName.textContent = displayName;
                 currentTimeRange.textContent = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
@@ -1275,5 +1274,3 @@
     </script>
 </body>
 </html>
-
-

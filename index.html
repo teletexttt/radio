@@ -1120,14 +1120,22 @@
                 
                 // INICIO ALEATORIO DENTRO DE LA CANCIÓN (solo para archivos locales)
                 if (track.includes('.mp3') || track.includes('.ogg') || track.includes('.wav')) {
-                    audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
-                        audioPlayer.removeEventListener('loadedmetadata', onMetadata);
-                        
-                        if (audioPlayer.duration > 30) {
-                            const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
-                            audioPlayer.currentTime = randomStart;
-                            console.log(`⏱️ Inicio aleatorio en canción: ${Math.floor(randomStart)}s`);
-                        }
+                   audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
+    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
+    
+    // VERIFICAR SI ES NUEVA CANCIÓN O RECARGA
+    const esRecarga = (audioPlayer.currentTime > 0); // Si ya tenía tiempo, es recarga
+    
+    if (audioPlayer.duration > 30 && esRecarga) {
+        // SOLO inicio aleatorio si es RECARGA de la misma canción
+        const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
+        audioPlayer.currentTime = randomStart;
+        console.log(`⏱️ Recarga - Inicio aleatorio: ${Math.floor(randomStart)}s`);
+    } else {
+        // NUEVA canción empieza desde 0
+        audioPlayer.currentTime = 0;
+        console.log(`⏱️ Nueva canción - Inicio en 0s`);
+    }
                         
                         // REPRODUCIR INMEDIATAMENTE SI LA RADIO ESTÁ ENCENDIDA
                         if (isPlaying) {
@@ -1274,3 +1282,4 @@
     </script>
 </body>
 </html>
+

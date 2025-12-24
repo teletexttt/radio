@@ -1,1 +1,21 @@
-{"tracks":["music/navidad/clasicos/bailarinamiranda.mp3","music/navidad/clasicos/goodlife.mp3","music/navidad/clasicos/gypsywoman.mp3","music/navidad/clasicos/lovegames.mp3","music/navidad/clasicos/theperfectkissneworder.mp3","music/navidad/clasicos/vanityrap.mp3","music/navidad/clasicos/windluxury.mp3"]}
+{
+  "tracks": [
+    "music/navidad/clasicos/bailarinamiranda.mp3",
+    "music/navidad/clasicos/bizarretriangule.mp3",
+    "music/navidad/clasicos/bluelovemix.mp3",
+    "music/navidad/clasicos/charliespencerwoman.mp3",
+    "music/navidad/clasicos/doncarlosfree.mp3",
+    "music/navidad/clasicos/goodlife.mp3",
+    "music/navidad/clasicos/gypsywoman.mp3",
+    "music/navidad/clasicos/iconfess.mp3",
+    "music/navidad/clasicos/lovegames.mp3",
+    "music/navidad/clasicos/myminehiptango.mp3",
+    "music/navidad/clasicos/problemesdamour.mp3",
+    "music/navidad/clasicos/summersweet.mp3",
+    "music/navidad/clasicos/theperfectkissneworder.mp3",
+    "music/navidad/clasicos/turnstyle.mp3",
+    "music/navidad/clasicos/vanityrap.mp3",
+    "music/navidad/clasicos/windluxury.mp3",
+    "music/navidad/clasicos/yourlovefrankie.mp3"
+  ]
+}

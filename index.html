@@ -997,42 +997,40 @@
             
             async function loadCurrentPlaylist() {
                 try {
-                    currentSchedule = getCurrentSchedule();
-                    const folderName = currentSchedule.name;
+                    console.log('📻 Cargando playlist.json...');
                     
-                    console.log(`🎵 Cargando música para: ${folderName}`);
+                    const response = await fetch('playlist.json');
+                    if (!response.ok) {
+                        console.error('❌ No se encontró playlist.json');
+                        // Fallback local
+                        currentPlaylist = ['music/jazzcartel.mp3'];
+                        return;
+                    }
                     
-                    // Cargar music.json con TODAS las listas
-                    const response = await fetch('music.json');
-                    if (!response.ok) throw new Error('No se encontró music.json');
+                    const data = await response.json();
                     
-                    const allMusic = await response.json();
-                    
-                    // Obtener la playlist de la carpeta actual
-                    if (allMusic[folderName] && Array.isArray(allMusic[folderName])) {
-                        currentPlaylist = allMusic[folderName];
-                        console.log(`✅ Encontrados ${currentPlaylist.length} tracks para ${folderName}`);
+                    if (data.tracks && Array.isArray(data.tracks)) {
+                        currentPlaylist = data.tracks;
+                        console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
+                        
+                        // Empezar desde una posición aleatoria en la lista
+                        currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
+                        console.log(`🎯 Empezando en posición: ${currentTrackIndex}`);
                     } else {
-                        console.warn(`❌ No hay tracks para ${folderName}, usando fallback`);
-                        // FALLBACK A STREAM 24/7 SI NO HAY MÚSICA
-                        currentPlaylist = ['https://stream.teletextradio.com/live'];
+                        console.error('❌ Formato incorrecto en playlist.json');
+                        currentPlaylist = ['music/jazzcartel.mp3'];
                     }
                     
                 } catch (error) {
-                    console.log('Error cargando music.json:', error);
-                    // FALLBACK ABSOLUTO A STREAM
-                    currentPlaylist = ['https://stream.teletextradio.com/live'];
-                }
-                
-                // Asegurar que siempre haya algo para reproducir
-                if (currentPlaylist.length === 0) {
-                    currentPlaylist = ['https://stream.teletextradio.com/live'];
+                    console.log('Error cargando playlist:', error);
+                    // Fallback absoluto
+                    currentPlaylist = ['music/jazzcartel.mp3'];
                 }
             }
             
             function playNextTrack() {
                 if (currentPlaylist.length === 0) {
-                    console.log('❌ Playlist vacía, recargando...');
+                    console.log('⚠️ Playlist vacía, recargando...');
                     loadCurrentPlaylist().then(() => {
                         if (currentPlaylist.length > 0) {
                             currentTrackIndex = 0;
@@ -1051,7 +1049,6 @@
                 }, 50);
             }
             
-            // ✅ FUNCIÓN DE AUDIO MEJORADA - MANEJA ERRORES CORRECTAMENTE
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) {
                     console.log('⚠️ No hay canciones en la playlist');
@@ -1164,10 +1161,8 @@
                 
                 if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
                     console.log(`🔄 Cambio de horario: ${oldSchedule} → ${currentSchedule.name}`);
-                    loadCurrentPlaylist().then(() => {
-                        currentTrackIndex = 0;
-                        playCurrentTrack();
-                    });
+                    // Por ahora, no cambiamos la música al cambiar de horario
+                    // En el futuro, cargaríamos playlist diferente
                 }
             }
             
@@ -1204,38 +1199,13 @@
             
             shareButton.addEventListener('click', shareRadio);
             
-            // ✅ FUNCIÓN PARA INICIAR LA RADIO AUTOMÁTICAMENTE
-            async function iniciarRadioAutomaticamente() {
-                console.log('🚀 INICIANDO RADIO AUTOMÁTICAMENTE...');
-                
-                // Feedback visual
-                document.querySelector('.fixed-player').classList.add('radio-iniciando');
-                
-                // Cargar playlist y empezar
-                await loadCurrentPlaylist();
-                
-                if (currentPlaylist.length > 0) {
-                    isPlaying = true;
-                    updatePlayButton();
-                    playCurrentTrack();
-                    
-                    console.log('🎧 RADIO INICIADA AUTOMÁTICAMENTE');
-                } else {
-                    console.error('❌ No se pudo cargar música');
-                }
-                
-                // Quitar feedback visual después de 2 segundos
-                setTimeout(() => {
-                    document.querySelector('.fixed-player').classList.remove('radio-iniciando');
-                }, 2000);
-            }
-            
+            // ✅ INICIALIZACIÓN SIN AUTOPLAY
             updateDisplayInfo();
             generateScheduleCards();
             generateCollectionCards();
             
-            // ✅ INICIAR LA RADIO INMEDIATAMENTE
-            iniciarRadioAutomaticamente();
+            // Cargar playlist pero NO reproducir automáticamente
+            loadCurrentPlaylist();
             
             setInterval(checkScheduleChange, 60000);
             setInterval(updateDisplayInfo, 60000);

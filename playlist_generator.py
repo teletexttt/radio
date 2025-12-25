@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-GENERADOR AUTOMÁTICO de playlist ÚNICO para Teletext Radio
-- Calcula duraciones REALES de todos los MP3
-- Genera playlist.json principal con orden aleatorio FIJO
+GENERADOR DE PLAYLIST POR PROGRAMA para Teletext Radio
+- Genera un playlist.json dentro de cada carpeta de programa
 """
 
 import os
@@ -12,42 +11,40 @@ from pathlib import Path
 
 # Configuración
 BASE_DIR = Path(".")
-MUSIC_DIR = BASE_DIR / "music"
-SEMILLA_FIJA = 42  # Para que el orden aleatorio sea siempre el mismo
+MUSIC_ROOT = BASE_DIR / "music"
+PROGRAMS = ["madrugadatxt", "telesoft", "radio404", "especialestxt", "internetarchive", "teletext"]
 
 def obtener_duracion_real(mp3_path):
     """Obtiene duración real del MP3 usando mutagen"""
     try:
-        # Si no tienes mutagen: pip install mutagen
         from mutagen.mp3 import MP3
         audio = MP3(mp3_path)
-        return int(audio.info.length)  # segundos
+        return int(audio.info.length)
     except ImportError:
         print("⚠️  Instala mutagen: pip install mutagen")
-        # Estimación aproximada (5 min por defecto)
         return 300
     except Exception:
-        # Si falla, estimar basado en tamaño (≈ 1MB/min)
         size_mb = mp3_path.stat().st_size / (1024 * 1024)
         return int(size_mb * 60) if size_mb > 0 else 300
 
-def main():
-    print("=" * 60)
-    print("GENERADOR DE PLAYLIST ÚNICO - Teletext Radio")
-    print("=" * 60)
+def generar_playlist_para_programa(programa):
+    """Genera playlist.json para un programa específico"""
+    programa_dir = MUSIC_ROOT / programa
     
-    # Buscar TODOS los MP3 en music/
-    archivos_mp3 = []
-    for ext in ['*.mp3', '*.MP3']:
-        archivos_mp3.extend(MUSIC_DIR.glob(ext))
-    
-    if not archivos_mp3:
-        print("❌ No hay archivos MP3 en music/")
+    if not programa_dir.exists():
+        print(f"❌ Carpeta {programa} no existe")
         return
     
-    print(f"📁 Encontrados {len(archivos_mp3)} archivos MP3")
+    # Buscar MP3 en esta carpeta
+    archivos_mp3 = []
+    for ext in ['*.mp3', '*.MP3']:
+        archivos_mp3.extend(programa_dir.glob(ext))
     
-    # Crear lista con duraciones reales
+    if not archivos_mp3:
+        print(f"⚠️  No hay MP3 en {programa}")
+        return
+    
+    # Crear tracks
     tracks = []
     duracion_total = 0
     
@@ -56,46 +53,45 @@ def main():
         tracks.append({
             "file": mp3.name,
             "duration": duracion,
-            "path": f"music/{mp3.name}"
+            "url": f"music/{programa}/{mp3.name}"  # Ruta relativa desde index.html
         })
         duracion_total += duracion
     
-    # Orden aleatorio FIJO (misma semilla siempre)
-    random.seed(SEMILLA_FIJA)
+    # Orden aleatorio FIJO (semilla basada en nombre del programa)
+    semilla = sum(ord(c) for c in programa)
+    random.seed(semilla)
     random.shuffle(tracks)
     
-    # Crear estructura final
+    # Estructura final
     playlist_data = {
         "version": "1.0",
-        "seed": SEMILLA_FIJA,  # Para regenerar el mismo orden
+        "program": programa,
         "total_duration": duracion_total,
         "total_tracks": len(tracks),
         "tracks": tracks
     }
     
-    # Guardar playlist.json principal
-    output_path = BASE_DIR / "playlist.json"
+    # Guardar dentro de la carpeta del programa
+    output_path = programa_dir / "playlist.json"
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(playlist_data, f, indent=2, ensure_ascii=False)
     
-    # Mostrar resumen
-    print("\n" + "=" * 60)
-    print("📊 RESUMEN GENERADO:")
+    print(f"✅ {programa}: {len(tracks)} tracks, {duracion_total/3600:.1f}h")
+
+def main():
     print("=" * 60)
-    print(f"📍 Archivo: {output_path}")
-    print(f"🎵 Canciones: {len(tracks)}")
-    print(f"⏱️  Duración total: {duracion_total} segundos")
-    print(f"   ({duracion_total/3600:.2f} horas)")
-    print(f"🔀 Orden aleatorio fijo (semilla: {SEMILLA_FIJA})")
-    print("\n📋 PRIMERAS 10 CANCIONES:")
-    for i, track in enumerate(tracks[:10]):
-        mins = track['duration'] // 60
-        segs = track['duration'] % 60
-        print(f"  {i+1:2d}. {track['file']} ({mins}:{segs:02d})")
+    print("GENERADOR DE PLAYLIST POR PROGRAMA - Teletext Radio")
+    print("=" * 60)
     
-    if len(tracks) > 10:
-        print(f"  ... y {len(tracks)-10} más")
+    for programa in PROGRAMS:
+        generar_playlist_para_programa(programa)
     
+    print("\n" + "=" * 60)
+    print("🎯 TODOS LOS PLAYLISTS GENERADOS")
+    print("=" * 60)
+    print("📍 Ubicación: music/<programa>/playlist.json")
+    print("📁 Programas procesados:", ", ".join(PROGRAMS))
+    print("\n⚠️  EJECUTA: python playlist_generator.py")
     print("=" * 60)
 
 if __name__ == "__main__":

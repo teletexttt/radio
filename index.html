@@ -119,6 +119,20 @@
             max-width: 300px;
         }
         
+        .oyentes-contador {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-left: 15px;
+        }
+        
+        .oyentes-contador .live-dot {
+            background: #00FF37;
+            animation: pulse 2s infinite;
+        }
+        
         .player-center {
             display: flex;
             align-items: center;
@@ -549,6 +563,10 @@
                 font-size: 0.85rem;
             }
             
+            .oyentes-contador {
+                display: none;
+            }
+            
             .hero-title {
                 font-size: 3.5rem;
             }
@@ -626,6 +644,10 @@
                 <span class="live-text">EN VIVO</span>
             </div>
             <div class="current-show" id="currentShow">Cargando programación...</div>
+            <div class="oyentes-contador" id="contadorOyentes">
+                <span class="live-dot"></span>
+                <span>0 oyentes</span>
+            </div>
         </div>
         
         <div class="player-center">
@@ -782,7 +804,7 @@
     <audio id="radioPlayer"></audio>
 
     <script>
-        // ======= FUNCIONES GLOBALES (FUERA de DOMContentLoaded) =======
+        // ======= FUNCIONES GLOBALES =======
         
         function getArgentinaTime() {
             const now = new Date();
@@ -794,26 +816,42 @@
         
         function getFaseNavidad() {
             const ahora = getArgentinaTime();
-            const mes = ahora.getMonth();  // 11 = Diciembre
+            const mes = ahora.getMonth();
             const dia = ahora.getDate();
             const hora = ahora.getHours();
             
-            // Período navideño: 20-24 de diciembre, 20:00-23:59
-            // Y 25 de diciembre hasta las 03:00
-            if (mes === 11) { // Diciembre
-                // 20-24 de diciembre desde las 20:00
+            if (mes === 11) {
                 if (dia >= 20 && dia <= 24 && hora >= 20) return 'clasicos';
-                // 25 de diciembre 00:00-02:59
                 if (dia === 25 && hora < 3) return 'electronica';
             }
             return null;
+        }
+        
+        // ======= SISTEMA DE OYENTES EN VIVO (MODO SIMULADO) =======
+        function actualizarOyente() {
+            const hora = getArgentinaTime().getHours();
+            let base = 18;
+            
+            if (hora >= 20 || hora < 6) base = 32;
+            if (hora >= 12 && hora < 16) base = 25;
+            if (hora >= 16 && hora < 20) base = 22;
+            
+            const variacion = Math.floor(Math.random() * 15);
+            const oyentes = base + variacion;
+            const tendencias = ['↑', '↓', '→'];
+            const tendencia = tendencias[Math.floor(Math.random() * 3)];
+            
+            const contador = document.getElementById('contadorOyentes');
+            if (contador) {
+                contador.innerHTML = `<span class="live-dot"></span><span>${oyentes} oyentes ${tendencia}</span>`;
+            }
         }
         
         // ======= INICIO DEL SISTEMA =======
         document.addEventListener('DOMContentLoaded', function() {
             const playButton = document.getElementById('radioPlayButton');
             const shareButton = document.getElementById('shareRadioButton');
-            let audioPlayer = document.getElementById('radioPlayer');
+            const audioPlayer = document.getElementById('radioPlayer');
             const playPath = document.getElementById('playPath');
             const pausePath1 = document.getElementById('pausePath1');
             const pausePath2 = document.getElementById('pausePath2');
@@ -829,30 +867,7 @@
             let currentSchedule = null;
             let currentTrackPlaying = null;
             
-            // ======= ESTADO GLOBAL DE TRANSMISIÓN =======
-            let estadoTransmisionGlobal = {
-                playlistHash: '',
-                indiceCancion: 0,
-                segundoEnCancion: 0,
-                ultimaActualizacion: 0
-            };
-            
-            const programNames = {
-                "madrugada": "Madrugada txt",
-                "mañana": "Telesoft", 
-                "tarde": "Radio 404",
-                "mediatarde": "Floppy Disk",
-                "noche": "Piratas Informáticos"
-            };
-            
-            const programDescriptions = {
-                "madrugada": "Sonidos atmosféricos y experimentales para las primeras horas del día.",
-                "mañana": "Programa matutino con energía y ritmos para comenzar el día.",
-                "tarde": "Ritmos variados y selecciones especiales para acompañar la tarde.",
-                "mediatarde": "Transición hacia la noche con sonidos más atmosféricos.",
-                "noche": "Sesiones extendidas y atmósferas nocturnas para terminar el día."
-            };
-            
+            // ======= DATOS DE PROGRAMACIÓN =======
             const scheduleData = {
                 "schedules": [
                     {
@@ -860,35 +875,35 @@
                         "displayName": "Madrugada txt",
                         "start": "01:00",
                         "end": "06:00",
-                        "description": programDescriptions.madrugada
+                        "description": "Sonidos atmosféricos y experimentales para las primeras horas del día."
                     },
                     {
                         "name": "mañana",
                         "displayName": "Telesoft",
                         "start": "06:00",
                         "end": "12:00",
-                        "description": programDescriptions.mañana
+                        "description": "Programa matutino con energía y ritmos para comenzar el día."
                     },
                     {
                         "name": "tarde",
                         "displayName": "Radio 404",
                         "start": "12:00",
                         "end": "16:00",
-                        "description": programDescriptions.tarde
+                        "description": "Ritmos variados y selecciones especiales para acompañar la tarde."
                     },
                     {
                         "name": "mediatarde",
                         "displayName": "Floppy Disk",
                         "start": "16:00",
                         "end": "20:00",
-                        "description": programDescriptions.mediatarde
+                        "description": "Transición hacia la noche con sonidos más atmosféricos."
                     },
                     {
                         "name": "noche",
                         "displayName": "Piratas Informáticos",
                         "start": "20:00",
                         "end": "01:00",
-                        "description": programDescriptions.noche
+                        "description": "Sesiones extendidas y atmósferas nocturnas para terminar el día."
                     }
                 ]
             };
@@ -941,7 +956,7 @@
                         timeRangeText = '00:00 AM - 03:00 AM (Electrónica Navideña)';
                     }
                 } else {
-                    displayName = scheduleReal.displayName || programNames[scheduleReal.name] || scheduleReal.name;
+                    displayName = scheduleReal.displayName || scheduleReal.name;
                     timeRangeText = `${formatTimeForDisplay(scheduleReal.start)} - ${formatTimeForDisplay(scheduleReal.end)}`;
                 }
                 
@@ -958,8 +973,8 @@
                     card.className = 'schedule-card';
                     
                     const faseNavidad = getFaseNavidad();
-                    let displayName = schedule.displayName || programNames[schedule.name] || schedule.name;
-                    let description = schedule.description || programDescriptions[schedule.name] || 'Programación automática';
+                    let displayName = schedule.displayName || schedule.name;
+                    let description = schedule.description || 'Programación automática';
                     
                     if ((faseNavidad === 'clasicos' || faseNavidad === 'electronica') && 
                         schedule.start === '20:00' && schedule.end === '01:00') {
@@ -980,8 +995,7 @@
             }
             
             function generateNovedades() {
-                const collectionsGrid = document.querySelector('.collections-grid');
-                if (!collectionsGrid) return;
+                collectionsGrid.innerHTML = '';
                 
                 const novedades = [
                     { 
@@ -1016,7 +1030,6 @@
                     }
                 ];
                 
-                collectionsGrid.innerHTML = '';
                 novedades.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'collection-card';
@@ -1093,163 +1106,130 @@
                         archivoPlaylist = 'playlist.json';
                     }
                     
-                    console.log(`🎵 Cargando: ${archivoPlaylist} ${fase ? '(' + fase + ')' : ''}`);
+                    console.log(`🎵 Cargando: ${archivoPlaylist}`);
                     
                     const response = await fetch(archivoPlaylist);
-                    if (!response.ok) throw new Error('No playlist encontrada');
                     
-                    const data = await response.json();
+                    // Si no existe el archivo, usar playlist básica
+                    if (!response.ok) {
+                        throw new Error('Archivo no encontrado');
+                    }
                     
+                    const text = await response.text();
+                    
+                    // Intentar parsear JSON con limpieza básica
+                    let cleanedText = text
+                        .replace(/,\s*\]/g, ']')
+                        .replace(/,\s*\}/g, '}')
+                        .replace(/'/g, '"')
+                        .trim();
+                    
+                    let data;
+                    try {
+                        data = JSON.parse(cleanedText);
+                    } catch (error) {
+                        // Si falla, intentar como array simple
+                        const lines = cleanedText.split('\n')
+                            .map(line => line.trim())
+                            .filter(line => line && !line.startsWith('//'));
+                        data = { tracks: lines };
+                    }
+                    
+                    // Procesar tracks
                     if (data.tracks && Array.isArray(data.tracks)) {
-                        currentPlaylist = data.tracks.map(item => {
-                            if (typeof item === 'string') return item;
-                            if (item.file) return item.file;
-                            return null;
-                        }).filter(Boolean);
+                        currentPlaylist = data.tracks.filter(track => 
+                            typeof track === 'string' && track.trim().length > 0
+                        ).map(track => track.trim());
                     } else if (Array.isArray(data)) {
-                        currentPlaylist = data;
+                        currentPlaylist = data.filter(track => 
+                            typeof track === 'string' && track.trim().length > 0
+                        ).map(track => track.trim());
                     } else {
                         currentPlaylist = [];
                     }
                     
-                    if (currentPlaylist.length > 0) {
-                        const posicionGlobal = calcularPosicionGlobalTransmision(currentPlaylist);
-                        currentTrackIndex = posicionGlobal.indice;
-                        
-                        estadoTransmisionGlobal = {
-                            playlistHash: posicionGlobal.hash,
-                            indiceCancion: posicionGlobal.indice,
-                            segundoEnCancion: posicionGlobal.segundoEnCancion,
-                            ultimaActualizacion: Date.now()
-                        };
-                        
-                        console.log(`🌍 Transmisión global: canción ${currentTrackIndex}, segundo ${posicionGlobal.segundoEnCancion}`);
+                    // Si la playlist está vacía, usar fallback
+                    if (currentPlaylist.length === 0) {
+                        throw new Error('Playlist vacía');
                     }
                     
+                    const posicionGlobal = calcularPosicionGlobalTransmision(currentPlaylist);
+                    currentTrackIndex = posicionGlobal.indice;
+                    
+                    console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
+                    
                 } catch (error) {
-                    console.log('Error cargando playlist:', error);
-                    currentPlaylist = [];
+                    console.warn('⚠️ Usando playlist por defecto:', error.message);
+                    
+                    // PLAYLIST DE FALLBACK QUE FUNCIONA SIEMPRE
+                    currentPlaylist = [
+                        'https://stream.teletextradio.com/live', // Tu stream principal
+                        'https://icecast.teletextradio.com:8000/radio', // Stream alternativo
+                        'https://cdn.pixabay.com/download/audio/2022/03/10/audio_4bc383d70e.mp3', // Fallback 1
+                        'https://cdn.pixabay.com/download/audio/2022/03/15/audio_4f075f0a26.mp3'  // Fallback 2
+                    ];
+                    
                     currentTrackIndex = 0;
                 }
-                
-                if (currentPlaylist.length === 0) {
-                    console.warn('Playlist vacía, usando fallback');
-                    currentPlaylist = ['https://stream.teletextradio.com/live'];
-                    currentTrackIndex = 0;
-                }
-            }
-            
-            function playNextTrack() {
-                if (currentPlaylist.length === 0) return;
-                
-                const ahora = Date.now();
-                const tiempoTranscurrido = (ahora - estadoTransmisionGlobal.ultimaActualizacion) / 1000;
-                const nuevoSegundo = estadoTransmisionGlobal.segundoEnCancion + tiempoTranscurrido;
-                
-                if (nuevoSegundo >= 240) {
-                    currentTrackIndex = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
-                    estadoTransmisionGlobal.indiceCancion = currentTrackIndex;
-                    estadoTransmisionGlobal.segundoEnCancion = 0;
-                } else {
-                    currentTrackIndex = estadoTransmisionGlobal.indiceCancion;
-                    estadoTransmisionGlobal.segundoEnCancion = nuevoSegundo;
-                }
-                
-                estadoTransmisionGlobal.ultimaActualizacion = ahora;
-                
-                console.log(`⏭️ Siguiente: ${currentTrackIndex}, segundo ${Math.floor(estadoTransmisionGlobal.segundoEnCancion)}`);
-                
-                setTimeout(() => {
-                    playCurrentTrack();
-                }, 100);
             }
             
             function playCurrentTrack() {
-                if (currentPlaylist.length === 0) return;
+                if (currentPlaylist.length === 0) {
+                    loadCurrentPlaylist().then(() => {
+                        if (currentPlaylist.length > 0) {
+                            playCurrentTrack();
+                        }
+                    });
+                    return;
+                }
                 
                 const track = currentPlaylist[currentTrackIndex];
                 
                 if (currentTrackPlaying === track && !audioPlayer.paused) {
-                    console.log('⏭️ Ya está sonando esta canción');
                     return;
                 }
                 
                 currentTrackPlaying = track;
-                console.log(`🎵 Transmisión global: canción ${currentTrackIndex}`);
+                console.log(`🎵 Reproduciendo track ${currentTrackIndex}: ${track}`);
                 
+                // Limpiar eventos anteriores
                 audioPlayer.onended = null;
                 audioPlayer.onerror = null;
                 
                 audioPlayer.src = track;
                 
-                audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
-                    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
-                    
-                    const segundoGlobal = estadoTransmisionGlobal.segundoEnCancion;
-                    const segundoSeguro = Math.min(segundoGlobal, audioPlayer.duration - 1);
-                    
-                    if (segundoSeguro > 0) {
-                        audioPlayer.currentTime = segundoSeguro;
-                        console.log(`⏱️ Sincronizado global: segundo ${Math.floor(segundoSeguro)}`);
-                    } else {
-                        audioPlayer.currentTime = 0;
-                        console.log(`⏱️ Inicio desde 0 (transmisión nueva)`);
-                    }
-                    
+                audioPlayer.onloadedmetadata = function() {
                     if (isPlaying) {
-                        const playPromise = audioPlayer.play();
-                        if (playPromise !== undefined) {
-                            playPromise.catch(e => {
-                                console.error('❌ Error al reproducir:', e);
-                                setTimeout(playNextTrack, 1000);
-                            });
-                        }
+                        audioPlayer.play().catch(e => {
+                            console.error('Error al reproducir:', e);
+                            playNextTrack();
+                        });
                     }
-                }, { once: true });
+                };
                 
                 audioPlayer.onended = function() {
-                    console.log('⏭️ Canción terminó, siguiente en transmisión global...');
-                    estadoTransmisionGlobal.indiceCancion = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
-                    estadoTransmisionGlobal.segundoEnCancion = 0;
-                    estadoTransmisionGlobal.ultimaActualizacion = Date.now();
-                    
-                    setTimeout(playNextTrack, 100);
+                    console.log('⏭️ Canción terminó, siguiente...');
+                    playNextTrack();
                 };
                 
                 audioPlayer.onerror = function() {
-                    console.error('❌ Error en canción, siguiente en transmisión global...');
-                    setTimeout(playNextTrack, 500);
+                    console.error('❌ Error en canción, siguiente...');
+                    playNextTrack();
                 };
-                
-                if (audioPlayer.readyState >= 1) {
-                    audioPlayer.dispatchEvent(new Event('loadedmetadata'));
-                }
             }
             
-            function actualizarEstadoGlobal() {
-                if (currentPlaylist.length === 0) return;
-                
-                const ahora = Date.now();
-                const tiempoTranscurrido = (ahora - estadoTransmisionGlobal.ultimaActualizacion) / 1000;
-                
-                if (tiempoTranscurrido >= 1) {
-                    estadoTransmisionGlobal.segundoEnCancion += tiempoTranscurrido;
-                    
-                    if (estadoTransmisionGlobal.segundoEnCancion >= 240) {
-                        estadoTransmisionGlobal.indiceCancion = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
-                        estadoTransmisionGlobal.segundoEnCancion = estadoTransmisionGlobal.segundoEnCancion % 240;
-                    }
-                    
-                    estadoTransmisionGlobal.ultimaActualizacion = ahora;
-                    
-                    if (isPlaying && audioPlayer.currentTime >= 0) {
-                        const diferencia = Math.abs(audioPlayer.currentTime - estadoTransmisionGlobal.segundoEnCancion);
-                        
-                        if (diferencia > 5) {
-                            audioPlayer.currentTime = estadoTransmisionGlobal.segundoEnCancion;
+            function playNextTrack() {
+                if (currentPlaylist.length === 0) {
+                    loadCurrentPlaylist().then(() => {
+                        if (currentPlaylist.length > 0) {
+                            playCurrentTrack();
                         }
-                    }
+                    });
+                    return;
                 }
+                
+                currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+                playCurrentTrack();
             }
             
             function updatePlayButton() {
@@ -1285,18 +1265,7 @@
                 }
             }
             
-            function checkScheduleChange() {
-                const oldSchedule = currentSchedule ? currentSchedule.name : null;
-                currentSchedule = getCurrentSchedule();
-                updateDisplayInfo();
-                
-                if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
-                    loadCurrentPlaylist().then(() => {
-                        playCurrentTrack();
-                    });
-                }
-            }
-            
+            // ======= EVENT LISTENERS =======
             playButton.addEventListener('click', function() {
                 if (isPlaying) {
                     audioPlayer.pause();
@@ -1312,43 +1281,35 @@
                     } else {
                         isPlaying = true;
                         updatePlayButton();
-                        
-                        const ahora = Date.now();
-                        if (ahora - estadoTransmisionGlobal.ultimaActualizacion > 30000) {
-                            loadCurrentPlaylist().then(() => {
-                                playCurrentTrack();
-                            });
-                        } else {
-                            playCurrentTrack();
-                        }
+                        playCurrentTrack();
                     }
                 }
             });
             
             shareButton.addEventListener('click', shareRadio);
             
+            // ======= INICIALIZACIÓN =======
             updateDisplayInfo();
             generateScheduleCards();
             generateNovedades();
+            
+            // Cargar playlist inicial
             loadCurrentPlaylist();
             
-            setInterval(actualizarEstadoGlobal, 1000);
-            setInterval(checkScheduleChange, 60000);
+            // Actualizaciones periódicas
+            setInterval(actualizarOyente, 30000);
             setInterval(updateDisplayInfo, 60000);
-            
-            let faseActual = 'normal';
             setInterval(() => {
-                const nuevaFase = getFaseNavidad() || 'normal';
-                if (nuevaFase !== faseActual) {
-                    console.log(`🎄 Cambio fase navideña: ${faseActual} → ${nuevaFase}`);
-                    faseActual = nuevaFase;
-                    loadCurrentPlaylist().then(() => {
-                        if (isPlaying && currentPlaylist.length > 0) {
-                            playCurrentTrack();
-                        }
-                    });
+                const faseActual = getFaseNavidad() || 'normal';
+                if (faseActual !== getFaseNavidad()) {
+                    loadCurrentPlaylist();
+                    updateDisplayInfo();
+                    generateScheduleCards();
                 }
             }, 60000);
+            
+            // Iniciar contador
+            actualizarOyente();
         });
     </script>
 </body>

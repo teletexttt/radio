@@ -119,20 +119,6 @@
             max-width: 300px;
         }
         
-        .oyentes-contador {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-left: 15px;
-        }
-        
-        .oyentes-contador .live-dot {
-            background: #00FF37;
-            animation: pulse 2s infinite;
-        }
-        
         .player-center {
             display: flex;
             align-items: center;
@@ -174,8 +160,8 @@
         }
         
         .share-button:hover {
-            border-color = '#00FF37';
-            color = '#00FF37';
+            border-color: #00FF37;
+            color: #00FF37;
         }
         
         /* CONTENIDO PRINCIPAL */
@@ -563,10 +549,6 @@
                 font-size: 0.85rem;
             }
             
-            .oyentes-contador {
-                display: none;
-            }
-            
             .hero-title {
                 font-size: 3.5rem;
             }
@@ -644,10 +626,6 @@
                 <span class="live-text">EN VIVO</span>
             </div>
             <div class="current-show" id="currentShow">Cargando programación...</div>
-            <div class="oyentes-contador" id="contadorOyentes">
-                <span class="live-dot"></span>
-                <span>0 oyentes</span>
-            </div>
         </div>
         
         <div class="player-center">
@@ -829,31 +807,6 @@
                 if (dia === 25 && hora < 3) return 'electronica';
             }
             return null;
-        }
-        
-        // ======= SISTEMA DE OYENTES EN VIVO (MODO SIMULADO) =======
-        function actualizarOyente() {
-            const hora = getArgentinaTime().getHours();
-            let base = 18; // Base de oyentes
-            
-            // Más oyentes en horarios pico
-            if (hora >= 20 || hora < 6) base = 32; // Noche/madrugada
-            if (hora >= 12 && hora < 16) base = 25; // Tarde
-            if (hora >= 16 && hora < 20) base = 22; // Tarde-noche
-            
-            // Aleatoriedad natural
-            const variacion = Math.floor(Math.random() * 15);
-            const oyentes = base + variacion;
-            
-            // Tendencia (↑ ↓ →)
-            const tendencias = ['↑', '↓', '→'];
-            const tendencia = tendencias[Math.floor(Math.random() * 3)];
-            
-            // Actualizar display
-            const contador = document.getElementById('contadorOyentes');
-            if (contador) {
-                contador.innerHTML = `<span class="live-dot"></span><span>${oyentes} oyentes ${tendencia}</span>`;
-            }
         }
         
         // ======= INICIO DEL SISTEMA =======
@@ -1140,47 +1093,17 @@
                         archivoPlaylist = 'playlist.json';
                     }
                     
-                    console.log(`🎵 Intentando cargar: ${archivoPlaylist}`);
+                    console.log(`🎵 Cargando: ${archivoPlaylist} ${fase ? '(' + fase + ')' : ''}`);
                     
                     const response = await fetch(archivoPlaylist);
-                    const text = await response.text();
+                    if (!response.ok) throw new Error('No playlist encontrada');
                     
-                    // INTENTAR arreglar JSON automáticamente si tiene errores
-                    let data;
-                    try {
-                        data = JSON.parse(text);
-                    } catch (jsonError) {
-                        console.error('❌ Error parseando JSON, intentando limpiar...', jsonError);
-                        
-                        // LIMPIAR JSON: eliminar comas finales, corregir comillas
-                        let cleanedText = text
-                            .replace(/,\s*]/g, ']')  // Quitar comas antes de ]
-                            .replace(/,\s*}/g, '}')  // Quitar comas antes de }
-                            .replace(/'/g, '"')      // Reemplazar comillas simples por dobles
-                            .replace(/,\s*,/g, ',')  // Quitar comas duplicadas
-                            .trim();
-                        
-                        try {
-                            data = JSON.parse(cleanedText);
-                            console.log('✅ JSON reparado automáticamente');
-                        } catch (secondError) {
-                            console.error('❌ No se pudo reparar JSON:', secondError);
-                            // Usar playlist de emergencia básica
-                            data = {
-                                tracks: [
-                                    'music/song1.mp3',
-                                    'music/song2.mp3', 
-                                    'music/song3.mp3'
-                                ]
-                            };
-                        }
-                    }
+                    const data = await response.json();
                     
                     if (data.tracks && Array.isArray(data.tracks)) {
                         currentPlaylist = data.tracks.map(item => {
                             if (typeof item === 'string') return item;
                             if (item.file) return item.file;
-                            if (item.path) return item.path;
                             return null;
                         }).filter(Boolean);
                     } else if (Array.isArray(data)) {
@@ -1194,46 +1117,25 @@
                         currentTrackIndex = posicionGlobal.indice;
                         
                         estadoTransmisionGlobal = {
-                            playlistHash: calcularHashPlaylist(currentPlaylist),
+                            playlistHash: posicionGlobal.hash,
                             indiceCancion: posicionGlobal.indice,
                             segundoEnCancion: posicionGlobal.segundoEnCancion,
                             ultimaActualizacion: Date.now()
                         };
                         
-                        console.log(`✅ Playlist cargada: ${currentPlaylist.length} canciones`);
-                        console.log(`🌍 Transmisión: canción ${currentTrackIndex}, segundo ${posicionGlobal.segundoEnCancion}`);
-                    } else {
-                        console.error('❌ Playlist vacía después de procesar');
-                        currentPlaylist = [];
-                        currentTrackIndex = 0;
+                        console.log(`🌍 Transmisión global: canción ${currentTrackIndex}, segundo ${posicionGlobal.segundoEnCancion}`);
                     }
                     
                 } catch (error) {
-                    console.error('❌ Error FATAL cargando playlist:', error);
+                    console.log('Error cargando playlist:', error);
                     currentPlaylist = [];
                     currentTrackIndex = 0;
                 }
                 
-                // ⬇️ FALLBACK SEGURO ⬇️
                 if (currentPlaylist.length === 0) {
-                    console.warn('⚠️ Usando playlist de emergencia...');
-                    // Lista básica de archivos MP3 que SÍ existen
-                    currentPlaylist = [
-                        'music/song1.mp3',
-                        'music/song2.mp3',
-                        'music/song3.mp3'
-                    ].filter(url => {
-                        // Verificar que la URL no esté rota
-                        return !url.includes('stream.teletextradio.com');
-                    });
-                    
-                    if (currentPlaylist.length === 0) {
-                        // Último recurso: MP3 locales reales
-                        currentPlaylist = ['music/example.mp3'];
-                    }
-                    
+                    console.warn('Playlist vacía, usando fallback');
+                    currentPlaylist = ['https://stream.teletextradio.com/live'];
                     currentTrackIndex = 0;
-                    console.log(`🎵 Playlist emergencia: ${currentPlaylist.length} canciones`);
                 }
             }
             
@@ -1425,11 +1327,6 @@
             
             shareButton.addEventListener('click', shareRadio);
             
-            // INICIALIZAR OYENTES EN VIVO (cada 30 segundos)
-            setInterval(actualizarOyente, 30000);
-            actualizarOyente(); // Primera vez
-            
-            // INICIALIZAR RADIO
             updateDisplayInfo();
             generateScheduleCards();
             generateNovedades();

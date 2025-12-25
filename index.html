@@ -119,6 +119,20 @@
             max-width: 300px;
         }
         
+        .oyentes-contador {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-left: 15px;
+        }
+        
+        .oyentes-contador .live-dot {
+            background: #00FF37;
+            animation: pulse 2s infinite;
+        }
+        
         .player-center {
             display: flex;
             align-items: center;
@@ -549,6 +563,10 @@
                 font-size: 0.85rem;
             }
             
+            .oyentes-contador {
+                display: none; /* Ocultar en móviles si espacio es limitado */
+            }
+            
             .hero-title {
                 font-size: 3.5rem;
             }
@@ -626,6 +644,10 @@
                 <span class="live-text">EN VIVO</span>
             </div>
             <div class="current-show" id="currentShow">Cargando programación...</div>
+            <div class="oyentes-contador" id="contadorOyentes">
+                <span class="live-dot"></span>
+                <span>0 oyentes</span>
+            </div>
         </div>
         
         <div class="player-center">
@@ -807,6 +829,33 @@
                 if (dia === 25 && hora < 3) return 'electronica';
             }
             return null;
+        }
+        
+        // ======= SISTEMA DE OYENTES EN VIVO =======
+        let oyenteId = localStorage.getItem('oyente_id') || null;
+        const OYENTES_API = 'http://localhost:5000'; // Cambia según tu servidor
+        
+        function actualizarOyente() {
+            fetch(`${OYENTES_API}/oyente/ping`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: oyenteId})
+            })
+            .then(res => res.json())
+            .then(data => {
+                oyenteId = data.id;
+                localStorage.setItem('oyente_id', oyenteId);
+                
+                // Actualizar display en el reproductor
+                const contador = document.getElementById('contadorOyentes');
+                if (contador) {
+                    contador.innerHTML = `<span class="live-dot"></span><span>${data.oyentes_activos} oyentes</span>`;
+                }
+            })
+            .catch(error => {
+                // Silenciar errores de conexión (puede no estar corriendo el backend)
+                console.debug('Oyentes API no disponible:', error);
+            });
         }
         
         // ======= INICIO DEL SISTEMA =======
@@ -1327,6 +1376,11 @@
             
             shareButton.addEventListener('click', shareRadio);
             
+            // INICIALIZAR OYENTES EN VIVO (cada 30 segundos)
+            setInterval(actualizarOyente, 30000);
+            actualizarOyente(); // Primera vez
+            
+            // INICIALIZAR RADIO
             updateDisplayInfo();
             generateScheduleCards();
             generateNovedades();

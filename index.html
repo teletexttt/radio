@@ -564,7 +564,7 @@
             }
             
             .oyentes-contador {
-                display: none; /* Ocultar en móviles si espacio es limitado */
+                display: none;
             }
             
             .hero-title {
@@ -831,31 +831,29 @@
             return null;
         }
         
-        // ======= SISTEMA DE OYENTES EN VIVO =======
-        let oyenteId = localStorage.getItem('oyente_id') || null;
-        const OYENTES_API = 'http://localhost:5000'; // Cambia según tu servidor
-        
+        // ======= SISTEMA DE OYENTES EN VIVO (MODO SIMULADO) =======
         function actualizarOyente() {
-            fetch(`${OYENTES_API}/oyente/ping`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({id: oyenteId})
-            })
-            .then(res => res.json())
-            .then(data => {
-                oyenteId = data.id;
-                localStorage.setItem('oyente_id', oyenteId);
-                
-                // Actualizar display en el reproductor
-                const contador = document.getElementById('contadorOyentes');
-                if (contador) {
-                    contador.innerHTML = `<span class="live-dot"></span><span>${data.oyentes_activos} oyentes</span>`;
-                }
-            })
-            .catch(error => {
-                // Silenciar errores de conexión (puede no estar corriendo el backend)
-                console.debug('Oyentes API no disponible:', error);
-            });
+            const hora = getArgentinaTime().getHours();
+            let base = 18; // Base de oyentes
+            
+            // Más oyentes en horarios pico
+            if (hora >= 20 || hora < 6) base = 32; // Noche/madrugada
+            if (hora >= 12 && hora < 16) base = 25; // Tarde
+            if (hora >= 16 && hora < 20) base = 22; // Tarde-noche
+            
+            // Aleatoriedad natural
+            const variacion = Math.floor(Math.random() * 15);
+            const oyentes = base + variacion;
+            
+            // Tendencia (↑ ↓ →)
+            const tendencias = ['↑', '↓', '→'];
+            const tendencia = tendencias[Math.floor(Math.random() * 3)];
+            
+            // Actualizar display
+            const contador = document.getElementById('contadorOyentes');
+            if (contador) {
+                contador.innerHTML = `<span class="live-dot"></span><span>${oyentes} oyentes ${tendencia}</span>`;
+            }
         }
         
         // ======= INICIO DEL SISTEMA =======

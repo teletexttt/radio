@@ -997,62 +997,90 @@
             
             async function loadCurrentPlaylist() {
                 try {
-                    const response = await fetch('playlist.json');
-                    if (!response.ok) throw new Error('No playlist.json found');
+                    currentSchedule = getCurrentSchedule();
+                    const folderName = currentSchedule.name;
                     
-                    const data = await response.json();
+                    console.log(`🎵 Cargando música para: ${folderName}`);
                     
-                    if (data.tracks && Array.isArray(data.tracks)) {
-                        currentPlaylist = data.tracks.map(item => {
-                            if (typeof item === 'string') return item;
-                            if (item.file) return item.file;
-                            return null;
-                        }).filter(Boolean);
-                    } else if (Array.isArray(data)) {
-                        currentPlaylist = data;
+                    // Cargar music.json con TODAS las listas
+                    const response = await fetch('music.json');
+                    if (!response.ok) throw new Error('No se encontró music.json');
+                    
+                    const allMusic = await response.json();
+                    
+                    // Obtener la playlist de la carpeta actual
+                    if (allMusic[folderName] && Array.isArray(allMusic[folderName])) {
+                        currentPlaylist = allMusic[folderName];
+                        console.log(`✅ Encontrados ${currentPlaylist.length} tracks para ${folderName}`);
                     } else {
-                        currentPlaylist = [];
+                        console.warn(`❌ No hay tracks para ${folderName}, usando fallback`);
+                        // FALLBACK A STREAM 24/7 SI NO HAY MÚSICA
+                        currentPlaylist = ['https://stream.teletextradio.com/live'];
                     }
                     
                 } catch (error) {
-                    console.log('Error cargando playlist:', error);
-                    currentPlaylist = [];
+                    console.log('Error cargando music.json:', error);
+                    // FALLBACK ABSOLUTO A STREAM
+                    currentPlaylist = ['https://stream.teletextradio.com/live'];
                 }
                 
+                // Asegurar que siempre haya algo para reproducir
                 if (currentPlaylist.length === 0) {
-                    console.warn('Playlist vacía, usando fallback');
-                    currentPlaylist = ['jazzcartel.mp3'];
+                    currentPlaylist = ['https://stream.teletextradio.com/live'];
                 }
             }
             
             function playNextTrack() {
-                if (currentPlaylist.length === 0) return;
+                if (currentPlaylist.length === 0) {
+                    console.log('❌ Playlist vacía, recargando...');
+                    loadCurrentPlaylist().then(() => {
+                        if (currentPlaylist.length > 0) {
+                            currentTrackIndex = 0;
+                            playCurrentTrack();
+                        }
+                    });
+                    return;
+                }
                 
                 currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-                playCurrentTrack();
+                console.log(`⏭️ Siguiente canción: ${currentTrackIndex}/${currentPlaylist.length}`);
+                
+                // Pequeño delay para evitar problemas
+                setTimeout(() => {
+                    playCurrentTrack();
+                }, 50);
             }
             
+            // ✅ FUNCIÓN DE AUDIO MEJORADA - MANEJA ERRORES CORRECTAMENTE
             function playCurrentTrack() {
-                if (currentPlaylist.length === 0) return;
+                if (currentPlaylist.length === 0) {
+                    console.log('⚠️ No hay canciones en la playlist');
+                    return;
+                }
                 
                 const track = currentPlaylist[currentTrackIndex];
                 
+                // Evitar reproducir la misma canción si ya está sonando
                 if (currentTrackPlaying === track && !audioPlayer.paused) {
-                    console.log('⏭️ Ya está sonando esta canción');
+                    console.log('⏭️ Ya está sonando esta canción, pasando a la siguiente');
+                    playNextTrack();
                     return;
                 }
                 
                 currentTrackPlaying = track;
                 console.log('🎵 Reproduciendo:', track);
                 
+                // Limpiar event listeners previos
                 audioPlayer.onended = null;
                 audioPlayer.onerror = null;
                 
                 audioPlayer.src = track;
                 
+                // Configurar para cuando el audio esté listo
                 audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
                     audioPlayer.removeEventListener('loadedmetadata', onMetadata);
                     
+                    // Inicio aleatorio si la canción es larga
                     if (audioPlayer.duration > 30) {
                         const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
                         audioPlayer.currentTime = randomStart;
@@ -1061,24 +1089,37 @@
                         audioPlayer.currentTime = 0;
                     }
                     
+                    // Reproducir si la radio está encendida
                     if (isPlaying) {
-                        audioPlayer.play().catch(e => {
-                            console.error('Error al reproducir:', e);
-                            setTimeout(playNextTrack, 1000);
-                        });
+                        const playPromise = audioPlayer.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => {
+                                console.error('❌ Error al reproducir:', e.name, e.message);
+                                // ✅ SI FALLA, PASAR A LA SIGUIENTE INMEDIATAMENTE
+                                setTimeout(playNextTrack, 500);
+                            });
+                        }
                     }
                 }, { once: true });
                 
+                // ✅ MANEJADOR DE FIN DE CANCIÓN - SEGURO
                 audioPlayer.onended = function() {
-                    console.log('⏭️ Canción terminó, siguiente...');
-                    setTimeout(playNextTrack, 100);
+                    console.log('✅ Canción terminó correctamente, siguiente...');
+                    playNextTrack();
                 };
                 
-                audioPlayer.onerror = function() {
-                    console.error('❌ Error en canción, siguiente...');
-                    setTimeout(playNextTrack, 500);
+                // ✅ MANEJADOR DE ERROR - SEGURO
+                audioPlayer.onerror = function(e) {
+                    console.error('❌ Error en canción:', audioPlayer.error ? audioPlayer.error.message : 'Error desconocido');
+                    console.log('🔄 Pasando a siguiente canción...');
+                    
+                    // Esperar un poco y pasar a la siguiente
+                    setTimeout(() => {
+                        playNextTrack();
+                    }, 500);
                 };
                 
+                // Si ya está cargado, disparar manualmente
                 if (audioPlayer.readyState >= 1) {
                     audioPlayer.dispatchEvent(new Event('loadedmetadata'));
                 }
@@ -1122,6 +1163,7 @@
                 updateDisplayInfo();
                 
                 if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
+                    console.log(`🔄 Cambio de horario: ${oldSchedule} → ${currentSchedule.name}`);
                     loadCurrentPlaylist().then(() => {
                         currentTrackIndex = 0;
                         playCurrentTrack();
@@ -1138,6 +1180,7 @@
                     if (!audioPlayer.src || audioPlayer.ended) {
                         if (currentPlaylist.length === 0) {
                             loadCurrentPlaylist().then(() => {
+                                currentTrackIndex = 0;
                                 isPlaying = true;
                                 updatePlayButton();
                                 playCurrentTrack();
@@ -1168,25 +1211,17 @@
                 // Feedback visual
                 document.querySelector('.fixed-player').classList.add('radio-iniciando');
                 
-                // 1. Cargar la playlist
+                // Cargar playlist y empezar
                 await loadCurrentPlaylist();
                 
-                // 2. Si hay playlist, iniciar reproducción
                 if (currentPlaylist.length > 0) {
-                    isPlaying = true;  // ← ESTADO CRÍTICO: decirle al sistema que está reproduciendo
-                    updatePlayButton(); // ← Actualizar botón visualmente
-                    
-                    // 3. Iniciar reproducción
+                    isPlaying = true;
+                    updatePlayButton();
                     playCurrentTrack();
                     
                     console.log('🎧 RADIO INICIADA AUTOMÁTICAMENTE');
                 } else {
-                    // Fallback si no hay playlist
-                    console.error('❌ No se pudo cargar playlist, usando fallback');
-                    currentPlaylist = ['jazzcartel.mp3'];
-                    isPlaying = true;
-                    updatePlayButton();
-                    playCurrentTrack();
+                    console.error('❌ No se pudo cargar música');
                 }
                 
                 // Quitar feedback visual después de 2 segundos
@@ -1204,6 +1239,17 @@
             
             setInterval(checkScheduleChange, 60000);
             setInterval(updateDisplayInfo, 60000);
+            
+            // ✅ VERIFICACIÓN PERIÓDICA POR SI SE DETIENE
+            setInterval(() => {
+                if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
+                    console.log('⚠️ Radio se detuvo inesperadamente, reanudando...');
+                    audioPlayer.play().catch(e => {
+                        console.error('No se pudo reanudar, siguiente canción:', e);
+                        playNextTrack();
+                    });
+                }
+            }, 5000);
         });
     </script>
 </body>

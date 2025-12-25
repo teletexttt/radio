@@ -1179,10 +1179,17 @@
                     currentTrackIndex = 0;
                 }
                 
+                // ⬇️⬇️⬇️ AQUÍ ESTÁ EL CAMBIO CRÍTICO ⬇️⬇️⬇️
                 if (currentPlaylist.length === 0) {
-                    console.warn('Playlist vacía, usando fallback');
-                    currentPlaylist = ['https://stream.teletextradio.com/live'];
-                    currentTrackIndex = 0;
+                    console.error('❌ ERROR: Playlist principal no cargada. Reintentando en 5 segundos...');
+                    // NO usar fallback que no funciona
+                    // La radio intentará recargar automáticamente
+                    setTimeout(() => {
+                        loadCurrentPlaylist().then(() => {
+                            if (isPlaying) playCurrentTrack();
+                        });
+                    }, 5000);
+                    return;
                 }
             }
             

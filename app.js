@@ -14,7 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let totalDuration = 0;
   let isPlaying = false;
 
-  // Época fija: la radio "ya estaba sonando"
+  let currentTrackIndex = null;
+
+  // Época fija: la radio ya estaba sonando
   const EPOCH = Date.UTC(2025, 0, 1, 0, 0, 0);
 
   function argentinaNowMs() {
@@ -56,17 +58,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const offset = liveOffsetSeconds();
     const { index, time } = resolveTrack(offset);
-
     const track = playlist[index];
 
-    audio.src = track.path;
-    audio.currentTime = time;
+    const sameTrack = currentTrackIndex === index;
+    const drift = Math.abs(audio.currentTime - time);
+
+    // SOLO re-sincroniza si es necesario
+    if (!sameTrack || drift > 2 || audio.src === "") {
+      audio.src = track.path;
+      audio.currentTime = time;
+      currentTrackIndex = index;
+    }
 
     audio.onended = syncAndPlay;
-    audio.onerror = syncAndPlay;
+    audio.onerror = () => setTimeout(syncAndPlay, 500);
 
     audio.play().catch(() => {
-      // si el browser falla, reintenta en el siguiente tick
       setTimeout(syncAndPlay, 500);
     });
   }
@@ -97,14 +104,16 @@ document.addEventListener("DOMContentLoaded", () => {
       audio.pause();
       isPlaying = false;
     } else {
-      syncAndPlay(); // SIEMPRE reengancha al vivo
+      syncAndPlay(); // siempre engancha al vivo
       isPlaying = true;
     }
     updateButton();
   });
 
-  // UI mínima de “en vivo” (no decide música)
+  // UI “en vivo”
   currentShow.textContent = "Teletext Radio · En vivo";
   currentTimeName.textContent = "Emisión continua";
   currentTimeRange.textContent = "24/7";
 });
+
+

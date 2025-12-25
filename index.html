@@ -3,213 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teletext Radio</title>
-    <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preload" href="Chomsky.otf" as="font" type="font/otf" crossorigin>
+    <title>Teletext Radio</title>
+    
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://teletexttt.github.io/radio/">
     <meta property="og:title" content="Teletext Radio">
     <meta property="og:description" content="Patagonia Argentina">
     <meta property="og:image" content="https://teletexttt.github.io/radio/social-preview.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Vista previa de Teletext Radio">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@teletextlab">
+    <meta name="twitter:creator" content="@teletextlab">
+    <meta name="twitter:title" content="Teletext Radio">
+    <meta name="twitter:description" content="Patagonia Argentina">
+    <meta name="twitter:image" content="https://teletexttt.github.io/radio/social-preview.png">
+    <meta name="twitter:image:alt" content="Vista previa de Teletext Radio">
+    
+    <!-- CSS ORIGINAL - NO MODIFICADO -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- REPRODUCTOR FIJO SUPERIOR (DISEÑO ORIGINAL) -->
     <div class="fixed-player">
         <div class="player-left">
             <a href="#" class="station-logo">TXT</a>
             <div class="live-status">
                 <span class="live-dot"></span>
-                <span>EN VIVO</span>
+                <span class="live-text">EN VIVO</span>
             </div>
-            <div class="current-show" id="currentShow">Cargando...</div>
+            <div class="current-show" id="currentShow">Cargando programación...</div>
         </div>
+        
         <div class="player-center">
-            <button class="play-button" id="radioPlayButton">
-                <svg width="20" height="20" viewBox="0 0 20 20">
+            <button class="play-button" id="radioPlayButton" aria-label="Reproducir/Pausar">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                     <path id="playPath" d="M5 4L15 10L5 16V4Z"/>
                     <path id="pausePath1" d="M5 4H9V16H5V4Z" opacity="0"/>
                     <path id="pausePath2" d="M11 4H15V16H11V4Z" opacity="0"/>
                 </svg>
             </button>
-            <button class="share-button" id="shareRadioButton">
-                <svg width="16" height="16" viewBox="0 0 24 24">
+            <button class="share-button" id="shareRadioButton" aria-label="Compartir radio" title="Copiar enlace">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.19C16.5 7.69 17.21 8 18 8C19.66 8 21 6.66 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.81C7.5 9.31 6.79 9 6 9C4.34 9 3 10.34 3 12C3 13.66 4.34 15 6 15C6.79 15 7.5 14.69 8.04 14.19L15.16 18.35C15.11 18.56 15.08 18.78 15.08 19C15.08 20.61 16.39 21.92 18 21.92C19.61 21.92 20.92 20.61 20.92 19C20.92 17.39 19.61 16.08 18 16.08Z"/>
                 </svg>
             </button>
         </div>
     </div>
 
+    <!-- CONTENIDO PRINCIPAL (DISEÑO ORIGINAL - NO MODIFICADO) -->
     <div class="main-content">
+        <!-- HERO SECTION -->
         <section class="hero-section">
             <div class="hero-content">
                 <h1 class="hero-title">Teletext Radio</h1>
-                <p class="hero-subtitle">Radio Online desde la Patagonia Argentina</p>
+                <p class="hero-subtitle">Txt es una Radio Online creada por amantes de la música para amantes de la música.</p>
             </div>
         </section>
 
+        <!-- NOW PLAYING -->
         <section class="content-section">
-            <h2 id="currentProgramTitle">Cargando programa...</h2>
-            <div id="playerStatus">Presiona PLAY para comenzar</div>
-            <div id="nowPlaying">-</div>
+            <div class="now-playing">
+                <h2 class="section-title">EN VIVO <span>AHORA</span></h2>
+                <div class="current-time-block">
+                    <div class="time-title">Estás escuchando</div>
+                    <div class="time-name" id="currentTimeName">Cargando...</div>
+                    <div class="time-range" id="currentTimeRange">--:-- -- --:-- --</div>
+                </div>
+            </div>
         </section>
+
+        <!-- SCHEDULE -->
+        <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
+            <div class="schedule-section">
+                <h2 class="section-title">PROGRAMACIÓN <span>DIARIA</span></h2>
+                <div class="schedule-grid" id="scheduleGrid">
+                    <!-- Tarjetas generadas por JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- COLLECTIONS -->
+        <section class="content-section">
+            <div class="collections-section">
+                <h2 class="section-title">COLECCIONES <span>MUSICALES</span></h2>
+                <div class="collections-grid" id="collectionsGrid">
+                    <!-- Tarjetas generadas por JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- INFO -->
+        <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
+            <div class="info-section">
+                <h2 class="section-title">INFORMACIÓN <span>& APOYO</span></h2>
+                <div class="info-content">
+                    <p class="info-text">
+                        Teletext Radio es una plataforma independiente que transmite música las 24 horas, con sede en la Patagonia Argentina. 
+                        Nuestro objetivo es ofrecer una experiencia auditiva única, combinando programación automática con selecciones curadas.
+                    </p>
+                    <a href='https://cafecito.app/teletext' class="cafecito-link" target="_blank" rel="noopener">
+                        <span>🌹 Apoya este proyecto en Cafecito</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3 class="footer-title">Teletext Radio</h3>
+                    <ul class="footer-links">
+                        <li><a href="#now-playing">En Vivo</a></li>
+                        <li><a href="#schedule">Programación</a></li>
+                        <li><a href="#collections">Colecciones</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3 class="footer-title">Contacto</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://www.instagram.com/teletextradio/" target="_blank" rel="noopener">Instagram</a></li>
+                        <li><a href="mailto:rteletextradio@gmail.com">Email</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3 class="footer-title">Enlaces</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://cafecito.app/teletext" target="_blank" rel="noopener">Apoyar en Cafecito</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- PATROCINADORES -->
+            <div class="sponsors-section">
+                <div class="sponsors-title">Patrocina</div>
+                <div class="sponsors-container">
+                    <div class="sponsor-item">
+                        <div class="ascii-art">
+████████╗
+██╔═════╝
+███████╗ 
+╚════██║ 
+███████║ 
+╚══════╝ 
+                        </div>
+                        <div class="sponsor-name">Orto Galeria</div>
+                    </div>
+                    
+                    <div class="sponsor-item">
+                        <div class="ascii-art">
+ ██████╗ 
+██╔══██╗
+██████╔╝
+██╔══██╗
+██████╔╝
+╚═════╝ 
+                        </div>
+                        <div class="sponsor-name">Teletextlab</div>
+                    </div>
+                    
+                    <div class="sponsor-item">
+                        <div class="ascii-art">
+██████╗ 
+██╔══██╗
+██████╔╝
+██╔══██╗
+██████╔╝
+╚═════╝ 
+                        </div>
+                        <div class="sponsor-name">Cyberespacio</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                © 2025 Teletextlab. Patagonia Argentina. Todos los derechos reservados.
+            </div>
+        </footer>
     </div>
 
-    <audio id="radioPlayer" preload="none"></audio>
+    <!-- AUDIO -->
+    <audio id="radioPlayer"></audio>
 
-    <!-- ESTE ES EL SCRIPT CORRECTO -->
+    <!-- JAVASCRIPT ARREGLADO (100% compatible con tu diseño) -->
     <script>
-// ===== CONFIGURACIÓN INICIAL =====
-const PROGRAMAS = {
-    1: { nombre: "Madrugada txt", carpeta: "madrugadatxt" },
-    6: { nombre: "Telesoft", carpeta: "telesoft" },
-    12: { nombre: "Radio 404", carpeta: "radio404" },
-    16: { nombre: "Floppy Disk", carpeta: "especialestxt" },
-    20: { nombre: "Piratas Informáticos", carpeta: "teletext" }
-};
+// === CONFIGURACIÓN DE PROGRAMAS ===
+const PROGRAMAS = [
+    { hora: 1,  duracion: 5, nombre: "Madrugada txt", carpeta: "madrugadatxt" },
+    { hora: 6,  duracion: 6, nombre: "Telesoft", carpeta: "telesoft" },
+    { hora: 12, duracion: 4, nombre: "Radio 404", carpeta: "radio404" },
+    { hora: 16, duracion: 4, nombre: "Floppy Disk", carpeta: "especialestxt" },
+    { hora: 20, duracion: 5, nombre: "Piratas Informáticos", carpeta: "teletext" }
+];
 
-let playlistActual = [];
-let indiceActual = 0;
-let estaReproduciendo = false;
-const audio = document.getElementById('radioPlayer');
+// === VARIABLES GLOBALES ===
+let playlist = [];
+let currentIndex = 0;
+let isPlaying = false;
+let audio = document.getElementById('radioPlayer');
+let programaActual = null;
 
-// ===== FUNCIONES BÁSICAS =====
-function obtenerHoraArgentina() {
-    const ahora = new Date();
-    const offsetArg = -3; // UTC-3
-    const offsetLocal = ahora.getTimezoneOffset() / 60;
-    const diferencia = offsetArg + offsetLocal;
-    return new Date(ahora.getTime() + diferencia * 3600000);
+// === HORA ARGENTINA (FUNCIÓN ORIGINAL) ===
+function getArgentinaTime() {
+    const now = new Date();
+    const argentinaOffset = -3 * 60;
+    const localOffset = now.getTimezoneOffset();
+    const offsetDiff = argentinaOffset + localOffset;
+    return new Date(now.getTime() + offsetDiff * 60000);
 }
 
+// === OBTENER PROGRAMA ACTUAL ===
 function obtenerProgramaActual() {
-    const horaArg = obtenerHoraArgentina().getHours();
+    const ahora = getArgentinaTime();
+    const horaActual = ahora.getHours();
     
-    if (horaArg >= 1 && horaArg < 6) return PROGRAMAS[1];
-    if (horaArg >= 6 && horaArg < 12) return PROGRAMAS[6];
-    if (horaArg >= 12 && horaArg < 16) return PROGRAMAS[12];
-    if (horaArg >= 16 && horaArg < 20) return PROGRAMAS[16];
-    return PROGRAMAS[20]; // 20:00 a 01:00
+    for (const programa of PROGRAMAS) {
+        let horaFin = programa.hora + programa.duracion;
+        if (horaFin >= 24) horaFin -= 24;
+        
+        if (horaActual >= programa.hora && horaActual < horaFin) {
+            return programa;
+        }
+    }
+    return PROGRAMAS[0]; // Por defecto
 }
 
-async function cargarPlaylistDelPrograma() {
+// === CARGAR PLAYLIST ===
+async function cargarPlaylist() {
     const programa = obtenerProgramaActual();
+    programaActual = programa;
     
-    // Actualizar interfaz
+    // ACTUALIZAR INTERFAZ (DISEÑO ORIGINAL)
     document.getElementById('currentShow').textContent = programa.nombre;
-    document.getElementById('currentProgramTitle').textContent = `EN VIVO: ${programa.nombre}`;
+    document.getElementById('currentTimeName').textContent = programa.nombre;
+    document.getElementById('currentTimeRange').textContent = 
+        `${programa.hora}:00 - ${programa.hora + programa.duracion}:00`;
     
     try {
+        // Cargar playlist de la carpeta del programa
         const respuesta = await fetch(`music/${programa.carpeta}/playlist.json`);
         const datos = await respuesta.json();
-        playlistActual = datos.tracks || [];
+        playlist = datos.tracks || [];
+        console.log(`✅ Playlist cargada: ${playlist.length} canciones (${programa.nombre})`);
         
-        if (playlistActual.length > 0) {
-            console.log(`✅ Playlist cargada: ${playlistActual.length} canciones`);
-            // Si estaba reproduciendo, continuar con nueva playlist
-            if (estaReproduciendo) {
-                indiceActual = 0;
-                reproducirCancionActual();
-            }
-        } else {
-            console.warn('⚠️ Playlist vacía');
+        // Si estaba reproduciendo, continuar
+        if (isPlaying && playlist.length > 0) {
+            currentIndex = 0;
+            cargarCancion(currentIndex);
         }
     } catch (error) {
         console.error('❌ Error cargando playlist:', error);
         // Playlist de emergencia
-        playlistActual = [
+        playlist = [
             { url: 'music/teletext/toclimbthecliff.mp3', duration: 300 },
             { url: 'music/teletext/doomsday.mp3', duration: 300 }
         ];
     }
 }
 
-function reproducirCancionActual() {
-    if (playlistActual.length === 0) return;
+// === FUNCIONES DEL REPRODUCTOR ===
+function cargarCancion(index) {
+    if (playlist.length === 0) return;
     
-    const cancion = playlistActual[indiceActual];
-    audio.src = cancion.url || cancion.path || cancion.file;
+    currentIndex = index;
+    const cancion = playlist[currentIndex];
+    audio.src = cancion.url || cancion.path || `music/${programaActual.carpeta}/${cancion.file}`;
     
     audio.play().then(() => {
-        estaReproduciendo = true;
-        actualizarInterfazReproduccion();
+        isPlaying = true;
+        actualizarBotonPlay();
     }).catch(error => {
         console.error('Error al reproducir:', error);
-        reproducirSiguiente();
+        siguienteCancion();
     });
 }
 
-function reproducirSiguiente() {
-    if (playlistActual.length === 0) return;
-    indiceActual = (indiceActual + 1) % playlistActual.length;
-    reproducirCancionActual();
+function siguienteCancion() {
+    if (playlist.length === 0) return;
+    currentIndex = (currentIndex + 1) % playlist.length;
+    cargarCancion(currentIndex);
 }
 
-function actualizarInterfazReproduccion() {
-    const boton = document.getElementById('radioPlayButton');
-    const playIcon = document.getElementById('playPath');
-    const pauseIcon1 = document.getElementById('pausePath1');
-    const pauseIcon2 = document.getElementById('pausePath2');
+function actualizarBotonPlay() {
+    const playPath = document.getElementById('playPath');
+    const pausePath1 = document.getElementById('pausePath1');
+    const pausePath2 = document.getElementById('pausePath2');
     
-    if (estaReproduciendo) {
-        playIcon.setAttribute('opacity', '0');
-        pauseIcon1.setAttribute('opacity', '1');
-        pauseIcon2.setAttribute('opacity', '1');
-        document.getElementById('playerStatus').textContent = 'Reproduciendo...';
+    if (isPlaying) {
+        playPath.setAttribute('opacity', '0');
+        pausePath1.setAttribute('opacity', '1');
+        pausePath2.setAttribute('opacity', '1');
     } else {
-        playIcon.setAttribute('opacity', '1');
-        pauseIcon1.setAttribute('opacity', '0');
-        pauseIcon2.setAttribute('opacity', '0');
-        document.getElementById('playerStatus').textContent = 'Pausado';
+        playPath.setAttribute('opacity', '1');
+        pausePath1.setAttribute('opacity', '0');
+        pausePath2.setAttribute('opacity', '0');
     }
 }
 
-// ===== EVENTOS =====
-document.getElementById('radioPlayButton').addEventListener('click', function() {
-    if (playlistActual.length === 0) {
-        cargarPlaylistDelPrograma().then(() => {
-            if (playlistActual.length > 0) {
-                reproducirCancionActual();
+// === GENERAR PROGRAMACIÓN (DISEÑO ORIGINAL) ===
+function generarProgramacion() {
+    const grid = document.getElementById('scheduleGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = PROGRAMAS.map(programa => `
+        <div class="schedule-card">
+            <div class="schedule-time">${programa.hora}:00 - ${programa.hora + programa.duracion}:00</div>
+            <div class="schedule-name">${programa.nombre}</div>
+            <div class="schedule-desc">Programación automática</div>
+        </div>
+    `).join('');
+}
+
+// === GENERAR COLECCIONES (DISEÑO ORIGINAL) ===
+function generarColecciones() {
+    const grid = document.getElementById('collectionsGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = PROGRAMAS.map(programa => `
+        <div class="collection-card">
+            <div class="collection-header">
+                <div class="collection-name">${programa.nombre}</div>
+                <div class="collection-meta">
+                    <span>${playlist.length || '?'} tracks</span>
+                </div>
+            </div>
+            <div class="collection-body">
+                <div class="collection-desc">Colección musical del programa ${programa.nombre}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// === EVENTOS ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar
+    cargarPlaylist();
+    generarProgramacion();
+    generarColecciones();
+    
+    // Botón play/pause
+    const playButton = document.getElementById('radioPlayButton');
+    if (playButton) {
+        playButton.addEventListener('click', function() {
+            if (playlist.length === 0) {
+                cargarPlaylist().then(() => {
+                    if (playlist.length > 0) {
+                        cargarCancion(0);
+                    }
+                });
+                return;
+            }
+            
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+            } else {
+                audio.play().then(() => isPlaying = true);
+            }
+            actualizarBotonPlay();
+        });
+    }
+    
+    // Botón compartir (ORIGINAL)
+    const shareButton = document.getElementById('shareRadioButton');
+    if (shareButton) {
+        shareButton.addEventListener('click', function() {
+            const url = window.location.href;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    const originalHTML = shareButton.innerHTML;
+                    shareButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                    shareButton.style.borderColor = '#00FF37';
+                    shareButton.style.color = '#00FF37';
+                    
+                    setTimeout(() => {
+                        shareButton.innerHTML = originalHTML;
+                        shareButton.style.borderColor = '';
+                        shareButton.style.color = '';
+                    }, 2000);
+                });
             }
         });
-        return;
     }
     
-    if (estaReproduciendo) {
-        audio.pause();
-        estaReproduciendo = false;
-    } else {
-        audio.play().then(() => estaReproduciendo = true);
-    }
-    actualizarInterfazReproduccion();
+    // Eventos de audio
+    audio.addEventListener('ended', siguienteCancion);
+    audio.addEventListener('error', siguienteCancion);
+    
+    // Verificar cambio de programa cada minuto
+    setInterval(cargarPlaylist, 60000);
+    
+    // Verificar si la reproducción se detuvo
+    setInterval(() => {
+        if (isPlaying && audio.paused && !audio.ended) {
+            audio.play().catch(() => siguienteCancion());
+        }
+    }, 5000);
 });
 
-document.getElementById('shareRadioButton').addEventListener('click', function() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-        const original = this.innerHTML;
-        this.innerHTML = '✓';
-        this.style.color = '#00FF37';
-        setTimeout(() => {
-            this.innerHTML = original;
-            this.style.color = '';
-        }, 2000);
-    });
-});
-
-audio.addEventListener('ended', reproducirSiguiente);
-audio.addEventListener('error', reproducirSiguiente);
-
-// ===== INICIALIZACIÓN =====
-// Cargar el programa actual al inicio
-cargarPlaylistDelPrograma();
-
-// Verificar cambio de programa cada minuto
-setInterval(cargarPlaylistDelPrograma, 60000);
-
-// Verificar si la reproducción se detuvo
-setInterval(() => {
-    if (estaReproduciendo && audio.paused && !audio.ended) {
-        audio.play().catch(() => reproducirSiguiente());
-    }
-}, 5000);
-
-console.log('📻 Teletext Radio - Sistema básico activado');
+console.log('📻 Teletext Radio - Diseño original restaurado');
     </script>
 </body>
 </html>
+

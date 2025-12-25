@@ -800,7 +800,14 @@
             let currentTrackIndex = 0;
             let currentSchedule = null;
             let currentTrackPlaying = null;
-            let audioHandlersInitialized = false;
+            
+            // ======= ESTADO GLOBAL DE TRANSMISIÓN =======
+            let estadoTransmisionGlobal = {
+                playlistHash: '',
+                indiceCancion: 0,
+                segundoEnCancion: 0,
+                ultimaActualizacion: 0
+            };
             
             const programNames = {
                 "madrugada": "Madrugada txt",
@@ -1047,22 +1054,37 @@
                 return Math.abs(hash);
             }
             
-            function calcularIndiceInicial(lista) {
-                if (!lista || lista.length === 0) return 0;
+            // ======= CALCULAR POSICIÓN GLOBAL (ÍNDICE + SEGUNDO) =======
+            function calcularPosicionGlobalTransmision(lista) {
+                if (!lista || lista.length === 0) return { indice: 0, segundoEnCancion: 0 };
                 
                 const ahora = getArgentinaTime();
                 const epoch = new Date(2025, 0, 1, 0, 0, 0);
-                const milisegundosTranscurridos = ahora - epoch;
+                let milisegundosTranscurridos = ahora - epoch;
                 
-                if (milisegundosTranscurridos <= 0) return 0;
+                if (milisegundosTranscurridos <= 0) {
+                    milisegundosTranscurridos = 0;
+                }
                 
-                const msPorCancion = 240 * 1000;
-                const posicionContinua = Math.floor(milisegundosTranscurridos / msPorCancion);
+                // Calcular ciclo completo de playlist
+                const duracionTotalPlaylist = lista.length * 240 * 1000; // 4min por canción
+                const ciclosCompletos = Math.floor(milisegundosTranscurridos / duracionTotalPlaylist);
+                const msEnCicloActual = milisegundosTranscurridos - (ciclosCompletos * duracionTotalPlaylist);
+                
+                // Calcular canción actual dentro del ciclo
+                const indiceCancion = Math.floor(msEnCicloActual / (240 * 1000)) % lista.length;
+                const msEnCancion = msEnCicloActual % (240 * 1000);
+                const segundoEnCancion = Math.floor(msEnCancion / 1000);
+                
+                // Ajustar con hash de playlist para variación
                 const hashPlaylist = calcularHashPlaylist(lista);
-                const indiceFinal = (posicionContinua + hashPlaylist) % lista.length;
+                const indiceFinal = (indiceCancion + hashPlaylist) % lista.length;
                 
-                console.log(`📻 Índice: ${indiceFinal}/${lista.length}`);
-                return indiceFinal;
+                return {
+                    indice: indiceFinal,
+                    segundoEnCancion: segundoEnCancion,
+                    hash: hashPlaylist
+                };
             }
             
             async function loadCurrentPlaylist() {
@@ -1097,9 +1119,20 @@
                         currentPlaylist = [];
                     }
                     
+                    // CALCULAR POSICIÓN GLOBAL ACTUAL
                     if (currentPlaylist.length > 0) {
-                        currentTrackIndex = calcularIndiceInicial(currentPlaylist);
-                        console.log(`🎯 Playlist: ${currentPlaylist.length} canciones, posición: ${currentTrackIndex}`);
+                        const posicionGlobal = calcularPosicionGlobalTransmision(currentPlaylist);
+                        currentTrackIndex = posicionGlobal.indice;
+                        
+                        // ACTUALIZAR ESTADO GLOBAL
+                        estadoTransmisionGlobal = {
+                            playlistHash: posicionGlobal.hash,
+                            indiceCancion: posicionGlobal.indice,
+                            segundoEnCancion: posicionGlobal.segundoEnCancion,
+                            ultimaActualizacion: Date.now()
+                        };
+                        
+                        console.log(`🌍 Transmisión global: canción ${currentTrackIndex}, segundo ${posicionGlobal.segundoEnCancion}`);
                     }
                     
                 } catch (error) {
@@ -1118,50 +1151,70 @@
             function playNextTrack() {
                 if (currentPlaylist.length === 0) return;
                 
-                currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-                console.log(`⏭️ Siguiente canción: ${currentTrackIndex}`);
+                // Avanzar en la transmisión GLOBAL
+                const ahora = Date.now();
+                const tiempoTranscurrido = (ahora - estadoTransmisionGlobal.ultimaActualizacion) / 1000;
+                const nuevoSegundo = estadoTransmisionGlobal.segundoEnCancion + tiempoTranscurrido;
+                
+                // Si pasó más de 240 segundos (4min), cambiar de canción
+                if (nuevoSegundo >= 240) {
+                    currentTrackIndex = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
+                    estadoTransmisionGlobal.indiceCancion = currentTrackIndex;
+                    estadoTransmisionGlobal.segundoEnCancion = 0;
+                } else {
+                    currentTrackIndex = estadoTransmisionGlobal.indiceCancion;
+                    estadoTransmisionGlobal.segundoEnCancion = nuevoSegundo;
+                }
+                
+                estadoTransmisionGlobal.ultimaActualizacion = ahora;
+                
+                console.log(`⏭️ Siguiente: ${currentTrackIndex}, segundo ${Math.floor(estadoTransmisionGlobal.segundoEnCancion)}`);
                 
                 setTimeout(() => {
                     playCurrentTrack();
-                }, 50);
+                }, 100);
             }
             
-            // ======= FUNCIÓN DE AUDIO CORREGIDA (SIN SALTO) =======
+            // ======= REPRODUCIR CANCIÓN ACTUAL (SINCRONIZADO GLOBAL) =======
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
                 
+                // Si ya está sonando la misma canción, no hacer nada
                 if (currentTrackPlaying === track && !audioPlayer.paused) {
                     console.log('⏭️ Ya está sonando esta canción');
                     return;
                 }
                 
                 currentTrackPlaying = track;
-                console.log('🎵 Reproduciendo:', track);
+                console.log(`🎵 Transmisión global: canción ${currentTrackIndex}`);
                 
+                // Limpiar eventos anteriores
                 audioPlayer.onended = null;
                 audioPlayer.onerror = null;
                 
                 audioPlayer.src = track;
                 
+                // Configurar evento para cuando se carguen los metadatos
                 audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
                     audioPlayer.removeEventListener('loadedmetadata', onMetadata);
                     
-                    const esRecargaPagina = performance.navigation.type === 1;
-                    const lastTrack = sessionStorage.getItem('lastTrack');
+                    // USAR SEGUNDO GLOBAL, NO 0 Y NO ALEATORIO
+                    const segundoGlobal = estadoTransmisionGlobal.segundoEnCancion;
                     
-                    if (audioPlayer.duration > 30 && esRecargaPagina && lastTrack === track) {
-                        const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
-                        audioPlayer.currentTime = randomStart;
-                        console.log(`⏱️ Inicio aleatorio: ${Math.floor(randomStart)}s`);
+                    // Asegurar que no exceda la duración
+                    const segundoSeguro = Math.min(segundoGlobal, audioPlayer.duration - 1);
+                    
+                    if (segundoSeguro > 0) {
+                        audioPlayer.currentTime = segundoSeguro;
+                        console.log(`⏱️ Sincronizado global: segundo ${Math.floor(segundoSeguro)}`);
                     } else {
                         audioPlayer.currentTime = 0;
-                        console.log(`⏱️ Inicio desde 0s`);
+                        console.log(`⏱️ Inicio desde 0 (transmisión nueva)`);
                     }
                     
-                    sessionStorage.setItem('lastTrack', track);
-                    
+                    // Reproducir si está activo
                     if (isPlaying) {
                         const playPromise = audioPlayer.play();
                         if (playPromise !== undefined) {
@@ -1173,18 +1226,57 @@
                     }
                 }, { once: true });
                 
+                // Evento cuando termina la canción
                 audioPlayer.onended = function() {
-                    console.log('⏭️ Canción terminó, siguiente...');
+                    console.log('⏭️ Canción terminó, siguiente en transmisión global...');
+                    // Actualizar estado global
+                    estadoTransmisionGlobal.indiceCancion = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
+                    estadoTransmisionGlobal.segundoEnCancion = 0;
+                    estadoTransmisionGlobal.ultimaActualizacion = Date.now();
+                    
                     setTimeout(playNextTrack, 100);
                 };
                 
+                // Evento de error
                 audioPlayer.onerror = function() {
-                    console.error('❌ Error en canción, siguiente...');
+                    console.error('❌ Error en canción, siguiente en transmisión global...');
                     setTimeout(playNextTrack, 500);
                 };
                 
+                // Si ya está cargado, disparar manualmente
                 if (audioPlayer.readyState >= 1) {
                     audioPlayer.dispatchEvent(new Event('loadedmetadata'));
+                }
+            }
+            
+            // ======= ACTUALIZAR ESTADO GLOBAL PERIÓDICAMENTE =======
+            function actualizarEstadoGlobal() {
+                if (currentPlaylist.length === 0) return;
+                
+                const ahora = Date.now();
+                const tiempoTranscurrido = (ahora - estadoTransmisionGlobal.ultimaActualizacion) / 1000;
+                
+                // Solo actualizar si ha pasado al menos 1 segundo
+                if (tiempoTranscurrido >= 1) {
+                    estadoTransmisionGlobal.segundoEnCancion += tiempoTranscurrido;
+                    
+                    // Si supera 240 segundos, cambiar de canción
+                    if (estadoTransmisionGlobal.segundoEnCancion >= 240) {
+                        estadoTransmisionGlobal.indiceCancion = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
+                        estadoTransmisionGlobal.segundoEnCancion = estadoTransmisionGlobal.segundoEnCancion % 240;
+                    }
+                    
+                    estadoTransmisionGlobal.ultimaActualizacion = ahora;
+                    
+                    // Sincronizar player si está reproduciendo
+                    if (isPlaying && audioPlayer.currentTime >= 0) {
+                        const diferencia = Math.abs(audioPlayer.currentTime - estadoTransmisionGlobal.segundoEnCancion);
+                        
+                        // Si hay desfase mayor a 5 segundos, corregir
+                        if (diferencia > 5) {
+                            audioPlayer.currentTime = estadoTransmisionGlobal.segundoEnCancion;
+                        }
+                    }
                 }
             }
             
@@ -1227,57 +1319,63 @@
                 
                 if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
                     loadCurrentPlaylist().then(() => {
-                        currentTrackIndex = calcularIndiceInicial(currentPlaylist);
                         playCurrentTrack();
                     });
                 }
             }
             
+            // ======= EVENTO PLAY/PAUSE (UNIRSE A TRANSMISIÓN GLOBAL) =======
             playButton.addEventListener('click', function() {
                 if (isPlaying) {
+                    // PAUSA
                     audioPlayer.pause();
                     isPlaying = false;
                     updatePlayButton();
                 } else {
-                    if (!audioPlayer.src || audioPlayer.ended) {
-                        if (currentPlaylist.length === 0) {
+                    // PLAY - UNIRSE A TRANSMISIÓN GLOBAL
+                    if (currentPlaylist.length === 0) {
+                        loadCurrentPlaylist().then(() => {
+                            isPlaying = true;
+                            updatePlayButton();
+                            playCurrentTrack(); // Se unirá a la transmisión global
+                        });
+                    } else {
+                        isPlaying = true;
+                        updatePlayButton();
+                        
+                        // Verificar si necesitamos recargar playlist para sincronización
+                        const ahora = Date.now();
+                        if (ahora - estadoTransmisionGlobal.ultimaActualizacion > 30000) { // 30 segundos
                             loadCurrentPlaylist().then(() => {
-                                isPlaying = true;
-                                updatePlayButton();
                                 playCurrentTrack();
                             });
                         } else {
-                            isPlaying = true;
-                            updatePlayButton();
-                            playCurrentTrack();
+                            playCurrentTrack(); // Usar estado global actual
                         }
-                    } else {
-                        audioPlayer.play().then(() => {
-                            isPlaying = true;
-                            updatePlayButton();
-                        }).catch(e => {
-                            console.error('Error al reanudar:', e);
-                            playNextTrack();
-                        });
                     }
                 }
             });
             
             shareButton.addEventListener('click', shareRadio);
             
+            // INICIALIZAR
             updateDisplayInfo();
             generateScheduleCards();
             generateNovedades();
             loadCurrentPlaylist();
             
+            // Actualizar estado global cada segundo
+            setInterval(actualizarEstadoGlobal, 1000);
+            
             setInterval(checkScheduleChange, 60000);
             setInterval(updateDisplayInfo, 60000);
             
+            // Monitorear cambios navideños
             let faseActual = 'normal';
             setInterval(() => {
                 const nuevaFase = getFaseNavidad() || 'normal';
                 if (nuevaFase !== faseActual) {
-                    console.log(`🎄 Cambio: ${faseActual} → ${nuevaFase}`);
+                    console.log(`🎄 Cambio fase navideña: ${faseActual} → ${nuevaFase}`);
                     faseActual = nuevaFase;
                     loadCurrentPlaylist().then(() => {
                         if (isPlaying && currentPlaylist.length > 0) {
@@ -1290,5 +1388,6 @@
     </script>
 </body>
 </html>
+
 
 

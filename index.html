@@ -782,6 +782,34 @@
     <audio id="radioPlayer"></audio>
 
     <script>
+        // ======= FUNCIONES GLOBALES (FUERA de DOMContentLoaded) =======
+        
+        function getArgentinaTime() {
+            const now = new Date();
+            const argentinaOffset = -3 * 60;
+            const localOffset = now.getTimezoneOffset();
+            const offsetDiff = argentinaOffset + localOffset;
+            return new Date(now.getTime() + offsetDiff * 60000);
+        }
+        
+        function getFaseNavidad() {
+            const ahora = getArgentinaTime();
+            const mes = ahora.getMonth();  // 11 = Diciembre
+            const dia = ahora.getDate();
+            const hora = ahora.getHours();
+            
+            // Período navideño: 20-24 de diciembre, 20:00-23:59
+            // Y 25 de diciembre hasta las 03:00
+            if (mes === 11) { // Diciembre
+                // 20-24 de diciembre desde las 20:00
+                if (dia >= 20 && dia <= 24 && hora >= 20) return 'clasicos';
+                // 25 de diciembre 00:00-02:59
+                if (dia === 25 && hora < 3) return 'electronica';
+            }
+            return null;
+        }
+        
+        // ======= INICIO DEL SISTEMA =======
         document.addEventListener('DOMContentLoaded', function() {
             const playButton = document.getElementById('radioPlayButton');
             const shareButton = document.getElementById('shareRadioButton');
@@ -865,32 +893,6 @@
                 ]
             };
             
-            function getArgentinaTime() {
-                const now = new Date();
-                const argentinaOffset = -3 * 60;
-                const localOffset = now.getTimezoneOffset();
-                const offsetDiff = argentinaOffset + localOffset;
-                return new Date(now.getTime() + offsetDiff * 60000);
-            }
-            
-            // ======= DETECCIÓN NAVIDEÑA CORREGIDA =======
-            function getFaseNavidad() {
-                const ahora = getArgentinaTime();
-                const mes = ahora.getMonth();  // 11 = Diciembre
-                const dia = ahora.getDate();
-                const hora = ahora.getHours();
-                
-                // Período navideño: 20-24 de diciembre, 20:00-23:59
-                // Y 25 de diciembre hasta las 03:00
-                if (mes === 11) { // Diciembre
-                    // 20-24 de diciembre desde las 20:00
-                    if (dia >= 20 && dia <= 24 && hora >= 20) return 'clasicos';
-                    // 25 de diciembre 00:00-02:59
-                    if (dia === 25 && hora < 3) return 'electronica';
-                }
-                return null;
-            }
-            
             function formatTimeForDisplay(timeStr) {
                 const [hours, minutes] = timeStr.split(':').map(Number);
                 const period = hours >= 12 ? 'PM' : 'AM';
@@ -925,26 +927,22 @@
             }
             
             function updateDisplayInfo() {
-                currentSchedule = getCurrentSchedule();
-                
-                // TÍTULO ESPECIAL NAVIDEÑO
+                const scheduleReal = getCurrentSchedule();
                 const faseNavidad = getFaseNavidad();
+                
                 let displayName;
                 let timeRangeText;
                 
                 if (faseNavidad === 'clasicos' || faseNavidad === 'electronica') {
-                    // MODO NAVIDEÑO
                     displayName = 'Especial txt';
-                    
                     if (faseNavidad === 'clasicos') {
                         timeRangeText = '20:00 PM - 00:00 AM (Clásicos Navideños)';
                     } else {
                         timeRangeText = '00:00 AM - 03:00 AM (Electrónica Navideña)';
                     }
                 } else {
-                    // MODO NORMAL
-                    displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
-                    timeRangeText = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
+                    displayName = scheduleReal.displayName || programNames[scheduleReal.name] || scheduleReal.name;
+                    timeRangeText = `${formatTimeForDisplay(scheduleReal.start)} - ${formatTimeForDisplay(scheduleReal.end)}`;
                 }
                 
                 currentShow.textContent = displayName;
@@ -963,7 +961,6 @@
                     let displayName = schedule.displayName || programNames[schedule.name] || schedule.name;
                     let description = schedule.description || programDescriptions[schedule.name] || 'Programación automática';
                     
-                    // Mostrar "Especial txt" durante navidad en el horario 20:00-01:00
                     if ((faseNavidad === 'clasicos' || faseNavidad === 'electronica') && 
                         schedule.start === '20:00' && schedule.end === '01:00') {
                         displayName = 'Especial txt';
@@ -1054,7 +1051,6 @@
                 return Math.abs(hash);
             }
             
-            // ======= CALCULAR POSICIÓN GLOBAL (ÍNDICE + SEGUNDO) =======
             function calcularPosicionGlobalTransmision(lista) {
                 if (!lista || lista.length === 0) return { indice: 0, segundoEnCancion: 0 };
                 
@@ -1066,17 +1062,14 @@
                     milisegundosTranscurridos = 0;
                 }
                 
-                // Calcular ciclo completo de playlist
-                const duracionTotalPlaylist = lista.length * 240 * 1000; // 4min por canción
+                const duracionTotalPlaylist = lista.length * 240 * 1000;
                 const ciclosCompletos = Math.floor(milisegundosTranscurridos / duracionTotalPlaylist);
                 const msEnCicloActual = milisegundosTranscurridos - (ciclosCompletos * duracionTotalPlaylist);
                 
-                // Calcular canción actual dentro del ciclo
                 const indiceCancion = Math.floor(msEnCicloActual / (240 * 1000)) % lista.length;
                 const msEnCancion = msEnCicloActual % (240 * 1000);
                 const segundoEnCancion = Math.floor(msEnCancion / 1000);
                 
-                // Ajustar con hash de playlist para variación
                 const hashPlaylist = calcularHashPlaylist(lista);
                 const indiceFinal = (indiceCancion + hashPlaylist) % lista.length;
                 
@@ -1119,12 +1112,10 @@
                         currentPlaylist = [];
                     }
                     
-                    // CALCULAR POSICIÓN GLOBAL ACTUAL
                     if (currentPlaylist.length > 0) {
                         const posicionGlobal = calcularPosicionGlobalTransmision(currentPlaylist);
                         currentTrackIndex = posicionGlobal.indice;
                         
-                        // ACTUALIZAR ESTADO GLOBAL
                         estadoTransmisionGlobal = {
                             playlistHash: posicionGlobal.hash,
                             indiceCancion: posicionGlobal.indice,
@@ -1151,12 +1142,10 @@
             function playNextTrack() {
                 if (currentPlaylist.length === 0) return;
                 
-                // Avanzar en la transmisión GLOBAL
                 const ahora = Date.now();
                 const tiempoTranscurrido = (ahora - estadoTransmisionGlobal.ultimaActualizacion) / 1000;
                 const nuevoSegundo = estadoTransmisionGlobal.segundoEnCancion + tiempoTranscurrido;
                 
-                // Si pasó más de 240 segundos (4min), cambiar de canción
                 if (nuevoSegundo >= 240) {
                     currentTrackIndex = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
                     estadoTransmisionGlobal.indiceCancion = currentTrackIndex;
@@ -1175,13 +1164,11 @@
                 }, 100);
             }
             
-            // ======= REPRODUCIR CANCIÓN ACTUAL (SINCRONIZADO GLOBAL) =======
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) return;
                 
                 const track = currentPlaylist[currentTrackIndex];
                 
-                // Si ya está sonando la misma canción, no hacer nada
                 if (currentTrackPlaying === track && !audioPlayer.paused) {
                     console.log('⏭️ Ya está sonando esta canción');
                     return;
@@ -1190,20 +1177,15 @@
                 currentTrackPlaying = track;
                 console.log(`🎵 Transmisión global: canción ${currentTrackIndex}`);
                 
-                // Limpiar eventos anteriores
                 audioPlayer.onended = null;
                 audioPlayer.onerror = null;
                 
                 audioPlayer.src = track;
                 
-                // Configurar evento para cuando se carguen los metadatos
                 audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
                     audioPlayer.removeEventListener('loadedmetadata', onMetadata);
                     
-                    // USAR SEGUNDO GLOBAL, NO 0 Y NO ALEATORIO
                     const segundoGlobal = estadoTransmisionGlobal.segundoEnCancion;
-                    
-                    // Asegurar que no exceda la duración
                     const segundoSeguro = Math.min(segundoGlobal, audioPlayer.duration - 1);
                     
                     if (segundoSeguro > 0) {
@@ -1214,7 +1196,6 @@
                         console.log(`⏱️ Inicio desde 0 (transmisión nueva)`);
                     }
                     
-                    // Reproducir si está activo
                     if (isPlaying) {
                         const playPromise = audioPlayer.play();
                         if (playPromise !== undefined) {
@@ -1226,10 +1207,8 @@
                     }
                 }, { once: true });
                 
-                // Evento cuando termina la canción
                 audioPlayer.onended = function() {
                     console.log('⏭️ Canción terminó, siguiente en transmisión global...');
-                    // Actualizar estado global
                     estadoTransmisionGlobal.indiceCancion = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
                     estadoTransmisionGlobal.segundoEnCancion = 0;
                     estadoTransmisionGlobal.ultimaActualizacion = Date.now();
@@ -1237,30 +1216,25 @@
                     setTimeout(playNextTrack, 100);
                 };
                 
-                // Evento de error
                 audioPlayer.onerror = function() {
                     console.error('❌ Error en canción, siguiente en transmisión global...');
                     setTimeout(playNextTrack, 500);
                 };
                 
-                // Si ya está cargado, disparar manualmente
                 if (audioPlayer.readyState >= 1) {
                     audioPlayer.dispatchEvent(new Event('loadedmetadata'));
                 }
             }
             
-            // ======= ACTUALIZAR ESTADO GLOBAL PERIÓDICAMENTE =======
             function actualizarEstadoGlobal() {
                 if (currentPlaylist.length === 0) return;
                 
                 const ahora = Date.now();
                 const tiempoTranscurrido = (ahora - estadoTransmisionGlobal.ultimaActualizacion) / 1000;
                 
-                // Solo actualizar si ha pasado al menos 1 segundo
                 if (tiempoTranscurrido >= 1) {
                     estadoTransmisionGlobal.segundoEnCancion += tiempoTranscurrido;
                     
-                    // Si supera 240 segundos, cambiar de canción
                     if (estadoTransmisionGlobal.segundoEnCancion >= 240) {
                         estadoTransmisionGlobal.indiceCancion = (estadoTransmisionGlobal.indiceCancion + 1) % currentPlaylist.length;
                         estadoTransmisionGlobal.segundoEnCancion = estadoTransmisionGlobal.segundoEnCancion % 240;
@@ -1268,11 +1242,9 @@
                     
                     estadoTransmisionGlobal.ultimaActualizacion = ahora;
                     
-                    // Sincronizar player si está reproduciendo
                     if (isPlaying && audioPlayer.currentTime >= 0) {
                         const diferencia = Math.abs(audioPlayer.currentTime - estadoTransmisionGlobal.segundoEnCancion);
                         
-                        // Si hay desfase mayor a 5 segundos, corregir
                         if (diferencia > 5) {
                             audioPlayer.currentTime = estadoTransmisionGlobal.segundoEnCancion;
                         }
@@ -1315,6 +1287,7 @@
             
             function checkScheduleChange() {
                 const oldSchedule = currentSchedule ? currentSchedule.name : null;
+                currentSchedule = getCurrentSchedule();
                 updateDisplayInfo();
                 
                 if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
@@ -1324,33 +1297,29 @@
                 }
             }
             
-            // ======= EVENTO PLAY/PAUSE (UNIRSE A TRANSMISIÓN GLOBAL) =======
             playButton.addEventListener('click', function() {
                 if (isPlaying) {
-                    // PAUSA
                     audioPlayer.pause();
                     isPlaying = false;
                     updatePlayButton();
                 } else {
-                    // PLAY - UNIRSE A TRANSMISIÓN GLOBAL
                     if (currentPlaylist.length === 0) {
                         loadCurrentPlaylist().then(() => {
                             isPlaying = true;
                             updatePlayButton();
-                            playCurrentTrack(); // Se unirá a la transmisión global
+                            playCurrentTrack();
                         });
                     } else {
                         isPlaying = true;
                         updatePlayButton();
                         
-                        // Verificar si necesitamos recargar playlist para sincronización
                         const ahora = Date.now();
-                        if (ahora - estadoTransmisionGlobal.ultimaActualizacion > 30000) { // 30 segundos
+                        if (ahora - estadoTransmisionGlobal.ultimaActualizacion > 30000) {
                             loadCurrentPlaylist().then(() => {
                                 playCurrentTrack();
                             });
                         } else {
-                            playCurrentTrack(); // Usar estado global actual
+                            playCurrentTrack();
                         }
                     }
                 }
@@ -1358,19 +1327,15 @@
             
             shareButton.addEventListener('click', shareRadio);
             
-            // INICIALIZAR
             updateDisplayInfo();
             generateScheduleCards();
             generateNovedades();
             loadCurrentPlaylist();
             
-            // Actualizar estado global cada segundo
             setInterval(actualizarEstadoGlobal, 1000);
-            
             setInterval(checkScheduleChange, 60000);
             setInterval(updateDisplayInfo, 60000);
             
-            // Monitorear cambios navideños
             let faseActual = 'normal';
             setInterval(() => {
                 const nuevaFase = getFaseNavidad() || 'normal';
@@ -1388,6 +1353,3 @@
     </script>
 </body>
 </html>
-
-
-

@@ -132,7 +132,42 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     }
     
-    // --- FUNCIÓN MODIFICADA PARA MODO ESPECIAL ---
+    // --- NUEVA FUNCIÓN: Sincronización por hora del día ---
+    async function getCurrentTrackIndex(playlist) {
+        const ahora = await getArgentinaTime();
+        
+        // 1. Segundos transcurridos desde medianoche ARG
+        const segundosHoy = (ahora.getHours() * 3600) + 
+                            (ahora.getMinutes() * 60) + 
+                            ahora.getSeconds();
+        
+        // 2. Duración total de esta playlist
+        const duracionTotalPlaylist = playlist.reduce((sum, track) => sum + track.duration, 0);
+        
+        if (duracionTotalPlaylist === 0) return { index: 0, time: 0 };
+        
+        // 3. Dónde estamos en el ciclo de reproducción
+        const segundosEnCiclo = segundosHoy % duracionTotalPlaylist;
+        
+        // 4. Encontrar canción y segundo exacto
+        let acumulado = 0;
+        for (let i = 0; i < playlist.length; i++) {
+            acumulado += playlist[i].duration;
+            if (acumulado > segundosEnCiclo) {
+                const segundoEnCancion = playlist[i].duration - (acumulado - segundosEnCiclo);
+                return { 
+                    index: i, 
+                    time: segundoEnCancion,
+                    segundosHoy: segundosHoy,
+                    segundosEnCiclo: segundosEnCiclo
+                };
+            }
+        }
+        
+        return { index: 0, time: 0 };
+    }
+    
+    // --- FUNCIÓN MODIFICADA CON SINCRONIZACIÓN ---
     async function loadCurrentPlaylist() {
         console.log('🎭 MODO ESPECIAL ACTIVADO - Ignorando programación horaria');
         
@@ -146,22 +181,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPlaylist = data.tracks;
                 console.log(`✅ Playlist ESPECIAL cargada: ${currentPlaylist.length} pistas`);
                 
-                currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
+                // --- USAMOS SINCRONIZACIÓN POR HORA, NO RANDOM ---
+                const trackInfo = await getCurrentTrackIndex(currentPlaylist);
+                currentTrackIndex = trackInfo.index;
                 
-                // Actualizar UI para mostrar que es especial
+                console.log(`⏱️  Sincronizado por hora: canción ${currentTrackIndex + 1}/${currentPlaylist.length} en segundo ${Math.floor(trackInfo.time)}`);
+                
+                // Actualizar UI
                 currentShow.textContent = "🎭 Selección Especial";
                 currentTimeName.textContent = "Selección Especial";
-                currentTimeRange.textContent = "Reproducción continua";
+                currentTimeRange.textContent = "Reproducción sincronizada 24/7";
                 
                 if (isPlaying) {
+                    // Si ya está reproduciendo, sincronizar
                     playCurrentTrack();
+                    // Posicionar en el segundo correcto
+                    if (trackInfo.time > 0 && audioPlayer.src) {
+                        audioPlayer.currentTime = trackInfo.time;
+                    }
                 }
             } else {
                 throw new Error("Formato incorrecto en playlist especial");
             }
         } catch (error) {
             console.error(`❌ Error cargando ${PLAYLIST_ESPECIAL}:`, error);
-            alert(`No se puede cargar la playlist especial. Verifica que ${PLAYLIST_ESPECIAL} exista y tenga pistas.`);
             currentPlaylist = [];
         }
     }
@@ -178,6 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+        console.log(`⏭️  Siguiente canción: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
         
         setTimeout(() => {
             playCurrentTrack();
@@ -193,37 +237,42 @@ document.addEventListener('DOMContentLoaded', function() {
         const track = currentPlaylist[currentTrackIndex];
         
         if (currentTrackPlaying === track && !audioPlayer.paused) {
-            playNextTrack();
             return;
         }
         
         currentTrackPlaying = track;
-        console.log('🎵 Reproduciendo (Especial):', track);
+        console.log(`🎵 Reproduciendo (${currentTrackIndex + 1}/${currentPlaylist.length}): ${track.file}`);
         
         audioPlayer.onended = null;
         audioPlayer.onerror = null;
         
-        audioPlayer.src = track;
+        audioPlayer.src = track.path;
         
         audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
             audioPlayer.removeEventListener('loadedmetadata', onMetadata);
             
-            if (audioPlayer.duration > 30) {
-                const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
-                audioPlayer.currentTime = randomStart;
-            } else {
-                audioPlayer.currentTime = 0;
-            }
-            
-            if (isPlaying) {
-                const playPromise = audioPlayer.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => {
-                        console.error('❌ Error al reproducir:', e);
-                        setTimeout(playNextTrack, 500);
-                    });
+            // Cuando se cargue la canción, sincronizamos con el tiempo real
+            setTimeout(async () => {
+                const trackInfo = await getCurrentTrackIndex(currentPlaylist);
+                const segundoCorrecto = trackInfo.time;
+                
+                // Si estamos en la canción correcta, posicionamos
+                if (trackInfo.index === currentTrackIndex && segundoCorrecto > 0) {
+                    audioPlayer.currentTime = segundoCorrecto;
+                    console.log(`⏱️  Sincronizado al segundo: ${Math.floor(segundoCorrecto)}`);
                 }
-            }
+                
+                if (isPlaying) {
+                    const playPromise = audioPlayer.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(e => {
+                            console.error('❌ Error al reproducir:', e);
+                            setTimeout(playNextTrack, 500);
+                        });
+                    }
+                }
+            }, 100);
+            
         }, { once: true });
         
         audioPlayer.onended = function() {
@@ -319,6 +368,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // --- NUEVA: Verificar sincronización periódicamente ---
+    async function verificarSincronizacion() {
+        if (currentPlaylist.length > 0 && isPlaying) {
+            const trackInfo = await getCurrentTrackIndex(currentPlaylist);
+            
+            // Si la canción actual NO es la que debería sonar según la hora
+            if (trackInfo.index !== currentTrackIndex) {
+                console.log(`🔄 Resincronizando: canción ${currentTrackIndex + 1} → ${trackInfo.index + 1}`);
+                currentTrackIndex = trackInfo.index;
+                playCurrentTrack();
+            }
+        }
+    }
+    
     playButton.addEventListener('click', async function() {
         if (isPlaying) {
             audioPlayer.pause();
@@ -328,7 +391,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!audioPlayer.src || audioPlayer.ended) {
                 if (currentPlaylist.length === 0) {
                     await loadCurrentPlaylist();
-                    currentTrackIndex = 0;
                 }
                 isPlaying = true;
                 updatePlayButton();
@@ -352,17 +414,19 @@ document.addEventListener('DOMContentLoaded', function() {
         generateScheduleCards();
         generateCollectionCards();
         
-        // En modo especial, no chequeamos horarios
         if (MODO_ESPECIAL) {
-            console.log('🎭 INICIANDO EN MODO ESPECIAL');
+            console.log('🎭 INICIANDO EN MODO ESPECIAL - Sincronización 24/7');
             currentShow.textContent = "🎭 Selección Especial";
             currentTimeName.textContent = "Selección Especial";
-            currentTimeRange.textContent = "Reproducción continua";
+            currentTimeRange.textContent = "Reproducción sincronizada 24/7";
         }
         
         await loadCurrentPlaylist();
         
-        // Configurar chequeos periódicos (solo para fallos técnicos)
+        // Verificar sincronización cada 30 segundos
+        setInterval(verificarSincronizacion, 30000);
+        
+        // Chequeo técnico cada 5 segundos
         setInterval(() => {
             if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
                 audioPlayer.play().catch(e => {

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preload" href="Chomsky.otf" as="font" type="font/otf" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+    <title>Teletext Radio</title>
+    
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.txtradio.site/">
+    <meta property="og:title" content="Teletext Radio">
+    <meta property="og:description" content="Patagonia Argentina">
+    <meta property="og:image" content="https://www.txtradio.site/social-preview.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Vista previa de Teletext Radio">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@teletextlab">
+    <meta name="twitter:creator" content="@teletextlab">
+    <meta name="twitter:title" content="Teletext Radio">
+    <meta name="twitter:description" content="Patagonia Argentina">
+    <meta name="twitter:image" content="https://www.txtradio.site/social-preview.png">
+    <meta name="twitter:image:alt" content="Vista previa de Teletext Radio">
+</head>
+<body>
+    <div class="fixed-player">
+        <div class="player-left">
+            <a href="#" class="station-logo">TXT</a>
+            <div class="live-status">
+                <span class="live-dot"></span>
+                <span class="live-text">EN VIVO</span>
+            </div>
+            <div class="current-show" id="currentShow">Cargando programación...</div>
+        </div>
+        
+        <div class="player-center">
+            <button class="play-button" id="radioPlayButton" aria-label="Reproducir/Pausar">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path id="playPath" d="M5 4L15 10L5 16V4Z"/>
+                    <path id="pausePath1" d="M5 4H9V16H5V4Z" opacity="0"/>
+                    <path id="pausePath2" d="M11 4H15V16H11V4Z" opacity="0"/>
+                </svg>
+            </button>
+            <button class="share-button" id="shareRadioButton" aria-label="Compartir radio" title="Copiar enlace">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 16.08C17.24 16.08 16.56 16.38 16.04 16.85L8.91 12.7C8.96 12.47 9 12.24 9 12C9 11.76 8.96 11.53 8.91 11.3L15.96 7.19C16.5 7.69 17.21 8 18 8C19.66 8 21 6.66 21 5C21 3.34 19.66 2 18 2C16.34 2 15 3.34 15 5C15 5.24 15.04 5.47 15.09 5.7L8.04 9.81C7.5 9.31 6.79 9 6 9C4.34 9 3 10.34 3 12C3 13.66 4.34 15 6 15C6.79 15 7.5 14.69 8.04 14.19L15.16 18.35C15.11 18.56 15.08 18.78 15.08 19C15.08 20.61 16.39 21.92 18 21.92C19.61 21.92 20.92 20.61 20.92 19C20.92 17.39 19.61 16.08 18 16.08Z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">Teletext Radio</h1>
+                <p class="hero-subtitle">Txt es una Radio Online creada por amantes de la música para amantes de la música.</p>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="now-playing">
+                <h2 class="section-title">EN VIVO <span>AHORA</span></h2>
+                <div class="current-time-block">
+                    <div class="time-title">Estás escuchando</div>
+                    <div class="time-name" id="currentTimeName">Cargando...</div>
+                    <div class="time-range" id="currentTimeRange">--:-- -- --:-- --</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
+            <div class="schedule-section">
+                <h2 class="section-title">PROGRAMACIÓN <span>DIARIA</span></h2>
+                <div class="schedule-grid"></div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="novedades-section">
+                <h2 class="section-title">NOVEDADES <span>TXT</span></h2>
+                <div class="novedades-grid">
+                    <div class="novedad-card">
+                        <div class="novedad-imagen">
+                            <img src="novedades/evento1.png" alt="Orto Galeria" loading="lazy">
+                        </div>
+                        <div class="novedad-texto">
+                            <p>Orto Galería del Litoral banca este espacio. Arte que no decora: incomoda, pregunta, circula.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="novedad-card">
+                        <div class="novedad-imagen">
+                            <img src="novedades/evento2.jpg" alt="Teletext Radio" loading="lazy">
+                        </div>
+                        <div class="novedad-texto">
+                            <p>Apoyá Teletext Radio. Radio independiente sostenida por quienes la escuchan. Sin algoritmos. Sin ruido. Con criterio.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="novedad-card">
+                        <div class="novedad-imagen">
+                            <img src="novedades/evento3.png" alt="Archivos Perdidos" loading="lazy">
+                        </div>
+                        <div class="novedad-texto">
+                            <p>Estrenamos "Archivos Perdidos", una sección los domingos a las 22hs donde rescatamos grabaciones raras, demos inéditos y sesiones de estudio nunca antes escuchadas. Primera edición: sesiones de synthwave argentino 1985-1990.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-section" style="background: rgba(20, 20, 20, 0.92);">
+            <div class="info-section">
+                <h2 class="section-title">INFORMACIÓN <span>& APOYO</span></h2>
+                <div class="info-content">
+                    <p class="info-text">
+                        Teletext Radio es una plataforma independiente que transmite música las 24 horas, con sede en la Patagonia Argentina. 
+                        Nuestro objetivo es ofrecer una experiencia auditiva única, combinando programación automática con selecciones curadas.
+                    </p>
+                    <a href='https://cafecito.app/teletext' class="cafecito-link" target="_blank" rel="noopener">
+                        <span>🌹 Apoya este proyecto en Cafecito</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3 class="footer-title">Teletext Radio</h3>
+                    <ul class="footer-links">
+                        <li><a href="#now-playing">En Vivo</a></li>
+                        <li><a href="#schedule">Programación</a></li>
+                        <li><a href="#collections">Colecciones</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3 class="footer-title">Contacto</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://www.instagram.com/teletextradio/" target="_blank" rel="noopener">Instagram</a></li>
+                        <li><a href="mailto:rteletextradio@gmail.com">Email</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h3 class="footer-title">Enlaces</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://cafecito.app/teletext" target="_blank" rel="noopener">Apoyar en Cafecito</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="sponsors-section">
+                <div class="sponsors-title">Patrocina</div>
+                <div class="sponsors-container">
+                    <div class="sponsor-item">
+                        <a href="https://www.instagram.com/ortogaleria/" target="_blank" rel="noopener" class="sponsor-link">
+                            <img src="novedades/globo.png" class="sponsor-logo" alt="Orto Galeria">
+                        </a>
+                        <div class="sponsor-name">Orto Galeria</div>
+                    </div>
+                    
+                    <div class="sponsor-item">
+                        <a href="https://www.instagram.com/teletextlab/" target="_blank" rel="noopener" class="sponsor-link">
+                            <img src="novedades/globo.png" class="sponsor-logo" alt="Teletextlab">
+                        </a>
+                        <div class="sponsor-name">Teletextlab</div>
+                    </div>
+                    
+                    <div class="sponsor-item">
+                        <a href="https://www.youtube.com/@txtradio" target="_blank" rel="noopener" class="sponsor-link">
+                            <img src="novedades/globo.png" class="sponsor-logo" alt="Cyberespacio">
+                        </a>
+                        <div class="sponsor-name">Cyberespacio</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <div class="copyright-content">
+                    © 2025 Teletextlab. Patagonia Argentina. Todos los derechos reservados.
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <audio id="radioPlayer"></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const playButton = document.getElementById('radioPlayButton');
+            const shareButton = document.getElementById('shareRadioButton');
+            let audioPlayer = document.getElementById('radioPlayer');
+            const playPath = document.getElementById('playPath');
+            const pausePath1 = document.getElementById('pausePath1');
+            const pausePath2 = document.getElementById('pausePath2');
+            const currentShow = document.getElementById('currentShow');
+            const currentTimeName = document.getElementById('currentTimeName');
+            const currentTimeRange = document.getElementById('currentTimeRange');
+            const scheduleGrid = document.querySelector('.schedule-grid');
+            
+            let isPlaying = false;
+            let currentPlaylist = [];
+            let currentTrackIndex = 0;
+            let currentSchedule = null;
+            let currentTrackPlaying = null;
+            
+            const programNames = {
+                "madrugada": "Radio 404",
+                "mañana": "Archivo txt", 
+                "tarde": "Telesoft",
+                "mediatarde": "Floppy Disk",
+                "noche": "Internet Archive",
+                "especial": "Especiales txt"
+            };
+            
+            const programDescriptions = {
+                "madrugada": "Sonidos atmosféricos y experimentales para las primeras horas del día.",
+                "mañana": "Programa matutino con energía y ritmos para comenzar el día.",
+                "tarde": "Ritmos variados y selecciones especiales para acompañar la tarde.",
+                "mediatarde": "Transición hacia la noche con sonidos más atmosféricos.",
+                "noche": "Sesiones extendidas y atmósferas nocturnas para terminar el día.",
+                "especial": "Programación especial viernes y sábados de 22:00 a 00:00. Seguinos en nuestras redes para mas info."
+            };
+            
+            const scheduleData = {
+                "schedules": [
+                    {
+                        "name": "madrugada",
+                        "displayName": "Radio 404",
+                        "start": "01:00",
+                        "end": "06:00",
+                        "description": programDescriptions.madrugada
+                    },
+                    {
+                        "name": "mañana",
+                        "displayName": "Archivo txt",
+                        "start": "06:00",
+                        "end": "12:00",
+                        "description": programDescriptions.mañana
+                    },
+                    {
+                        "name": "tarde",
+                        "displayName": "Telesoft",
+                        "start": "12:00",
+                        "end": "16:00",
+                        "description": programDescriptions.tarde
+                    },
+                    {
+                        "name": "mediatarde",
+                        "displayName": "Floppy Disk",
+                        "start": "16:00",
+                        "end": "20:00",
+                        "description": programDescriptions.mediatarde
+                    },
+                    {
+                        "name": "noche",
+                        "displayName": "Internet Archive",
+                        "start": "20:00",
+                        "end": "01:00",
+                        "description": programDescriptions.noche
+                    },
+                    {
+                        "name": "especial",
+                        "displayName": "Especiales txt",
+                        "start": "22:00",
+                        "end": "00:00",
+                        "description": programDescriptions.especial
+                    }
+                ]
+            };
+            
+            function getArgentinaTime() {
+                const now = new Date();
+                const argentinaOffset = -3 * 60;
+                const localOffset = now.getTimezoneOffset();
+                const offsetDiff = argentinaOffset + localOffset;
+                return new Date(now.getTime() + offsetDiff * 60000);
+            }
+            
+            function formatTimeForDisplay(timeStr) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                const period = hours >= 12 ? 'PM' : 'AM';
+                const displayHours = hours % 12 || 12;
+                return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+            }
+            
+            function getCurrentSchedule() {
+                const now = getArgentinaTime();
+                const currentHour = now.getHours();
+                const currentMinute = now.getMinutes();
+                const currentTime = currentHour * 60 + currentMinute;
+                
+                for (const regular of scheduleData.schedules) {
+                    const startTime = parseInt(regular.start.split(':')[0]) * 60 + parseInt(regular.start.split(':')[1]);
+                    let endTime = parseInt(regular.end.split(':')[0]) * 60 + parseInt(regular.end.split(':')[1]);
+                    
+                    if (endTime < startTime) {
+                        endTime += 24 * 60;
+                        const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
+                        if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
+                            return regular;
+                        }
+                    } else {
+                        if (currentTime >= startTime && currentTime < endTime) {
+                            return regular;
+                        }
+                    }
+                }
+                
+                return scheduleData.schedules[0];
+            }
+            
+            function updateDisplayInfo() {
+                currentSchedule = getCurrentSchedule();
+                const displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
+                
+                currentShow.textContent = displayName;
+                currentTimeName.textContent = displayName;
+                currentTimeRange.textContent = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
+            }
+            
+            function generateScheduleCards() {
+                if (!scheduleGrid) {
+                    console.error("❌ No se encontró .schedule-grid");
+                    return;
+                }
+                
+                scheduleGrid.innerHTML = '';
+                
+                scheduleData.schedules.forEach(schedule => {
+                    const card = document.createElement('div');
+                    card.className = 'schedule-card';
+                    
+                    const displayName = schedule.displayName || programNames[schedule.name] || schedule.name;
+                    const description = schedule.description || programDescriptions[schedule.name] || 'Programación automática';
+                    
+                    card.innerHTML = `
+                        <div class="schedule-time">${formatTimeForDisplay(schedule.start)} - ${formatTimeForDisplay(schedule.end)}</div>
+                        <div class="schedule-name">${displayName}</div>
+                        <div class="schedule-desc">${description}</div>
+                    `;
+                    
+                    scheduleGrid.appendChild(card);
+                });
+            }
+            
+            async function loadCurrentPlaylist() {
+                try {
+                    console.log('📻 Cargando playlist.json...');
+                    
+                    const response = await fetch('playlist.json');
+                    if (!response.ok) {
+                        console.error('❌ No se encontró playlist.json');
+                        currentPlaylist = ['music/jazzcartel.mp3'];
+                        return;
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.tracks && Array.isArray(data.tracks)) {
+                        currentPlaylist = data.tracks;
+                        console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
+                        
+                        currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
+                        console.log(`🎯 Empezando en posición: ${currentTrackIndex}`);
+                    } else {
+                        console.error('❌ Formato incorrecto en playlist.json');
+                        currentPlaylist = ['music/jazzcartel.mp3'];
+                    }
+                    
+                } catch (error) {
+                    console.log('Error cargando playlist:', error);
+                    currentPlaylist = ['music/jazzcartel.mp3'];
+                }
+            }
+            
+            function playNextTrack() {
+                if (currentPlaylist.length === 0) {
+                    console.log('⚠️ Playlist vacía, recargando...');
+                    loadCurrentPlaylist().then(() => {
+                        if (currentPlaylist.length > 0) {
+                            currentTrackIndex = 0;
+                            playCurrentTrack();
+                        }
+                    });
+                    return;
+                }
+                
+                currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+                console.log(`⏭️ Siguiente canción: ${currentTrackIndex}/${currentPlaylist.length}`);
+                
+                setTimeout(() => {
+                    playCurrentTrack();
+                }, 50);
+            }
+            
+            function playCurrentTrack() {
+                if (currentPlaylist.length === 0) {
+                    console.log('⚠️ No hay canciones en la playlist');
+                    return;
+                }
+                
+                const track = currentPlaylist[currentTrackIndex];
+                
+                if (currentTrackPlaying === track && !audioPlayer.paused) {
+                    console.log('⏭️ Ya está sonando esta canción, pasando a la siguiente');
+                    playNextTrack();
+                    return;
+                }
+                
+                currentTrackPlaying = track;
+                console.log('🎵 Reproduciendo:', track);
+                
+                audioPlayer.onended = null;
+                audioPlayer.onerror = null;
+                
+                audioPlayer.src = track;
+                
+                audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
+                    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
+                    
+                    if (audioPlayer.duration > 30) {
+                        const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
+                        audioPlayer.currentTime = randomStart;
+                        console.log(`⏱️ Inicio aleatorio: ${Math.floor(randomStart)}s`);
+                    } else {
+                        audioPlayer.currentTime = 0;
+                    }
+                    
+                    if (isPlaying) {
+                        const playPromise = audioPlayer.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(e => {
+                                console.error('❌ Error al reproducir:', e.name, e.message);
+                                setTimeout(playNextTrack, 500);
+                            });
+                        }
+                    }
+                }, { once: true });
+                
+                audioPlayer.onended = function() {
+                    console.log('✅ Canción terminó correctamente, siguiente...');
+                    playNextTrack();
+                };
+                
+                audioPlayer.onerror = function(e) {
+                    console.error('❌ Error en canción:', audioPlayer.error ? audioPlayer.error.message : 'Error desconocido');
+                    console.log('🔄 Pasando a siguiente canción...');
+                    
+                    setTimeout(() => {
+                        playNextTrack();
+                    }, 500);
+                };
+                
+                if (audioPlayer.readyState >= 1) {
+                    audioPlayer.dispatchEvent(new Event('loadedmetadata'));
+                }
+            }
+            
+            function updatePlayButton() {
+                if (isPlaying) {
+                    playPath.setAttribute('opacity', '0');
+                    pausePath1.setAttribute('opacity', '1');
+                    pausePath2.setAttribute('opacity', '1');
+                    playButton.setAttribute('aria-label', 'Pausar');
+                } else {
+                    playPath.setAttribute('opacity', '1');
+                    pausePath1.setAttribute('opacity', '0');
+                    pausePath2.setAttribute('opacity', '0');
+                    playButton.setAttribute('aria-label', 'Reproducir');
+                }
+            }
+            
+            function shareRadio() {
+                const url = window.location.href;
+                
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(url).then(() => {
+                        const originalHTML = shareButton.innerHTML;
+                        shareButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                        shareButton.style.borderColor = '#00FF37';
+                        shareButton.style.color = '#00FF37';
+                        
+                        setTimeout(() => {
+                            shareButton.innerHTML = originalHTML;
+                            shareButton.style.borderColor = '';
+                            shareButton.style.color = '';
+                        }, 2000);
+                    });
+                }
+            }
+            
+            function checkScheduleChange() {
+                const oldSchedule = currentSchedule ? currentSchedule.name : null;
+                updateDisplayInfo();
+                
+                if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
+                    console.log(`🔄 Cambio de horario: ${oldSchedule} → ${currentSchedule.name}`);
+                }
+            }
+            
+            // FUNCIONALIDAD NOVEDADES - SIN BOTÓN X
+            function inicializarNovedades() {
+                const novedadCards = document.querySelectorAll('.novedad-card');
+                
+                novedadCards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        const imagen = this.querySelector('img');
+                        const texto = this.querySelector('p');
+                        
+                        let modal = document.getElementById('modalNovedad');
+                        if (!modal) {
+                            modal = document.createElement('div');
+                            modal.id = 'modalNovedad';
+                            modal.className = 'modal-novedad';
+                            // SIN BOTÓN X
+                            modal.innerHTML = `
+                                <div class="modal-contenido">
+                                    <div class="modal-imagen-container">
+                                        <img src="" alt="Novedad ampliada">
+                                    </div>
+                                    <div class="modal-texto-completo"></div>
+                                </div>
+                            `;
+                            document.body.appendChild(modal);
+                            
+                            // Cerrar al hacer click en el fondo
+                            modal.addEventListener('click', (e) => {
+                                if (e.target === modal) {
+                                    modal.style.display = 'none';
+                                    document.body.style.overflow = 'auto';
+                                }
+                            });
+                            
+                            // Cerrar con Escape
+                            document.addEventListener('keydown', (e) => {
+                                if (e.key === 'Escape' && modal.style.display === 'flex') {
+                                    modal.style.display = 'none';
+                                    document.body.style.overflow = 'auto';
+                                }
+                            });
+                        }
+                        
+                        modal.querySelector('img').src = imagen.src;
+                        modal.querySelector('img').alt = imagen.alt;
+                        modal.querySelector('.modal-texto-completo').textContent = texto.textContent;
+                        
+                        modal.style.display = 'flex';
+                        document.body.style.overflow = 'hidden';
+                    });
+                });
+            }
+            
+            // EVENT LISTENERS
+            playButton.addEventListener('click', function() {
+                if (isPlaying) {
+                    audioPlayer.pause();
+                    isPlaying = false;
+                    updatePlayButton();
+                } else {
+                    if (!audioPlayer.src || audioPlayer.ended) {
+                        if (currentPlaylist.length === 0) {
+                            loadCurrentPlaylist().then(() => {
+                                currentTrackIndex = 0;
+                                isPlaying = true;
+                                updatePlayButton();
+                                playCurrentTrack();
+                            });
+                        } else {
+                            isPlaying = true;
+                            updatePlayButton();
+                            playCurrentTrack();
+                        }
+                    } else {
+                        audioPlayer.play().then(() => {
+                            isPlaying = true;
+                            updatePlayButton();
+                        }).catch(e => {
+                            console.error('Error al reanudar:', e);
+                            playNextTrack();
+                        });
+                    }
+                }
+            });
+            
+            shareButton.addEventListener('click', shareRadio);
+            
+            // INICIALIZACIÓN
+            updateDisplayInfo();
+            generateScheduleCards();
+            inicializarNovedades();
+            
+            loadCurrentPlaylist();
+            
+            setInterval(checkScheduleChange, 60000);
+            setInterval(updateDisplayInfo, 60000);
+            
+            setInterval(() => {
+                if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
+                    console.log('⚠️ Radio se detuvo inesperadamente, reanudando...');
+                    audioPlayer.play().catch(e => {
+                        console.error('No se pudo reanudar, siguiente canción:', e);
+                        playNextTrack();
+                    });
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

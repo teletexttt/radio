@@ -359,7 +359,7 @@ body {
     overflow: hidden;
 }
 
-/* MODAL PARA NOVEDADES - SIN SCROLL LATERAL */
+/* MODAL PARA NOVEDADES - IMAGEN TAMAÑO NATURAL */
 .modal-novedad {
     display: none;
     position: fixed;
@@ -372,7 +372,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    overflow: hidden; /* IMPORTANTE: oculta scroll del modal */
+    overflow: hidden;
 }
 
 .modal-contenido {
@@ -382,8 +382,8 @@ body {
     max-width: 90%;
     width: auto;
     max-height: 90vh;
-    overflow-y: auto; /* Solo scroll vertical si es necesario */
-    overflow-x: hidden; /* Oculta scroll horizontal */
+    overflow-y: auto;
+    overflow-x: hidden;
     border: 1px solid rgba(0, 255, 55, 0.2);
     display: flex;
     flex-direction: column;
@@ -402,7 +402,7 @@ body {
 
 .modal-imagen-container img {
     max-width: 100%;
-    max-height: 65vh; /* Un poco menos para evitar scroll */
+    max-height: 65vh;
     width: auto;
     height: auto;
     object-fit: contain;
@@ -414,48 +414,11 @@ body {
     padding: 25px 30px;
     color: rgba(255, 255, 255, 0.9);
     font-size: 1.1rem;
-    line-height: 1.6; /* Línea más compacta */
+    line-height: 1.6;
     flex-grow: 1;
     max-width: 700px;
     margin: 0 auto;
-    text-align: center; /* Centrar texto */
-}
-
-/* RESPONSIVE PARA MODAL - SIN SCROLL */
-@media (max-width: 768px) {
-    .modal-contenido {
-        max-width: 95%;
-        max-height: 85vh; /* Menos altura para móviles */
-    }
-    
-    .modal-imagen-container {
-        padding: 15px;
-    }
-    
-    .modal-imagen-container img {
-        max-height: 45vh; /* Ajustar para móviles */
-    }
-    
-    .modal-texto-completo {
-        padding: 15px 20px;
-        font-size: 1rem;
-        line-height: 1.5;
-    }
-}
-
-@media (max-width: 480px) {
-    .modal-contenido {
-        max-height: 80vh;
-    }
-    
-    .modal-imagen-container img {
-        max-height: 35vh;
-    }
-    
-    .modal-texto-completo {
-        padding: 12px 15px;
-        font-size: 0.95rem;
-    }
+    text-align: center;
 }
 
 /* INFO */
@@ -643,44 +606,6 @@ body {
     width: 100%;
 }
 
-/* ==================== */
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    .sponsor-logo {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .sponsors-container {
-        gap: 15px;
-    }
-    
-    .sponsor-name {
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .sponsor-logo {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .sponsors-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-    }
-    
-    .copyright {
-        padding: 20px 15px 0;
-        font-size: 0.75rem;
-    }
-}
-
-/* ==================== */
-
 /* RESPONSIVE */
 @media (max-width: 768px) {
     .fixed-player {
@@ -742,17 +667,23 @@ body {
     }
     
     .modal-contenido {
+        max-width: 95%;
+        max-height: 85vh;
         flex-direction: column;
-        max-height: 95vh;
     }
     
     .modal-imagen-container {
-        height: 200px;
+        padding: 15px;
+    }
+    
+    .modal-imagen-container img {
+        max-height: 45vh;
     }
     
     .modal-texto-completo {
-        padding: 20px;
+        padding: 15px 20px;
         font-size: 1rem;
+        line-height: 1.5;
     }
 }
 
@@ -788,14 +719,12 @@ body {
         gap: 20px;
     }
     
-    .modal-imagen-container {
-        height: 150px;
+    .modal-contenido {
+        max-height: 80vh;
     }
     
-    .modal-novedad .cerrar-modal {
-        top: 10px;
-        right: 10px;
-        font-size: 2rem;
+    .modal-imagen-container img {
+        max-height: 35vh;
     }
 }
 

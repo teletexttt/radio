@@ -203,9 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
         console.log(`⏭️ Siguiente canción: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
         
-        setTimeout(() => {
-            playCurrentTrack();
-        }, 50);
+        // SIN TIMEOUT - DIRECTO
+        playCurrentTrack();
     }
     
     function playCurrentTrack() {
@@ -224,44 +223,58 @@ document.addEventListener('DOMContentLoaded', function() {
         currentTrackPlaying = track.path;
         console.log(`🎵 Reproduciendo canción ${currentTrackIndex + 1}/${currentPlaylist.length}: ${track.file}`);
         
+        // Limpiar eventos anteriores
         audioPlayer.onended = null;
         audioPlayer.onerror = null;
         
+        // Detener reproducción actual antes de cambiar fuente
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        
+        // Nueva fuente
         audioPlayer.src = track.path;
         
-        audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
-            audioPlayer.removeEventListener('loadedmetadata', onMetadata);
-            
-            audioPlayer.currentTime = 0;
-            
+        // Cargar y reproducir
+        audioPlayer.load();
+        
+        const tryPlay = () => {
             if (isPlaying) {
                 const playPromise = audioPlayer.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(e => {
                         console.error('❌ Error al reproducir:', e.name, e.message);
-                        setTimeout(playNextTrack, 500);
+                        // Reintentar después de error
+                        setTimeout(() => playNextTrack(), 1000);
                     });
                 }
             }
+        };
+        
+        // Cuando se cargue la metadata, asegurar inicio desde 0
+        audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
+            audioPlayer.removeEventListener('loadedmetadata', onMetadata);
+            audioPlayer.currentTime = 0;
+            tryPlay();
         }, { once: true });
         
+        // Si ya está cargado, forzar inicio desde 0
+        if (audioPlayer.readyState >= 1) {
+            audioPlayer.currentTime = 0;
+            tryPlay();
+        }
+        
+        // Evento cuando termina la canción
         audioPlayer.onended = function() {
             console.log('✅ Canción terminó completamente, siguiente...');
             playNextTrack();
         };
         
+        // Manejo de errores
         audioPlayer.onerror = function(e) {
             console.error('❌ Error en canción:', audioPlayer.error ? audioPlayer.error.message : 'Error desconocido');
             console.log('🔄 Pasando a siguiente canción...');
-            
-            setTimeout(() => {
-                playNextTrack();
-            }, 500);
+            setTimeout(() => playNextTrack(), 500);
         };
-        
-        if (audioPlayer.readyState >= 1) {
-            audioPlayer.dispatchEvent(new Event('loadedmetadata'));
-        }
     }
     
     function updatePlayButton() {

@@ -1,4 +1,4 @@
-// app.js - Teletext Radio (Lógica Zara Radio)
+// app.js - Radio Teletext (Playlist lineal infinita)
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // --- LÓGICA ZARA RADIO: Playlist cíclica ---
+    // --- PLAYLIST LINEAL INFINITA (Simple) ---
     async function loadCurrentPlaylist() {
         try {
             console.log('📻 Cargando playlist.json...');
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('playlist.json');
             if (!response.ok) {
                 console.error('❌ No se encontró playlist.json');
-                currentPlaylist = ['music/jazzcartel.mp3'];
+                currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
                 return;
             }
             
@@ -173,36 +173,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.tracks && Array.isArray(data.tracks)) {
                 currentPlaylist = data.tracks;
+                currentTrackIndex = 0;
                 console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
-                
-                // --- ZARA RADIO: Hora solo decide canción INICIAL ---
-                const ahora = getArgentinaTime();
-                const segundosHoy = (ahora.getHours() * 3600) + 
-                                    (ahora.getMinutes() * 60) + 
-                                    ahora.getSeconds();
-                
-                // Cada canción dura 240s (4min) según tu JSON
-                // Ciclo completo: 74 canciones × 240s = 17760s (4.93 horas)
-                const duracionCiclo = currentPlaylist.length * 240; // 17760s
-                
-                // Cuántos segundos llevamos en el ciclo actual
-                const segundosEnCiclo = segundosHoy % duracionCiclo;
-                
-                // Qué canción toca AHORA en el ciclo
-                const cancionEnCiclo = Math.floor(segundosEnCiclo / 240);
-                currentTrackIndex = cancionEnCiclo;
-                
-                console.log(`🔄 Zara Radio: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
-                console.log(`   Ciclo: ${Math.floor(segundosHoy / duracionCiclo) + 1} (cada ${(duracionCiclo/3600).toFixed(2)} horas)`);
-                
             } else {
                 console.error('❌ Formato incorrecto en playlist.json');
-                currentPlaylist = ['music/jazzcartel.mp3'];
+                currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
+                currentTrackIndex = 0;
             }
             
         } catch (error) {
             console.log('Error cargando playlist:', error);
-            currentPlaylist = ['music/jazzcartel.mp3'];
+            currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
+            currentTrackIndex = 0;
         }
     }
     
@@ -226,7 +208,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 50);
     }
     
-    // --- ZARA RADIO: Canciones COMPLETAS desde 0 ---
     function playCurrentTrack() {
         if (currentPlaylist.length === 0) {
             console.log('⚠️ No hay canciones en la playlist');
@@ -236,22 +217,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const track = currentPlaylist[currentTrackIndex];
         
         // Si ya está reproduciendo ESTA canción, no hacer nada
-        if (currentTrackPlaying === track && !audioPlayer.paused) {
+        if (currentTrackPlaying === track.path && !audioPlayer.paused) {
             return;
         }
         
-        currentTrackPlaying = track;
+        currentTrackPlaying = track.path;
         console.log(`🎵 Reproduciendo canción ${currentTrackIndex + 1}/${currentPlaylist.length}: ${track.file}`);
         
         audioPlayer.onended = null;
         audioPlayer.onerror = null;
         
-        audioPlayer.src = track;
+        audioPlayer.src = track.path;
         
         audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
             audioPlayer.removeEventListener('loadedmetadata', onMetadata);
             
-            // --- ZARA RADIO: SIEMPRE desde 0:00 ---
             audioPlayer.currentTime = 0;
             
             if (isPlaying) {
@@ -326,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // --- ZARA RADIO: Play recalcula canción ACTUAL ---
+    // --- LÓGICA SIMPLE DE PLAY/PAUSA ---
     playButton.addEventListener('click', async function() {
         if (isPlaying) {
             // PAUSA normal
@@ -334,25 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
             isPlaying = false;
             updatePlayButton();
         } else {
-            // PLAY: Si pasó mucho tiempo, recalcular canción ACTUAL
+            // PLAY: Inicia o reanuda
             if (currentPlaylist.length === 0) {
                 await loadCurrentPlaylist();
-            }
-            
-            // Recalcular qué canción toca AHORA según hora
-            const ahora = getArgentinaTime();
-            const segundosHoy = (ahora.getHours() * 3600) + 
-                                (ahora.getMinutes() * 60) + 
-                                ahora.getSeconds();
-            const duracionCiclo = currentPlaylist.length * 240;
-            const segundosEnCiclo = segundosHoy % duracionCiclo;
-            const cancionActual = Math.floor(segundosEnCiclo / 240);
-            
-            // Si la canción actual es diferente a la que teníamos
-            if (cancionActual !== currentTrackIndex) {
-                console.log(`📻 Retomando transmisión: canción ${currentTrackIndex + 1} → ${cancionActual + 1}`);
-                currentTrackIndex = cancionActual;
-                currentTrackPlaying = null; // Forzar nueva carga
             }
             
             isPlaying = true;

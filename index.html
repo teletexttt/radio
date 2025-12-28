@@ -349,6 +349,7 @@
                 });
             }
             
+            // --- FUNCIÓN CORREGIDA: SINCRONIZACIÓN 24/7 ---
             async function loadCurrentPlaylist() {
                 try {
                     console.log('📻 Cargando playlist.json...');
@@ -366,8 +367,29 @@
                         currentPlaylist = data.tracks;
                         console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
                         
-                        currentTrackIndex = Math.floor(Math.random() * currentPlaylist.length);
-                        console.log(`🎯 Empezando en posición: ${currentTrackIndex}`);
+                        // --- SINCRONIZACIÓN POR HORA (NO RANDOM) ---
+                        const ahora = getArgentinaTime();
+                        const segundosHoy = (ahora.getHours() * 3600) + 
+                                            (ahora.getMinutes() * 60) + 
+                                            ahora.getSeconds();
+                        
+                        // Duración total: 74 canciones × 240s = 17760s (29.6 horas)
+                        const duracionTotal = 17760;
+                        
+                        // En qué posición del ciclo de 29.6 horas estamos
+                        const segundosEnCiclo = segundosHoy % duracionTotal;
+                        
+                        // Cada canción dura 240s, calcular cuál toca ahora
+                        const cancionActual = Math.floor(segundosEnCiclo / 240);
+                        currentTrackIndex = cancionActual % currentPlaylist.length;
+                        
+                        // También calcular en qué segundo de ESA canción estamos
+                        const segundoEnCancion = segundosEnCiclo % 240;
+                        
+                        console.log(`⏱️ Sincronizado: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
+                        console.log(`   Hora ARG: ${ahora.getHours()}:${ahora.getMinutes()}:${ahora.getSeconds()}`);
+                        console.log(`   Segundo en canción: ${segundoEnCancion}s`);
+                        
                     } else {
                         console.error('❌ Formato incorrecto en playlist.json');
                         currentPlaylist = ['music/jazzcartel.mp3'];
@@ -399,6 +421,7 @@
                 }, 50);
             }
             
+            // --- FUNCIÓN CORREGIDA: INICIO SINCRONIZADO ---
             function playCurrentTrack() {
                 if (currentPlaylist.length === 0) {
                     console.log('⚠️ No hay canciones en la playlist');
@@ -424,13 +447,16 @@
                 audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
                     audioPlayer.removeEventListener('loadedmetadata', onMetadata);
                     
-                    if (audioPlayer.duration > 30) {
-                        const randomStart = Math.random() * (audioPlayer.duration * 0.7) + (audioPlayer.duration * 0.1);
-                        audioPlayer.currentTime = randomStart;
-                        console.log(`⏱️ Inicio aleatorio: ${Math.floor(randomStart)}s`);
-                    } else {
-                        audioPlayer.currentTime = 0;
-                    }
+                    // --- INICIO SINCRONIZADO (NO RANDOM) ---
+                    const ahora = getArgentinaTime();
+                    const segundosHoy = (ahora.getHours() * 3600) + 
+                                        (ahora.getMinutes() * 60) + 
+                                        ahora.getSeconds();
+                    const segundoEnCancion = segundosHoy % 240; // 240s por canción
+                    
+                    // Posicionar en el segundo correcto de la canción
+                    audioPlayer.currentTime = segundoEnCancion;
+                    console.log(`⏱️ Inicio sincronizado: segundo ${Math.floor(segundoEnCancion)}`);
                     
                     if (isPlaying) {
                         const playPromise = audioPlayer.play();

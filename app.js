@@ -1,5 +1,6 @@
-// app.js - Radio Teletext (Playlist lineal infinita)
+// app.js - Teletext Radio v2.0 (Playlist por programa)
 document.addEventListener('DOMContentLoaded', function() {
+    // Elementos DOM
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
     let audioPlayer = document.getElementById('radioPlayer');
@@ -11,76 +12,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentTimeRange = document.getElementById('currentTimeRange');
     const scheduleGrid = document.querySelector('.schedule-grid');
     
+    // Estado
     let isPlaying = false;
     let currentPlaylist = [];
     let currentTrackIndex = 0;
-    let currentSchedule = null;
+    let currentProgram = null;
+    let nextProgram = null; // Para transiciones
     let currentTrackPlaying = null;
+    let programsConfig = null;
     
-    const programNames = {
-        "madrugada": "Radio 404",
-        "mañana": "Archivo txt", 
-        "tarde": "Telesoft",
-        "mediatarde": "Floppy Disk",
-        "noche": "Internet Archive",
-        "especial": "Especiales txt"
-    };
-    
-    const programDescriptions = {
-        "madrugada": "Sonidos atmosféricos y experimentales para las primeras horas del día.",
-        "mañana": "Programa matutino con energía y ritmos para comenzar el día.",
-        "tarde": "Ritmos variados y selecciones especiales para acompañar la tarde.",
-        "mediatarde": "Transición hacia la noche con sonidos más atmosféricos.",
-        "noche": "Sesiones extendidas y atmósferas nocturnas para terminar el día.",
-        "especial": "Programación especial viernes y sábados de 22:00 a 00:00. Seguinos en nuestras redes para mas info."
-    };
-    
-    const scheduleData = {
-        "schedules": [
-            {
-                "name": "madrugada",
-                "displayName": "Radio 404",
-                "start": "01:00",
-                "end": "06:00",
-                "description": programDescriptions.madrugada
-            },
-            {
-                "name": "mañana",
-                "displayName": "Archivo txt",
-                "start": "06:00",
-                "end": "12:00",
-                "description": programDescriptions.mañana
-            },
-            {
-                "name": "tarde",
-                "displayName": "Telesoft",
-                "start": "12:00",
-                "end": "16:00",
-                "description": programDescriptions.tarde
-            },
-            {
-                "name": "mediatarde",
-                "displayName": "Floppy Disk",
-                "start": "16:00",
-                "end": "20:00",
-                "description": programDescriptions.mediatarde
-            },
-            {
-                "name": "noche",
-                "displayName": "Internet Archive",
-                "start": "20:00",
-                "end": "01:00",
-                "description": programDescriptions.noche
-            },
-            {
-                "name": "especial",
-                "displayName": "Especiales txt",
-                "start": "22:00",
-                "end": "00:00",
-                "description": programDescriptions.especial
-            }
-        ]
-    };
+    // ========== FUNCIONES CORE ==========
     
     function getArgentinaTime() {
         const now = new Date();
@@ -97,100 +38,127 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     }
     
-    function getCurrentSchedule() {
-        const now = getArgentinaTime();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        const currentTime = currentHour * 60 + currentMinute;
-        
-        for (const regular of scheduleData.schedules) {
-            const startTime = parseInt(regular.start.split(':')[0]) * 60 + parseInt(regular.start.split(':')[1]);
-            let endTime = parseInt(regular.end.split(':')[0]) * 60 + parseInt(regular.end.split(':')[1]);
+    // ========== GESTIÓN DE PROGRAMAS ==========
+    
+    async function loadProgramsConfig() {
+        try {
+            console.log('📋 Cargando configuración de programas...');
+            const response = await fetch('music/_programs.json');
             
-            if (endTime < startTime) {
+            if (!response.ok) {
+                console.error('❌ No se encontró music/_programs.json');
+                return null;
+            }
+            
+            programsConfig = await response.json();
+            console.log(`✅ Config cargada: ${programsConfig.programs.length} programas`);
+            return programsConfig;
+            
+        } catch (error) {
+            console.error('Error cargando configuración:', error);
+            return null;
+        }
+    }
+    
+    function getCurrentProgramFromSchedule(now) {
+        if (!programsConfig) return null;
+        
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+        
+        for (const program of programsConfig.programs) {
+            const start = program.schedule.start.split(':').map(Number);
+            const end = program.schedule.end.split(':').map(Number);
+            
+            const startTime = start[0] * 60 + start[1];
+            let endTime = end[0] * 60 + end[1];
+            
+            // Manejar cruce de medianoche
+            if (endTime <= startTime) {
                 endTime += 24 * 60;
-                const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
-                if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
-                    return regular;
-                }
-            } else {
-                if (currentTime >= startTime && currentTime < endTime) {
-                    return regular;
-                }
+            }
+            
+            const adjustedCurrentTime = currentTime + 
+                (currentTime < startTime ? 24 * 60 : 0);
+            
+            if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
+                return program;
             }
         }
         
-        return scheduleData.schedules[0];
+        return programsConfig.programs[0]; // Fallback
     }
     
-    function updateDisplayInfo() {
-        currentSchedule = getCurrentSchedule();
-        const displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
-        
-        currentShow.textContent = displayName;
-        currentTimeName.textContent = displayName;
-        currentTimeRange.textContent = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
-    }
+    // ========== PLAYLIST POR PROGRAMA ==========
     
-    function generateScheduleCards() {
-        if (!scheduleGrid) {
-            console.error("❌ No se encontró .schedule-grid");
-            return;
-        }
-        
-        scheduleGrid.innerHTML = '';
-        
-        scheduleData.schedules.forEach(schedule => {
-            const card = document.createElement('div');
-            card.className = 'schedule-card';
-            
-            const displayName = schedule.displayName || programNames[schedule.name] || schedule.name;
-            const description = schedule.description || programDescriptions[schedule.name] || 'Programación automática';
-            
-            card.innerHTML = `
-                <div class="schedule-time">${formatTimeForDisplay(schedule.start)} - ${formatTimeForDisplay(schedule.end)}</div>
-                <div class="schedule-name">${displayName}</div>
-                <div class="schedule-desc">${description}</div>
-            `;
-            
-            scheduleGrid.appendChild(card);
-        });
-    }
-    
-    // --- PLAYLIST LINEAL INFINITA (Simple) ---
     async function loadCurrentPlaylist() {
         try {
-            console.log('📻 Cargando playlist.json...');
+            if (!programsConfig) {
+                await loadProgramsConfig();
+                if (!programsConfig) {
+                    currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
+                    return;
+                }
+            }
             
-            const response = await fetch('playlist.json');
-            if (!response.ok) {
-                console.error('❌ No se encontró playlist.json');
+            // Determinar programa actual
+            const now = getArgentinaTime();
+            currentProgram = getCurrentProgramFromSchedule(now);
+            
+            if (!currentProgram) {
+                console.error('❌ No se pudo determinar el programa actual');
                 currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
                 return;
             }
             
-            const data = await response.json();
+            console.log(`🎯 Programa actual: ${currentProgram.name} (${currentProgram.folder})`);
             
-            if (data.tracks && Array.isArray(data.tracks)) {
-                currentPlaylist = data.tracks;
-                currentTrackIndex = 0;
+            // Cargar playlist del programa
+            const response = await fetch(`music/${currentProgram.folder}/playlist.json`);
+            
+            if (response.ok) {
+                const playlistData = await response.json();
+                currentPlaylist = playlistData.tracks || [];
                 console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
             } else {
-                console.error('❌ Formato incorrecto en playlist.json');
-                currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
-                currentTrackIndex = 0;
+                // Fallback: buscar MP3s directamente
+                console.warn(`⚠️ No hay playlist.json, usando MP3s directos`);
+                currentPlaylist = await scanFolderForMP3s(currentProgram.folder);
             }
             
+            currentTrackIndex = 0;
+            updateDisplayInfo();
+            
         } catch (error) {
-            console.log('Error cargando playlist:', error);
+            console.error('Error cargando playlist:', error);
             currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
             currentTrackIndex = 0;
         }
     }
     
+    async function scanFolderForMP3s(folderName) {
+        try {
+            // Este endpoint debe existir en tu backend
+            const response = await fetch(`api/list-mp3s?folder=${folderName}`);
+            if (response.ok) {
+                const files = await response.json();
+                return files.map(file => ({
+                    file: file,
+                    duration: 240, // Valor por defecto
+                    path: `music/${folderName}/${file}`
+                }));
+            }
+        } catch (e) {
+            console.error('No se pudo escanear carpeta:', e);
+        }
+        
+        // Fallback absoluto
+        return [{path: 'music/jazzcartel.mp3', duration: 240, file: 'jazzcartel.mp3'}];
+    }
+    
+    // ========== REPRODUCCIÓN ==========
+    
     function playNextTrack() {
         if (currentPlaylist.length === 0) {
-            console.log('⚠️ Playlist vacía, recargando...');
             loadCurrentPlaylist().then(() => {
                 if (currentPlaylist.length > 0) {
                     currentTrackIndex = 0;
@@ -201,33 +169,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-        console.log(`⏭️ Siguiente canción: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
+        console.log(`⏭️ Siguiente: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
         
-        // SIN TIMEOUT - DIRECTO
         playCurrentTrack();
     }
     
     function playCurrentTrack() {
-        if (currentPlaylist.length === 0) {
-            console.log('⚠️ No hay canciones en la playlist');
-            return;
-        }
+        if (currentPlaylist.length === 0) return;
         
         const track = currentPlaylist[currentTrackIndex];
         
-        // Si ya está reproduciendo ESTA canción, no hacer nada
+        // Evitar recargar la misma canción
         if (currentTrackPlaying === track.path && !audioPlayer.paused) {
             return;
         }
         
         currentTrackPlaying = track.path;
-        console.log(`🎵 Reproduciendo canción ${currentTrackIndex + 1}/${currentPlaylist.length}: ${track.file}`);
+        console.log(`🎵 Reproduciendo: ${track.file}`);
         
-        // Limpiar eventos anteriores
+        // Limpiar estado anterior
         audioPlayer.onended = null;
         audioPlayer.onerror = null;
-        
-        // Detener reproducción actual antes de cambiar fuente
         audioPlayer.pause();
         audioPlayer.currentTime = 0;
         
@@ -235,46 +197,71 @@ document.addEventListener('DOMContentLoaded', function() {
         audioPlayer.src = track.path;
         
         // Cargar y reproducir
-        audioPlayer.load();
-        
         const tryPlay = () => {
             if (isPlaying) {
-                const playPromise = audioPlayer.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => {
-                        console.error('❌ Error al reproducir:', e.name, e.message);
-                        // Reintentar después de error
-                        setTimeout(() => playNextTrack(), 1000);
-                    });
-                }
+                audioPlayer.play().catch(e => {
+                    console.error('❌ Error al reproducir:', e);
+                    setTimeout(() => playNextTrack(), 1000);
+                });
             }
         };
         
-        // Cuando se cargue la metadata, asegurar inicio desde 0
         audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
             audioPlayer.removeEventListener('loadedmetadata', onMetadata);
-            audioPlayer.currentTime = 0;
+            audioPlayer.currentTime = 0; // Siempre desde 0
             tryPlay();
         }, { once: true });
         
-        // Si ya está cargado, forzar inicio desde 0
+        // Si ya está cargado
         if (audioPlayer.readyState >= 1) {
             audioPlayer.currentTime = 0;
             tryPlay();
         }
         
-        // Evento cuando termina la canción
-        audioPlayer.onended = function() {
-            console.log('✅ Canción terminó completamente, siguiente...');
+        // Eventos
+        audioPlayer.onended = () => {
+            console.log('✅ Canción terminada');
             playNextTrack();
         };
         
-        // Manejo de errores
-        audioPlayer.onerror = function(e) {
-            console.error('❌ Error en canción:', audioPlayer.error ? audioPlayer.error.message : 'Error desconocido');
-            console.log('🔄 Pasando a siguiente canción...');
+        audioPlayer.onerror = () => {
+            console.error('❌ Error de audio');
             setTimeout(() => playNextTrack(), 500);
         };
+    }
+    
+    // ========== INTERFAZ ==========
+    
+    function updateDisplayInfo() {
+        if (!currentProgram) return;
+        
+        currentShow.textContent = currentProgram.name;
+        currentTimeName.textContent = currentProgram.name;
+        currentTimeRange.textContent = 
+            `${formatTimeForDisplay(currentProgram.schedule.start)} - ${formatTimeForDisplay(currentProgram.schedule.end)}`;
+    }
+    
+    function generateScheduleCards() {
+        if (!scheduleGrid || !programsConfig) return;
+        
+        scheduleGrid.innerHTML = '';
+        
+        programsConfig.programs.forEach(program => {
+            const card = document.createElement('div');
+            card.className = 'schedule-card';
+            
+            card.innerHTML = `
+                <div class="schedule-time">
+                    ${formatTimeForDisplay(program.schedule.start)} - ${formatTimeForDisplay(program.schedule.end)}
+                </div>
+                <div class="schedule-name">${program.name}</div>
+                <div class="schedule-desc">
+                    ${program.description || 'Programación automática'}
+                </div>
+            `;
+            
+            scheduleGrid.appendChild(card);
+        });
     }
     
     function updatePlayButton() {
@@ -291,122 +278,109 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function shareRadio() {
-        const url = window.location.href;
+    // ========== DETECCIÓN DE CAMBIO DE PROGRAMA ==========
+    
+    function checkProgramChange() {
+        if (!programsConfig) return;
         
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(() => {
-                const originalHTML = shareButton.innerHTML;
-                shareButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
-                shareButton.style.borderColor = '#00FF37';
-                shareButton.style.color = '#00FF37';
-                
-                setTimeout(() => {
-                    shareButton.innerHTML = originalHTML;
-                    shareButton.style.borderColor = '';
-                    shareButton.style.color = '';
-                }, 2000);
+        const now = getArgentinaTime();
+        const newProgram = getCurrentProgramFromSchedule(now);
+        
+        if (!newProgram || !currentProgram) return;
+        
+        if (newProgram.folder !== currentProgram.folder) {
+            console.log(`🔄 Cambio de programa: ${currentProgram.name} → ${newProgram.name}`);
+            
+            if (isPlaying) {
+                // Transición diferida: esperar a que termine la canción actual
+                nextProgram = newProgram;
+                console.log('⏳ Transición programada al terminar canción actual');
+            } else {
+                // Cambiar inmediatamente si no está reproduciendo
+                currentProgram = newProgram;
+                loadCurrentPlaylist();
+            }
+        }
+    }
+    
+    // Modificar evento onended para manejar transiciones
+    const originalOnEnded = audioPlayer.onended;
+    audioPlayer.onended = function() {
+        if (nextProgram) {
+            console.log(`🎬 Transicionando a: ${nextProgram.name}`);
+            currentProgram = nextProgram;
+            nextProgram = null;
+            loadCurrentPlaylist().then(() => {
+                playCurrentTrack();
             });
+        } else {
+            playNextTrack();
         }
-    }
+    };
     
-    function checkScheduleChange() {
-        const oldSchedule = currentSchedule ? currentSchedule.name : null;
-        updateDisplayInfo();
-        
-        if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
-            console.log(`🔄 Cambio de horario: ${oldSchedule} → ${currentSchedule.name}`);
-        }
-    }
+    // ========== EVENTOS ==========
     
-    // --- LÓGICA SIMPLE DE PLAY/PAUSA ---
     playButton.addEventListener('click', async function() {
         if (isPlaying) {
-            // PAUSA normal
             audioPlayer.pause();
             isPlaying = false;
-            updatePlayButton();
         } else {
-            // PLAY: Inicia o reanuda
             if (currentPlaylist.length === 0) {
                 await loadCurrentPlaylist();
             }
-            
             isPlaying = true;
-            updatePlayButton();
             playCurrentTrack();
+        }
+        updatePlayButton();
+    });
+    
+    shareButton.addEventListener('click', function() {
+        const url = window.location.href;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+                const originalHTML = shareButton.innerHTML;
+                shareButton.innerHTML = '✅';
+                shareButton.style.borderColor = '#00FF37';
+                setTimeout(() => {
+                    shareButton.innerHTML = originalHTML;
+                    shareButton.style.borderColor = '';
+                }, 2000);
+            });
         }
     });
     
-    shareButton.addEventListener('click', shareRadio);
+    // ========== INICIALIZACIÓN ==========
     
-    // FUNCIONALIDAD NOVEDADES
-    function inicializarNovedades() {
-        const novedadCards = document.querySelectorAll('.novedad-card');
+    async function init() {
+        console.log('🚀 Iniciando Teletext Radio v2.0...');
         
-        novedadCards.forEach(card => {
-            card.addEventListener('click', function() {
-                const imagen = this.querySelector('img');
-                const texto = this.querySelector('p');
-                
-                let modal = document.getElementById('modalNovedad');
-                if (!modal) {
-                    modal = document.createElement('div');
-                    modal.id = 'modalNovedad';
-                    modal.className = 'modal-novedad';
-                    modal.innerHTML = `
-                        <div class="modal-contenido">
-                            <div class="modal-imagen-container">
-                                <img src="" alt="Novedad ampliada">
-                            </div>
-                            <div class="modal-texto-completo"></div>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-                    
-                    modal.addEventListener('click', (e) => {
-                        if (e.target === modal) {
-                            modal.style.display = 'none';
-                            document.body.style.overflow = 'auto';
-                        }
-                    });
-                    
-                    document.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape' && modal.style.display === 'flex') {
-                            modal.style.display = 'none';
-                            document.body.style.overflow = 'auto';
-                        }
-                    });
-                }
-                
-                modal.querySelector('img').src = imagen.src;
-                modal.querySelector('img').alt = imagen.alt;
-                modal.querySelector('.modal-texto-completo').textContent = texto.textContent;
-                
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-            });
-        });
+        // 1. Cargar configuración
+        await loadProgramsConfig();
+        
+        // 2. Cargar playlist inicial
+        await loadCurrentPlaylist();
+        
+        // 3. Generar interfaz
+        updateDisplayInfo();
+        if (programsConfig) {
+            generateScheduleCards();
+        }
+        
+        // 4. Iniciar checks periódicos
+        setInterval(checkProgramChange, 30000); // Cada 30 segundos
+        setInterval(updateDisplayInfo, 60000);
+        
+        // 5. Check de caída de audio
+        setInterval(() => {
+            if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
+                console.log('⚠️ Audio caído, reintentando...');
+                audioPlayer.play().catch(() => playNextTrack());
+            }
+        }, 5000);
+        
+        console.log('✅ Radio lista');
     }
     
-    // INICIALIZACIÓN
-    updateDisplayInfo();
-    generateScheduleCards();
-    inicializarNovedades();
-    
-    loadCurrentPlaylist();
-    
-    setInterval(checkScheduleChange, 60000);
-    setInterval(updateDisplayInfo, 60000);
-    
-    // Chequeo de caída
-    setInterval(() => {
-        if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
-            console.log('⚠️ Radio se detuvo inesperadamente, reanudando...');
-            audioPlayer.play().catch(e => {
-                console.error('No se pudo reanudar, siguiente canción:', e);
-                playNextTrack();
-            });
-        }
-    }, 5000);
+    // Iniciar
+    init();
 });

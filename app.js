@@ -1,4 +1,4 @@
-// app.js - Todo el JavaScript de Teletext Radio
+// app.js - Teletext Radio (Lógica Zara Radio)
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // --- FUNCIÓN CORREGIDA: SINCRONIZACIÓN 24/7 ---
+    // --- LÓGICA ZARA RADIO: Playlist cíclica ---
     async function loadCurrentPlaylist() {
         try {
             console.log('📻 Cargando playlist.json...');
@@ -175,23 +175,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPlaylist = data.tracks;
                 console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
                 
-                // --- SINCRONIZACIÓN POR HORA (NO RANDOM) ---
+                // --- ZARA RADIO: Hora solo decide canción INICIAL ---
                 const ahora = getArgentinaTime();
                 const segundosHoy = (ahora.getHours() * 3600) + 
                                     (ahora.getMinutes() * 60) + 
                                     ahora.getSeconds();
                 
-                // Duración total: 74 canciones × 240s = 17760s (29.6 horas)
-                const duracionTotal = 17760;
+                // Cada canción dura 240s (4min) según tu JSON
+                // Ciclo completo: 74 canciones × 240s = 17760s (4.93 horas)
+                const duracionCiclo = currentPlaylist.length * 240; // 17760s
                 
-                // En qué posición del ciclo de 29.6 horas estamos
-                const segundosEnCiclo = segundosHoy % duracionTotal;
+                // Cuántos segundos llevamos en el ciclo actual
+                const segundosEnCiclo = segundosHoy % duracionCiclo;
                 
-                // Cada canción dura 240s, calcular cuál toca ahora
-                const cancionActual = Math.floor(segundosEnCiclo / 240);
-                currentTrackIndex = cancionActual % currentPlaylist.length;
+                // Qué canción toca AHORA en el ciclo
+                const cancionEnCiclo = Math.floor(segundosEnCiclo / 240);
+                currentTrackIndex = cancionEnCiclo;
                 
-                console.log(`⏱️ Sincronizado: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
+                console.log(`🔄 Zara Radio: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
+                console.log(`   Ciclo: ${Math.floor(segundosHoy / duracionCiclo) + 1} (cada ${(duracionCiclo/3600).toFixed(2)} horas)`);
                 
             } else {
                 console.error('❌ Formato incorrecto en playlist.json');
@@ -217,14 +219,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-        console.log(`⏭️ Siguiente canción: ${currentTrackIndex}/${currentPlaylist.length}`);
+        console.log(`⏭️ Siguiente canción: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
         
         setTimeout(() => {
             playCurrentTrack();
         }, 50);
     }
     
-    // --- FUNCIÓN CORREGIDA: INICIO SINCRONIZADO ---
+    // --- ZARA RADIO: Canciones COMPLETAS desde 0 ---
     function playCurrentTrack() {
         if (currentPlaylist.length === 0) {
             console.log('⚠️ No hay canciones en la playlist');
@@ -233,14 +235,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const track = currentPlaylist[currentTrackIndex];
         
+        // Si ya está reproduciendo ESTA canción, no hacer nada
         if (currentTrackPlaying === track && !audioPlayer.paused) {
-            console.log('⏭️ Ya está sonando esta canción, pasando a la siguiente');
-            playNextTrack();
             return;
         }
         
         currentTrackPlaying = track;
-        console.log('🎵 Reproduciendo:', track);
+        console.log(`🎵 Reproduciendo canción ${currentTrackIndex + 1}/${currentPlaylist.length}: ${track.file}`);
         
         audioPlayer.onended = null;
         audioPlayer.onerror = null;
@@ -250,16 +251,8 @@ document.addEventListener('DOMContentLoaded', function() {
         audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
             audioPlayer.removeEventListener('loadedmetadata', onMetadata);
             
-            // --- INICIO SINCRONIZADO (NO RANDOM) ---
-            const ahora = getArgentinaTime();
-            const segundosHoy = (ahora.getHours() * 3600) + 
-                                (ahora.getMinutes() * 60) + 
-                                ahora.getSeconds();
-            const segundoEnCancion = segundosHoy % 240; // 240s por canción
-            
-            // Posicionar en el segundo correcto de la canción
-            audioPlayer.currentTime = segundoEnCancion;
-            console.log(`⏱️ Inicio sincronizado: segundo ${Math.floor(segundoEnCancion)}`);
+            // --- ZARA RADIO: SIEMPRE desde 0:00 ---
+            audioPlayer.currentTime = 0;
             
             if (isPlaying) {
                 const playPromise = audioPlayer.play();
@@ -273,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, { once: true });
         
         audioPlayer.onended = function() {
-            console.log('✅ Canción terminó correctamente, siguiente...');
+            console.log('✅ Canción terminó completamente, siguiente...');
             playNextTrack();
         };
         
@@ -333,7 +326,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // FUNCIONALIDAD NOVEDADES - SIN BOTÓN X
+    // --- ZARA RADIO: Play recalcula canción ACTUAL ---
+    playButton.addEventListener('click', async function() {
+        if (isPlaying) {
+            // PAUSA normal
+            audioPlayer.pause();
+            isPlaying = false;
+            updatePlayButton();
+        } else {
+            // PLAY: Si pasó mucho tiempo, recalcular canción ACTUAL
+            if (currentPlaylist.length === 0) {
+                await loadCurrentPlaylist();
+            }
+            
+            // Recalcular qué canción toca AHORA según hora
+            const ahora = getArgentinaTime();
+            const segundosHoy = (ahora.getHours() * 3600) + 
+                                (ahora.getMinutes() * 60) + 
+                                ahora.getSeconds();
+            const duracionCiclo = currentPlaylist.length * 240;
+            const segundosEnCiclo = segundosHoy % duracionCiclo;
+            const cancionActual = Math.floor(segundosEnCiclo / 240);
+            
+            // Si la canción actual es diferente a la que teníamos
+            if (cancionActual !== currentTrackIndex) {
+                console.log(`📻 Retomando transmisión: canción ${currentTrackIndex + 1} → ${cancionActual + 1}`);
+                currentTrackIndex = cancionActual;
+                currentTrackPlaying = null; // Forzar nueva carga
+            }
+            
+            isPlaying = true;
+            updatePlayButton();
+            playCurrentTrack();
+        }
+    });
+    
+    shareButton.addEventListener('click', shareRadio);
+    
+    // FUNCIONALIDAD NOVEDADES
     function inicializarNovedades() {
         const novedadCards = document.querySelectorAll('.novedad-card');
         
@@ -347,7 +377,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     modal = document.createElement('div');
                     modal.id = 'modalNovedad';
                     modal.className = 'modal-novedad';
-                    // SIN BOTÓN X
                     modal.innerHTML = `
                         <div class="modal-contenido">
                             <div class="modal-imagen-container">
@@ -358,7 +387,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                     document.body.appendChild(modal);
                     
-                    // Cerrar al hacer click en el fondo
                     modal.addEventListener('click', (e) => {
                         if (e.target === modal) {
                             modal.style.display = 'none';
@@ -366,7 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                     
-                    // Cerrar con Escape
                     document.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape' && modal.style.display === 'flex') {
                             modal.style.display = 'none';
@@ -385,40 +412,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // EVENT LISTENERS
-    playButton.addEventListener('click', function() {
-        if (isPlaying) {
-            audioPlayer.pause();
-            isPlaying = false;
-            updatePlayButton();
-        } else {
-            if (!audioPlayer.src || audioPlayer.ended) {
-                if (currentPlaylist.length === 0) {
-                    loadCurrentPlaylist().then(() => {
-                        currentTrackIndex = 0;
-                        isPlaying = true;
-                        updatePlayButton();
-                        playCurrentTrack();
-                    });
-                } else {
-                    isPlaying = true;
-                    updatePlayButton();
-                    playCurrentTrack();
-                }
-            } else {
-                audioPlayer.play().then(() => {
-                    isPlaying = true;
-                    updatePlayButton();
-                }).catch(e => {
-                    console.error('Error al reanudar:', e);
-                    playNextTrack();
-                });
-            }
-        }
-    });
-    
-    shareButton.addEventListener('click', shareRadio);
-    
     // INICIALIZACIÓN
     updateDisplayInfo();
     generateScheduleCards();
@@ -429,6 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(checkScheduleChange, 60000);
     setInterval(updateDisplayInfo, 60000);
     
+    // Chequeo de caída
     setInterval(() => {
         if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
             console.log('⚠️ Radio se detuvo inesperadamente, reanudando...');

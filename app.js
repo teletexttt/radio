@@ -1,4 +1,4 @@
-// app.js - Teletext Radio v2.0 (Playlist por programa)
+// app.js - TELEXT RADIO (MODO SIMPLE - Esta Semana)
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos DOM
     const playButton = document.getElementById('radioPlayButton');
@@ -10,18 +10,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentShow = document.getElementById('currentShow');
     const currentTimeName = document.getElementById('currentTimeName');
     const currentTimeRange = document.getElementById('currentTimeRange');
-    const scheduleGrid = document.querySelector('.schedule-grid');
     
-    // Estado
+    // Estado simple
     let isPlaying = false;
     let currentPlaylist = [];
     let currentTrackIndex = 0;
-    let currentProgram = null;
-    let nextProgram = null; // Para transiciones
     let currentTrackPlaying = null;
-    let programsConfig = null;
     
-    // ========== FUNCIONES CORE ==========
+    // ========== FUNCIONES DE TIEMPO (MANTENER) ==========
     
     function getArgentinaTime() {
         const now = new Date();
@@ -38,128 +34,51 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
     }
     
-    // ========== GESTIÓN DE PROGRAMAS ==========
+    // ========== PLAYLIST SIMPLE ==========
     
-    async function loadProgramsConfig() {
+    async function loadSimplePlaylist() {
         try {
-            console.log('📋 Cargando configuración de programas...');
-            const response = await fetch('music/_programs.json');
+            console.log('📻 Cargando playlist simple...');
+            const response = await fetch('music/playlist.json');
             
             if (!response.ok) {
-                console.error('❌ No se encontró music/_programs.json');
-                return null;
+                throw new Error('No se encontró playlist.json');
             }
             
-            programsConfig = await response.json();
-            console.log(`✅ Config cargada: ${programsConfig.programs.length} programas`);
-            return programsConfig;
+            const data = await response.json();
             
-        } catch (error) {
-            console.error('Error cargando configuración:', error);
-            return null;
-        }
-    }
-    
-    function getCurrentProgramFromSchedule(now) {
-        if (!programsConfig) return null;
-        
-        const currentTime = now.getHours() * 60 + now.getMinutes();
-        
-        for (const program of programsConfig.programs) {
-            const start = program.schedule.start.split(':').map(Number);
-            const end = program.schedule.end.split(':').map(Number);
+            // Convertir strings a objetos
+            currentPlaylist = data.tracks.map(trackPath => ({
+                path: trackPath,
+                file: trackPath.split('/').pop(),
+                duration: 240 // Valor por defecto
+            }));
             
-            const startTime = start[0] * 60 + start[1];
-            let endTime = end[0] * 60 + end[1];
-            
-            // Manejar cruce de medianoche
-            if (endTime <= startTime) {
-                endTime += 24 * 60;
-            }
-            
-            const adjustedCurrentTime = currentTime + 
-                (currentTime < startTime ? 24 * 60 : 0);
-            
-            if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
-                return program;
-            }
-        }
-        
-        return programsConfig.programs[0]; // Fallback
-    }
-    
-    // ========== PLAYLIST POR PROGRAMA ==========
-    
-    async function loadCurrentPlaylist() {
-        try {
-            if (!programsConfig) {
-                await loadProgramsConfig();
-                if (!programsConfig) {
-                    currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
-                    return;
-                }
-            }
-            
-            // Determinar programa actual
-            const now = getArgentinaTime();
-            currentProgram = getCurrentProgramFromSchedule(now);
-            
-            if (!currentProgram) {
-                console.error('❌ No se pudo determinar el programa actual');
-                currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
-                return;
-            }
-            
-            console.log(`🎯 Programa actual: ${currentProgram.name} (${currentProgram.folder})`);
-            
-            // Cargar playlist del programa
-            const response = await fetch(`music/${currentProgram.folder}/playlist.json`);
-            
-            if (response.ok) {
-                const playlistData = await response.json();
-                currentPlaylist = playlistData.tracks || [];
-                console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
-            } else {
-                // Fallback: buscar MP3s directamente
-                console.warn(`⚠️ No hay playlist.json, usando MP3s directos`);
-                currentPlaylist = await scanFolderForMP3s(currentProgram.folder);
-            }
-            
+            // ⭐⭐ IMPORTANTE: Siempre empieza desde la PRIMERA ⭐⭐
             currentTrackIndex = 0;
-            updateDisplayInfo();
+            
+            console.log(`✅ ${currentPlaylist.length} canciones cargadas (Modo Simple)`);
             
         } catch (error) {
             console.error('Error cargando playlist:', error);
-            currentPlaylist = [{path: 'music/jazzcartel.mp3'}];
+            
+            // Fallback con algunos de tus tracks
+            currentPlaylist = [
+                {path: 'music/aerodynamik.mp3', file: 'aerodynamik.mp3', duration: 240},
+                {path: 'music/andando.mp3', file: 'andando.mp3', duration: 240},
+                {path: 'music/bajoelagua.mp3', file: 'bajoelagua.mp3', duration: 240},
+                {path: 'music/blueelectric.mp3', file: 'blueelectric.mp3', duration: 240},
+                {path: 'music/ciudad.mp3', file: 'ciudad.mp3', duration: 240},
+                {path: 'music/jazzcartel.mp3', file: 'jazzcartel.mp3', duration: 240}
+            ];
             currentTrackIndex = 0;
         }
     }
     
-    async function scanFolderForMP3s(folderName) {
-        try {
-            // Este endpoint debe existir en tu backend
-            const response = await fetch(`api/list-mp3s?folder=${folderName}`);
-            if (response.ok) {
-                const files = await response.json();
-                return files.map(file => ({
-                    file: file,
-                    duration: 240, // Valor por defecto
-                    path: `music/${folderName}/${file}`
-                }));
-            }
-        } catch (e) {
-            console.error('No se pudo escanear carpeta:', e);
-        }
-        
-        // Fallback absoluto
-        return [{path: 'music/jazzcartel.mp3', duration: 240, file: 'jazzcartel.mp3'}];
-    }
-    
-    // ========== REPRODUCCIÓN ==========
-    
     function playNextTrack() {
         if (currentPlaylist.length === 0) {
-            loadCurrentPlaylist().then(() => {
+            console.log('⚠️ Playlist vacía, recargando...');
+            loadSimplePlaylist().then(() => {
                 if (currentPlaylist.length > 0) {
                     currentTrackIndex = 0;
                     playCurrentTrack();
@@ -168,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Avanza secuencialmente (1→2→3→...→N→1)
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
         console.log(`⏭️ Siguiente: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
         
@@ -175,7 +95,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function playCurrentTrack() {
-        if (currentPlaylist.length === 0) return;
+        if (currentPlaylist.length === 0) {
+            console.log('⚠️ No hay canciones');
+            return;
+        }
         
         const track = currentPlaylist[currentTrackIndex];
         
@@ -185,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentTrackPlaying = track.path;
-        console.log(`🎵 Reproduciendo: ${track.file}`);
+        console.log(`🎵 ${track.file} (${currentTrackIndex + 1}/${currentPlaylist.length})`);
         
         // Limpiar estado anterior
         audioPlayer.onended = null;
@@ -196,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Nueva fuente
         audioPlayer.src = track.path;
         
-        // Cargar y reproducir
+        // Reproducir si está en modo play
         const tryPlay = () => {
             if (isPlaying) {
                 audioPlayer.play().catch(e => {
@@ -206,9 +129,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         
+        // Manejar carga del audio
         audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
             audioPlayer.removeEventListener('loadedmetadata', onMetadata);
-            audioPlayer.currentTime = 0; // Siempre desde 0
+            audioPlayer.currentTime = 0; // ⭐ SIEMPRE desde 0:00 ⭐
             tryPlay();
         }, { once: true });
         
@@ -218,14 +142,15 @@ document.addEventListener('DOMContentLoaded', function() {
             tryPlay();
         }
         
-        // Eventos
-        audioPlayer.onended = () => {
-            console.log('✅ Canción terminada');
+        // Cuando termina la canción
+        audioPlayer.onended = function() {
+            console.log('✅ Canción terminada, siguiente...');
             playNextTrack();
         };
         
-        audioPlayer.onerror = () => {
-            console.error('❌ Error de audio');
+        // Manejo de errores
+        audioPlayer.onerror = function() {
+            console.error('❌ Error de audio, saltando canción...');
             setTimeout(() => playNextTrack(), 500);
         };
     }
@@ -233,35 +158,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== INTERFAZ ==========
     
     function updateDisplayInfo() {
-        if (!currentProgram) return;
+        // Mantén tu lógica actual de mostrar programa/horario
+        const scheduleData = {
+            "schedules": [
+                {
+                    "name": "madrugada",
+                    "displayName": "Radio 404",
+                    "start": "01:00",
+                    "end": "06:00",
+                    "description": "Sonidos atmosféricos y experimentales para las primeras horas del día."
+                },
+                {
+                    "name": "mañana",
+                    "displayName": "Archivo txt",
+                    "start": "06:00",
+                    "end": "12:00",
+                    "description": "Programa matutino con energía y ritmos para comenzar el día."
+                }
+                // ... tus otros programas
+            ]
+        };
         
-        currentShow.textContent = currentProgram.name;
-        currentTimeName.textContent = currentProgram.name;
+        const now = getArgentinaTime();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        const currentTime = currentHour * 60 + currentMinute;
+        
+        let currentSchedule = scheduleData.schedules[0];
+        
+        for (const schedule of scheduleData.schedules) {
+            const start = schedule.start.split(':').map(Number);
+            const end = schedule.end.split(':').map(Number);
+            const startTime = start[0] * 60 + start[1];
+            let endTime = end[0] * 60 + end[1];
+            
+            if (endTime < startTime) endTime += 24 * 60;
+            
+            const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
+            
+            if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
+                currentSchedule = schedule;
+                break;
+            }
+        }
+        
+        // Actualizar DOM
+        currentShow.textContent = currentSchedule.displayName;
+        currentTimeName.textContent = currentSchedule.displayName;
         currentTimeRange.textContent = 
-            `${formatTimeForDisplay(currentProgram.schedule.start)} - ${formatTimeForDisplay(currentProgram.schedule.end)}`;
-    }
-    
-    function generateScheduleCards() {
-        if (!scheduleGrid || !programsConfig) return;
-        
-        scheduleGrid.innerHTML = '';
-        
-        programsConfig.programs.forEach(program => {
-            const card = document.createElement('div');
-            card.className = 'schedule-card';
-            
-            card.innerHTML = `
-                <div class="schedule-time">
-                    ${formatTimeForDisplay(program.schedule.start)} - ${formatTimeForDisplay(program.schedule.end)}
-                </div>
-                <div class="schedule-name">${program.name}</div>
-                <div class="schedule-desc">
-                    ${program.description || 'Programación automática'}
-                </div>
-            `;
-            
-            scheduleGrid.appendChild(card);
-        });
+            `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
     }
     
     function updatePlayButton() {
@@ -278,63 +223,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // ========== DETECCIÓN DE CAMBIO DE PROGRAMA ==========
-    
-    function checkProgramChange() {
-        if (!programsConfig) return;
-        
-        const now = getArgentinaTime();
-        const newProgram = getCurrentProgramFromSchedule(now);
-        
-        if (!newProgram || !currentProgram) return;
-        
-        if (newProgram.folder !== currentProgram.folder) {
-            console.log(`🔄 Cambio de programa: ${currentProgram.name} → ${newProgram.name}`);
-            
-            if (isPlaying) {
-                // Transición diferida: esperar a que termine la canción actual
-                nextProgram = newProgram;
-                console.log('⏳ Transición programada al terminar canción actual');
-            } else {
-                // Cambiar inmediatamente si no está reproduciendo
-                currentProgram = newProgram;
-                loadCurrentPlaylist();
-            }
-        }
-    }
-    
-    // Modificar evento onended para manejar transiciones
-    const originalOnEnded = audioPlayer.onended;
-    audioPlayer.onended = function() {
-        if (nextProgram) {
-            console.log(`🎬 Transicionando a: ${nextProgram.name}`);
-            currentProgram = nextProgram;
-            nextProgram = null;
-            loadCurrentPlaylist().then(() => {
-                playCurrentTrack();
-            });
-        } else {
-            playNextTrack();
-        }
-    };
-    
-    // ========== EVENTOS ==========
-    
-    playButton.addEventListener('click', async function() {
-        if (isPlaying) {
-            audioPlayer.pause();
-            isPlaying = false;
-        } else {
-            if (currentPlaylist.length === 0) {
-                await loadCurrentPlaylist();
-            }
-            isPlaying = true;
-            playCurrentTrack();
-        }
-        updatePlayButton();
-    });
-    
-    shareButton.addEventListener('click', function() {
+    function shareRadio() {
         const url = window.location.href;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(() => {
@@ -347,30 +236,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 2000);
             });
         }
+    }
+    
+    // ========== EVENTOS ==========
+    
+    playButton.addEventListener('click', async function() {
+        if (isPlaying) {
+            // PAUSA
+            audioPlayer.pause();
+            isPlaying = false;
+        } else {
+            // PLAY simple - sin cálculos horarios
+            if (currentPlaylist.length === 0) {
+                await loadSimplePlaylist();
+            }
+            isPlaying = true;
+            playCurrentTrack();
+        }
+        updatePlayButton();
     });
+    
+    shareButton.addEventListener('click', shareRadio);
     
     // ========== INICIALIZACIÓN ==========
     
     async function init() {
-        console.log('🚀 Iniciando Teletext Radio v2.0...');
+        console.log('🚀 Iniciando Teletext Radio (Modo Simple - Esta Semana)');
+        console.log('⭐ PLAYLIST SECUENCIAL: 1→2→3→...→N→1');
         
-        // 1. Cargar configuración
-        await loadProgramsConfig();
+        // Cargar playlist
+        await loadSimplePlaylist();
         
-        // 2. Cargar playlist inicial
-        await loadCurrentPlaylist();
-        
-        // 3. Generar interfaz
+        // Mostrar info de programa/horario
         updateDisplayInfo();
-        if (programsConfig) {
-            generateScheduleCards();
-        }
         
-        // 4. Iniciar checks periódicos
-        setInterval(checkProgramChange, 30000); // Cada 30 segundos
+        // Check periódico solo para info (no cambia playlist)
         setInterval(updateDisplayInfo, 60000);
         
-        // 5. Check de caída de audio
+        // Check de caída de audio
         setInterval(() => {
             if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
                 console.log('⚠️ Audio caído, reintentando...');
@@ -378,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 5000);
         
-        console.log('✅ Radio lista');
+        console.log('✅ Radio lista en MODO SIMPLE');
     }
     
     // Iniciar

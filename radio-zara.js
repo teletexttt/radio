@@ -1,4 +1,4 @@
-// radio-zara.js - ZARA RADIO COMPLETO
+// radio-zara.js - ZARA RADIO COMPLETO CON ESPECIALES
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -41,7 +41,8 @@ document.addEventListener('DOMContentLoaded', function() {
             {"name": "mañana", "displayName": "Archivo txt", "start": "06:00", "end": "12:00"},
             {"name": "tarde", "displayName": "Telesoft", "start": "12:00", "end": "16:00"},
             {"name": "mediatarde", "displayName": "Floppy Disk", "start": "16:00", "end": "20:00"},
-            {"name": "noche", "displayName": "Internet Archive", "start": "20:00", "end": "01:00"}
+            {"name": "noche", "displayName": "Internet Archive", "start": "20:00", "end": "01:00"},
+            {"name": "especial", "displayName": "Especiales txt", "start": "22:00", "end": "00:00"}
         ]
     };
     
@@ -63,9 +64,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getCurrentSchedule() {
         const now = getArgentinaTime();
+        const day = now.getDay(); // 0=Domingo, 5=Viernes, 6=Sábado
         const currentTime = now.getHours() * 60 + now.getMinutes();
         
         for (const schedule of scheduleData.schedules) {
+            // Omitir "especial" si no es viernes o sábado
+            if (schedule.name === "especial" && day !== 5 && day !== 6) {
+                continue;
+            }
+            
             const start = schedule.start.split(':').map(Number);
             const end = schedule.end.split(':').map(Number);
             const startTime = start[0] * 60 + start[1];
@@ -130,7 +137,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`⏱️ Sincronizado: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
             console.log(`   Segundo en canción: ${segundoEnCancion}s`);
             
-            // ✅ ACTUALIZAR PROGRAMA
             updateDisplayInfo();
             
         } catch (error) {
@@ -218,8 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 Iniciando Zara Radio...');
         await loadZaraPlaylist();
         generateScheduleCards();
-        setInterval(updateDisplayInfo, 60000); // ✅ ACTUALIZAR CADA MINUTO
-        console.log('✅ Zara Radio lista');
+        setInterval(updateDisplayInfo, 60000);
+        console.log('✅ Zara Radio lista (con Especiales txt)');
     }
     
     init();

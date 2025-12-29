@@ -1,4 +1,4 @@
-// radio-zara.js - ZARA RADIO COMPLETO CON ESPECIALES
+// radio-zara.js - CON SALTO AUTOMÁTICO DE ERRORES
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -64,14 +64,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getCurrentSchedule() {
         const now = getArgentinaTime();
-        const day = now.getDay(); // 0=Domingo, 5=Viernes, 6=Sábado
+        const day = now.getDay();
         const currentTime = now.getHours() * 60 + now.getMinutes();
         
         for (const schedule of scheduleData.schedules) {
-            // Omitir "especial" si no es viernes o sábado
-            if (schedule.name === "especial" && day !== 5 && day !== 6) {
-                continue;
-            }
+            if (schedule.name === "especial" && day !== 5 && day !== 6) continue;
             
             const start = schedule.start.split(':').map(Number);
             const end = schedule.end.split(':').map(Number);
@@ -79,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function() {
             let endTime = end[0] * 60 + end[1];
             
             if (endTime < startTime) endTime += 24 * 60;
-            
             const adjustedCurrentTime = currentTime + (currentTime < startTime ? 24 * 60 : 0);
             if (adjustedCurrentTime >= startTime && adjustedCurrentTime < endTime) {
                 return schedule;
@@ -99,13 +95,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateScheduleCards() {
         if (!scheduleGrid) return;
         scheduleGrid.innerHTML = '';
-        
         scheduleData.schedules.forEach(schedule => {
             const card = document.createElement('div');
             card.className = 'schedule-card';
             const displayName = schedule.displayName || programNames[schedule.name];
             const description = programDescriptions[schedule.name] || '';
-            
             card.innerHTML = `
                 <div class="schedule-time">${formatTimeForDisplay(schedule.start)} - ${formatTimeForDisplay(schedule.end)}</div>
                 <div class="schedule-name">${displayName}</div>
@@ -115,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== ZARA RADIO (AUDIO) ==========
+    // ========== ZARA RADIO CON SALTO DE ERRORES ==========
     async function loadZaraPlaylist() {
         try {
             console.log('📻 Cargando Zara Radio...');
@@ -138,7 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log(`   Segundo en canción: ${segundoEnCancion}s`);
             
             updateDisplayInfo();
-            
         } catch (error) {
             console.error('Error:', error);
             currentPlaylist = [];
@@ -168,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isPlaying) {
             audioPlayer.play().catch(e => {
                 console.error('❌ Error:', e.name);
-                setTimeout(() => playNextTrack(), 2000);
+                playNextTrack(); // SALTO INMEDIATO
             });
         }
         
@@ -179,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         audioPlayer.onerror = function() {
             console.error('❌ Error audio');
-            setTimeout(() => playNextTrack(), 2000);
+            playNextTrack(); // SALTO INMEDIATO
         };
     }
     
@@ -225,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
         await loadZaraPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
-        console.log('✅ Zara Radio lista (con Especiales txt)');
+        console.log('✅ Zara Radio lista (salta errores)');
     }
     
     init();

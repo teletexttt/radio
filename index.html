@@ -7,7 +7,6 @@
     <link rel="preload" href="Chomsky.otf" as="font" type="font/otf" crossorigin>
     <link rel="stylesheet" href="styles.css">
     <title>Teletext Radio</title>
-    
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.txtradio.site/">
     <meta property="og:title" content="Teletext Radio">
@@ -16,7 +15,6 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Vista previa de Teletext Radio">
-    
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@teletextlab">
     <meta name="twitter:creator" content="@teletextlab">
@@ -191,7 +189,7 @@
     <audio id="radioPlayer"></audio>
 
     <script>
-        // TELEXT RADIO - MODO SIMPLE CORREGIDO
+        // TELEXT RADIO - PLAYLIST SIMPLE (ESTA SEMANA)
         document.addEventListener('DOMContentLoaded', function() {
             const playButton = document.getElementById('radioPlayButton');
             const shareButton = document.getElementById('shareRadioButton');
@@ -208,24 +206,8 @@
             let currentPlaylist = [];
             let currentTrackIndex = 0;
             let currentSchedule = null;
-            let errorHandling = false;
             
-            // ========== FUNCIONES BÁSICAS ==========
-            function getArgentinaTime() {
-                const now = new Date();
-                const argentinaOffset = -3 * 60;
-                const localOffset = now.getTimezoneOffset();
-                const offsetDiff = argentinaOffset + localOffset;
-                return new Date(now.getTime() + offsetDiff * 60000);
-            }
-            
-            function formatTimeForDisplay(timeStr) {
-                const [hours, minutes] = timeStr.split(':').map(Number);
-                const period = hours >= 12 ? 'PM' : 'AM';
-                const displayHours = hours % 12 || 12;
-                return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
-            }
-            
+            // ========== CONFIGURACIÓN ==========
             const programNames = {
                 "madrugada": "Radio 404",
                 "mañana": "Archivo txt", 
@@ -291,6 +273,22 @@
                 ]
             };
             
+            // ========== FUNCIONES BÁSICAS ==========
+            function getArgentinaTime() {
+                const now = new Date();
+                const argentinaOffset = -3 * 60;
+                const localOffset = now.getTimezoneOffset();
+                const offsetDiff = argentinaOffset + localOffset;
+                return new Date(now.getTime() + offsetDiff * 60000);
+            }
+            
+            function formatTimeForDisplay(timeStr) {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                const period = hours >= 12 ? 'PM' : 'AM';
+                const displayHours = hours % 12 || 12;
+                return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+            }
+            
             function getCurrentSchedule() {
                 const now = getArgentinaTime();
                 const currentHour = now.getHours();
@@ -331,39 +329,25 @@
                         file: trackPath.split('/').pop()
                     }));
                     
-                    // Mantener progreso si existe
-                    const savedIndex = localStorage.getItem('teletextCurrentTrack');
-                    if (savedIndex !== null && !isNaN(savedIndex)) {
-                        const idx = parseInt(savedIndex);
-                        if (idx >= 0 && idx < currentPlaylist.length) {
-                            currentTrackIndex = idx;
-                            console.log(`📖 Recuperado progreso: canción ${currentTrackIndex + 1}`);
-                        }
-                    }
-                    
+                    currentTrackIndex = 0;
                     console.log(`✅ ${currentPlaylist.length} canciones cargadas`);
                     
                 } catch (error) {
                     console.error('Error:', error);
-                    currentPlaylist = [
-                        {path: 'music/jazzcartel.mp3', file: 'jazzcartel.mp3'}
-                    ];
+                    currentPlaylist = [{path: 'music/jazzcartel.mp3', file: 'jazzcartel.mp3'}];
+                    currentTrackIndex = 0;
                 }
             }
             
             function playNextTrack() {
                 if (currentPlaylist.length === 0) {
                     loadSimplePlaylist().then(() => {
-                        if (currentPlaylist.length > 0) {
-                            currentTrackIndex = 0;
-                            playCurrentTrack();
-                        }
+                        if (currentPlaylist.length > 0) playCurrentTrack();
                     });
                     return;
                 }
                 
                 currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-                localStorage.setItem('teletextCurrentTrack', currentTrackIndex);
                 console.log(`⏭️ Siguiente: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
                 playCurrentTrack();
             }
@@ -378,23 +362,13 @@
                 audioPlayer.onerror = null;
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
-                
                 audioPlayer.src = track.path;
                 
                 const tryPlay = () => {
-                    if (isPlaying && !errorHandling) {
-                        audioPlayer.play().then(() => {
-                            errorHandling = false;
-                        }).catch(e => {
-                            if (!errorHandling) {
-                                errorHandling = true;
-                                console.error('❌ Error al reproducir:', e.name);
-                                console.log('🔄 Saltando en 2 segundos...');
-                                setTimeout(() => {
-                                    errorHandling = false;
-                                    playNextTrack();
-                                }, 2000);
-                            }
+                    if (isPlaying) {
+                        audioPlayer.play().catch(e => {
+                            console.error('❌ Error:', e.name);
+                            setTimeout(() => playNextTrack(), 2000);
                         });
                     }
                 };
@@ -406,22 +380,13 @@
                 }, { once: true });
                 
                 audioPlayer.onended = function() {
-                    if (!errorHandling) {
-                        console.log('✅ Canción terminada');
-                        playNextTrack();
-                    }
+                    console.log('✅ Canción terminada');
+                    playNextTrack();
                 };
                 
-                audioPlayer.onerror = function(e) {
-                    if (!errorHandling) {
-                        errorHandling = true;
-                        console.error('❌ Error de audio en:', track.file);
-                        console.log('🔄 Saltando en 3 segundos...');
-                        setTimeout(() => {
-                            errorHandling = false;
-                            playNextTrack();
-                        }, 3000);
-                    }
+                audioPlayer.onerror = function() {
+                    console.error('❌ Error de audio');
+                    setTimeout(() => playNextTrack(), 2000);
                 };
                 
                 if (audioPlayer.readyState >= 1) {
@@ -434,7 +399,6 @@
             function updateDisplayInfo() {
                 currentSchedule = getCurrentSchedule();
                 const displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
-                
                 currentShow.textContent = displayName;
                 currentTimeName.textContent = displayName;
                 currentTimeRange.textContent = `${formatTimeForDisplay(currentSchedule.start)} - ${formatTimeForDisplay(currentSchedule.end)}`;
@@ -442,13 +406,11 @@
             
             function generateScheduleCards() {
                 if (!scheduleGrid) return;
-                
                 scheduleGrid.innerHTML = '';
                 
                 scheduleData.schedules.forEach(schedule => {
                     const card = document.createElement('div');
                     card.className = 'schedule-card';
-                    
                     const displayName = schedule.displayName || programNames[schedule.name] || schedule.name;
                     const description = schedule.description || programDescriptions[schedule.name] || 'Programación automática';
                     
@@ -457,7 +419,6 @@
                         <div class="schedule-name">${displayName}</div>
                         <div class="schedule-desc">${description}</div>
                     `;
-                    
                     scheduleGrid.appendChild(card);
                 });
             }
@@ -497,9 +458,7 @@
                     audioPlayer.pause();
                     isPlaying = false;
                 } else {
-                    if (currentPlaylist.length === 0) {
-                        await loadSimplePlaylist();
-                    }
+                    if (currentPlaylist.length === 0) await loadSimplePlaylist();
                     isPlaying = true;
                     playCurrentTrack();
                 }
@@ -510,28 +469,12 @@
             
             // ========== INICIALIZACIÓN ==========
             async function init() {
-                console.log('🚀 Iniciando Teletext Radio');
-                
+                console.log('🚀 Iniciando Teletext Radio (Playlist Simple)');
                 await loadSimplePlaylist();
                 updateDisplayInfo();
                 generateScheduleCards();
-                
                 setInterval(updateDisplayInfo, 60000);
-                
-                // Check de caída solo si NO estamos manejando un error
-                setInterval(() => {
-                    if (isPlaying && audioPlayer.paused && !audioPlayer.ended && !errorHandling) {
-                        console.log('⚠️ Audio pausado, reintentando...');
-                        audioPlayer.play().catch(e => {
-                            if (!errorHandling) {
-                                console.error('No se pudo reanudar:', e);
-                                playNextTrack();
-                            }
-                        });
-                    }
-                }, 5000);
-                
-                console.log('✅ Radio lista');
+                console.log('✅ Radio lista (Playlist Simple)');
             }
             
             init();

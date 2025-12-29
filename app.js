@@ -1,4 +1,4 @@
-// app.js - ZARA RADIO (bucle 24/7 sincronizado)
+// app.js - RADIO REAL (ZARA RADIO)
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let isPlaying = false;
     let currentPlaylist = [];
-    let currentTrackIndex = 0;
     
     // ========== ZARA RADIO ==========
     async function loadPlaylist() {
@@ -26,63 +25,58 @@ document.addEventListener('DOMContentLoaded', function() {
                 file: track.split('/').pop()
             }));
             
-            // CALCULAR CANCIÓN SEGÚN HORA (ZARA RADIO)
-            const ahora = new Date();
-            const segundosHoy = (ahora.getHours() * 3600) + (ahora.getMinutes() * 60) + ahora.getSeconds();
-            const duracionTotal = currentPlaylist.length * 240; // 4 min por canción
-            const segundosEnCiclo = segundosHoy % duracionTotal;
-            const cancionActual = Math.floor(segundosEnCiclo / 240);
-            
-            currentTrackIndex = cancionActual % currentPlaylist.length;
-            const segundoEnCancion = segundosEnCiclo % 240;
-            
-            console.log(`⏱️ Sincronizado: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
-            console.log(`   Segundo en canción: ${segundoEnCancion}s`);
+            console.log(`✅ ${currentPlaylist.length} canciones (Radio Real)`);
             
         } catch (error) {
             console.error('Error:', error);
             currentPlaylist = [];
-            currentTrackIndex = 0;
         }
     }
     
-    function playNextTrack() {
-        if (currentPlaylist.length === 0) return;
+    function getCurrentTrackInfo() {
+        if (currentPlaylist.length === 0) return { trackIndex: 0, secondInTrack: 0 };
         
-        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-        console.log(`⏭️ ${currentTrackIndex + 1}/${currentPlaylist.length}`);
-        playCurrentTrack();
+        const ahora = new Date();
+        const segundosHoy = (ahora.getHours() * 3600) + (ahora.getMinutes() * 60) + ahora.getSeconds();
+        const duracionTotal = currentPlaylist.length * 240; // 4 min por canción
+        const segundosEnCiclo = segundosHoy % duracionTotal;
+        const trackIndex = Math.floor(segundosEnCiclo / 240) % currentPlaylist.length;
+        const secondInTrack = segundosEnCiclo % 240;
+        
+        return { trackIndex, secondInTrack };
     }
     
     function playCurrentTrack() {
         if (currentPlaylist.length === 0) return;
         
-        const track = currentPlaylist[currentTrackIndex];
-        console.log(`🎵 ${track.file}`);
+        const { trackIndex, secondInTrack } = getCurrentTrackInfo();
+        const track = currentPlaylist[trackIndex];
         
-        // CALCULAR SEGUNDO ACTUAL EN LA CANCIÓN
-        const ahora = new Date();
-        const segundosHoy = (ahora.getHours() * 3600) + (ahora.getMinutes() * 60) + ahora.getSeconds();
-        const segundoEnCancion = segundosHoy % 240;
+        console.log(`📻 Radio Real: canción ${trackIndex + 1}/${currentPlaylist.length}`);
+        console.log(`   Hora actual: ${Math.floor(secondInTrack)}s de 240s`);
         
         audioPlayer.src = track.path;
-        audioPlayer.currentTime = segundoEnCancion; // ← EMPIEZA EN EL SEGUNDO CORRECTO
+        audioPlayer.currentTime = secondInTrack;
         
         if (isPlaying) {
             audioPlayer.play().catch(e => {
                 console.error('❌ Error:', e.name);
-                setTimeout(() => playNextTrack(), 2000);
+                setTimeout(() => playCurrentTrack(), 2000);
             });
         }
         
-        audioPlayer.onended = function() {
-            console.log('✅ Terminada');
-            playNextTrack();
-        };
+        // Cuando la canción llegue a su fin (240s), pasar a la siguiente
+        const timeToEnd = 240 - secondInTrack;
+        setTimeout(() => {
+            if (isPlaying) {
+                console.log('🔄 Fin de canción por tiempo, siguiente...');
+                playCurrentTrack();
+            }
+        }, timeToEnd * 1000);
         
         audioPlayer.onerror = function() {
-            console.error('❌ Error audio');
-            setTimeout(() => playNextTrack(), 2000);
+            console.error('❌ Error audio, reintentando...');
+            setTimeout(() => playCurrentTrack(), 2000);
         };
     }
     
@@ -102,7 +96,21 @@ document.addEventListener('DOMContentLoaded', function() {
         pausePath2.setAttribute('opacity', isPlaying ? '1' : '0');
     });
     
+    // Verificar cada minuto si cambió la canción
+    setInterval(() => {
+        if (isPlaying) {
+            const { trackIndex } = getCurrentTrackInfo();
+            const currentSrc = audioPlayer.src.split('/').pop();
+            const shouldBeTrack = currentPlaylist[trackIndex]?.file;
+            
+            if (shouldBeTrack && currentSrc !== shouldBeTrack) {
+                console.log('🔄 Cambio de canción por horario');
+                playCurrentTrack();
+            }
+        }
+    }, 60000);
+    
     // ========== INICIALIZAR ==========
     loadPlaylist();
-    console.log('✅ Radio lista - ZARA RADIO (bucle sincronizado)');
+    console.log('✅ Radio Real (Zara Radio) - Todos escuchan lo mismo');
 });

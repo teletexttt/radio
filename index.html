@@ -191,6 +191,7 @@
     <audio id="radioPlayer"></audio>
 
     <script>
+        // TELEXT RADIO - MODO SIMPLE (ESTA SEMANA)
         document.addEventListener('DOMContentLoaded', function() {
             const playButton = document.getElementById('radioPlayButton');
             const shareButton = document.getElementById('shareRadioButton');
@@ -207,8 +208,8 @@
             let currentPlaylist = [];
             let currentTrackIndex = 0;
             let currentSchedule = null;
-            let currentTrackPlaying = null;
             
+            // ========== CONFIGURACIÓN DE PROGRAMAS ==========
             const programNames = {
                 "madrugada": "Radio 404",
                 "mañana": "Archivo txt", 
@@ -274,6 +275,7 @@
                 ]
             };
             
+            // ========== FUNCIONES BÁSICAS ==========
             function getArgentinaTime() {
                 const now = new Date();
                 const argentinaOffset = -3 * 60;
@@ -315,6 +317,100 @@
                 return scheduleData.schedules[0];
             }
             
+            // ========== PLAYLIST SIMPLE ==========
+            async function loadSimplePlaylist() {
+                try {
+                    console.log('📻 Cargando playlist simple...');
+                    const response = await fetch('playlist.json');
+                    
+                    if (!response.ok) {
+                        throw new Error('No se encontró playlist.json');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Convertir strings a objetos
+                    currentPlaylist = data.tracks.map(trackPath => ({
+                        path: trackPath,
+                        file: trackPath.split('/').pop(),
+                        duration: 240
+                    }));
+                    
+                    // ⭐ SIEMPRE EMPIEZA DESDE LA PRIMERA ⭐
+                    currentTrackIndex = 0;
+                    
+                    console.log(`✅ ${currentPlaylist.length} canciones cargadas (Modo Simple)`);
+                    
+                } catch (error) {
+                    console.error('Error cargando playlist:', error);
+                    currentPlaylist = [
+                        {path: 'music/jazzcartel.mp3', file: 'jazzcartel.mp3', duration: 240}
+                    ];
+                    currentTrackIndex = 0;
+                }
+            }
+            
+            function playNextTrack() {
+                if (currentPlaylist.length === 0) {
+                    loadSimplePlaylist().then(() => {
+                        if (currentPlaylist.length > 0) {
+                            currentTrackIndex = 0;
+                            playCurrentTrack();
+                        }
+                    });
+                    return;
+                }
+                
+                currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+                console.log(`⏭️ Siguiente: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
+                playCurrentTrack();
+            }
+            
+            function playCurrentTrack() {
+                if (currentPlaylist.length === 0) return;
+                
+                const track = currentPlaylist[currentTrackIndex];
+                console.log(`🎵 ${track.file} (${currentTrackIndex + 1}/${currentPlaylist.length})`);
+                
+                audioPlayer.onended = null;
+                audioPlayer.onerror = null;
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                
+                audioPlayer.src = track.path;
+                
+                const tryPlay = () => {
+                    if (isPlaying) {
+                        audioPlayer.play().catch(e => {
+                            console.error('❌ Error:', e);
+                            setTimeout(() => playNextTrack(), 1000);
+                        });
+                    }
+                };
+                
+                audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
+                    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
+                    audioPlayer.currentTime = 0;
+                    tryPlay();
+                }, { once: true });
+                
+                if (audioPlayer.readyState >= 1) {
+                    audioPlayer.currentTime = 0;
+                    tryPlay();
+                }
+                
+                audioPlayer.onended = function() {
+                    console.log('✅ Canción terminada, siguiente...');
+                    playNextTrack();
+                };
+                
+                audioPlayer.onerror = function() {
+                    console.error('❌ Error de audio...');
+                    setTimeout(() => playNextTrack(), 500);
+                };
+            }
+            
+            // ========== INTERFAZ ==========
             function updateDisplayInfo() {
                 currentSchedule = getCurrentSchedule();
                 const displayName = currentSchedule.displayName || programNames[currentSchedule.name] || currentSchedule.name;
@@ -325,10 +421,7 @@
             }
             
             function generateScheduleCards() {
-                if (!scheduleGrid) {
-                    console.error("❌ No se encontró .schedule-grid");
-                    return;
-                }
+                if (!scheduleGrid) return;
                 
                 scheduleGrid.innerHTML = '';
                 
@@ -349,145 +442,6 @@
                 });
             }
             
-            // --- FUNCIÓN CORREGIDA: SINCRONIZACIÓN 24/7 ---
-            async function loadCurrentPlaylist() {
-                try {
-                    console.log('📻 Cargando playlist.json...');
-                    
-                    const response = await fetch('playlist.json');
-                    if (!response.ok) {
-                        console.error('❌ No se encontró playlist.json');
-                        currentPlaylist = ['music/jazzcartel.mp3'];
-                        return;
-                    }
-                    
-                    const data = await response.json();
-                    
-                    if (data.tracks && Array.isArray(data.tracks)) {
-                        currentPlaylist = data.tracks;
-                        console.log(`✅ Playlist cargada: ${currentPlaylist.length} tracks`);
-                        
-                        // --- SINCRONIZACIÓN POR HORA (NO RANDOM) ---
-                        const ahora = getArgentinaTime();
-                        const segundosHoy = (ahora.getHours() * 3600) + 
-                                            (ahora.getMinutes() * 60) + 
-                                            ahora.getSeconds();
-                        
-                        // Duración total: 74 canciones × 240s = 17760s (29.6 horas)
-                        const duracionTotal = 17760;
-                        
-                        // En qué posición del ciclo de 29.6 horas estamos
-                        const segundosEnCiclo = segundosHoy % duracionTotal;
-                        
-                        // Cada canción dura 240s, calcular cuál toca ahora
-                        const cancionActual = Math.floor(segundosEnCiclo / 240);
-                        currentTrackIndex = cancionActual % currentPlaylist.length;
-                        
-                        // También calcular en qué segundo de ESA canción estamos
-                        const segundoEnCancion = segundosEnCiclo % 240;
-                        
-                        console.log(`⏱️ Sincronizado: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
-                        console.log(`   Hora ARG: ${ahora.getHours()}:${ahora.getMinutes()}:${ahora.getSeconds()}`);
-                        console.log(`   Segundo en canción: ${segundoEnCancion}s`);
-                        
-                    } else {
-                        console.error('❌ Formato incorrecto en playlist.json');
-                        currentPlaylist = ['music/jazzcartel.mp3'];
-                    }
-                    
-                } catch (error) {
-                    console.log('Error cargando playlist:', error);
-                    currentPlaylist = ['music/jazzcartel.mp3'];
-                }
-            }
-            
-            function playNextTrack() {
-                if (currentPlaylist.length === 0) {
-                    console.log('⚠️ Playlist vacía, recargando...');
-                    loadCurrentPlaylist().then(() => {
-                        if (currentPlaylist.length > 0) {
-                            currentTrackIndex = 0;
-                            playCurrentTrack();
-                        }
-                    });
-                    return;
-                }
-                
-                currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-                console.log(`⏭️ Siguiente canción: ${currentTrackIndex}/${currentPlaylist.length}`);
-                
-                setTimeout(() => {
-                    playCurrentTrack();
-                }, 50);
-            }
-            
-            // --- FUNCIÓN CORREGIDA: INICIO SINCRONIZADO ---
-            function playCurrentTrack() {
-                if (currentPlaylist.length === 0) {
-                    console.log('⚠️ No hay canciones en la playlist');
-                    return;
-                }
-                
-                const track = currentPlaylist[currentTrackIndex];
-                
-                if (currentTrackPlaying === track && !audioPlayer.paused) {
-                    console.log('⏭️ Ya está sonando esta canción, pasando a la siguiente');
-                    playNextTrack();
-                    return;
-                }
-                
-                currentTrackPlaying = track;
-                console.log('🎵 Reproduciendo:', track);
-                
-                audioPlayer.onended = null;
-                audioPlayer.onerror = null;
-                
-                audioPlayer.src = track;
-                
-                audioPlayer.addEventListener('loadedmetadata', function onMetadata() {
-                    audioPlayer.removeEventListener('loadedmetadata', onMetadata);
-                    
-                    // --- INICIO SINCRONIZADO (NO RANDOM) ---
-                    const ahora = getArgentinaTime();
-                    const segundosHoy = (ahora.getHours() * 3600) + 
-                                        (ahora.getMinutes() * 60) + 
-                                        ahora.getSeconds();
-                    const segundoEnCancion = segundosHoy % 240; // 240s por canción
-                    
-                    // Posicionar en el segundo correcto de la canción
-                    audioPlayer.currentTime = segundoEnCancion;
-                    console.log(`⏱️ Inicio sincronizado: segundo ${Math.floor(segundoEnCancion)}`);
-                    
-                    if (isPlaying) {
-                        const playPromise = audioPlayer.play();
-                        if (playPromise !== undefined) {
-                            playPromise.catch(e => {
-                                console.error('❌ Error al reproducir:', e.name, e.message);
-                                setTimeout(playNextTrack, 500);
-                            });
-                        }
-                    }
-                }, { once: true });
-                
-                audioPlayer.onended = function() {
-                    console.log('✅ Canción terminó correctamente, siguiente...');
-                    playNextTrack();
-                };
-                
-                audioPlayer.onerror = function(e) {
-                    console.error('❌ Error en canción:', audioPlayer.error ? audioPlayer.error.message : 'Error desconocido');
-                    console.log('🔄 Pasando a siguiente canción...');
-                    
-                    setTimeout(() => {
-                        playNextTrack();
-                    }, 500);
-                };
-                
-                if (audioPlayer.readyState >= 1) {
-                    audioPlayer.dispatchEvent(new Event('loadedmetadata'));
-                }
-            }
-            
             function updatePlayButton() {
                 if (isPlaying) {
                     playPath.setAttribute('opacity', '0');
@@ -504,137 +458,57 @@
             
             function shareRadio() {
                 const url = window.location.href;
-                
                 if (navigator.clipboard) {
                     navigator.clipboard.writeText(url).then(() => {
                         const originalHTML = shareButton.innerHTML;
-                        shareButton.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                        shareButton.innerHTML = '✅';
                         shareButton.style.borderColor = '#00FF37';
-                        shareButton.style.color = '#00FF37';
-                        
                         setTimeout(() => {
                             shareButton.innerHTML = originalHTML;
                             shareButton.style.borderColor = '';
-                            shareButton.style.color = '';
                         }, 2000);
                     });
                 }
             }
             
-            function checkScheduleChange() {
-                const oldSchedule = currentSchedule ? currentSchedule.name : null;
-                updateDisplayInfo();
-                
-                if (currentSchedule && oldSchedule !== currentSchedule.name && isPlaying) {
-                    console.log(`🔄 Cambio de horario: ${oldSchedule} → ${currentSchedule.name}`);
-                }
-            }
-            
-            // FUNCIONALIDAD NOVEDADES - SIN BOTÓN X
-            function inicializarNovedades() {
-                const novedadCards = document.querySelectorAll('.novedad-card');
-                
-                novedadCards.forEach(card => {
-                    card.addEventListener('click', function() {
-                        const imagen = this.querySelector('img');
-                        const texto = this.querySelector('p');
-                        
-                        let modal = document.getElementById('modalNovedad');
-                        if (!modal) {
-                            modal = document.createElement('div');
-                            modal.id = 'modalNovedad';
-                            modal.className = 'modal-novedad';
-                            // SIN BOTÓN X
-                            modal.innerHTML = `
-                                <div class="modal-contenido">
-                                    <div class="modal-imagen-container">
-                                        <img src="" alt="Novedad ampliada">
-                                    </div>
-                                    <div class="modal-texto-completo"></div>
-                                </div>
-                            `;
-                            document.body.appendChild(modal);
-                            
-                            // Cerrar al hacer click en el fondo
-                            modal.addEventListener('click', (e) => {
-                                if (e.target === modal) {
-                                    modal.style.display = 'none';
-                                    document.body.style.overflow = 'auto';
-                                }
-                            });
-                            
-                            // Cerrar con Escape
-                            document.addEventListener('keydown', (e) => {
-                                if (e.key === 'Escape' && modal.style.display === 'flex') {
-                                    modal.style.display = 'none';
-                                    document.body.style.overflow = 'auto';
-                                }
-                            });
-                        }
-                        
-                        modal.querySelector('img').src = imagen.src;
-                        modal.querySelector('img').alt = imagen.alt;
-                        modal.querySelector('.modal-texto-completo').textContent = texto.textContent;
-                        
-                        modal.style.display = 'flex';
-                        document.body.style.overflow = 'hidden';
-                    });
-                });
-            }
-            
-            // EVENT LISTENERS
-            playButton.addEventListener('click', function() {
+            // ========== EVENTOS ==========
+            playButton.addEventListener('click', async function() {
                 if (isPlaying) {
                     audioPlayer.pause();
                     isPlaying = false;
-                    updatePlayButton();
                 } else {
-                    if (!audioPlayer.src || audioPlayer.ended) {
-                        if (currentPlaylist.length === 0) {
-                            loadCurrentPlaylist().then(() => {
-                                currentTrackIndex = 0;
-                                isPlaying = true;
-                                updatePlayButton();
-                                playCurrentTrack();
-                            });
-                        } else {
-                            isPlaying = true;
-                            updatePlayButton();
-                            playCurrentTrack();
-                        }
-                    } else {
-                        audioPlayer.play().then(() => {
-                            isPlaying = true;
-                            updatePlayButton();
-                        }).catch(e => {
-                            console.error('Error al reanudar:', e);
-                            playNextTrack();
-                        });
+                    if (currentPlaylist.length === 0) {
+                        await loadSimplePlaylist();
                     }
+                    isPlaying = true;
+                    playCurrentTrack();
                 }
+                updatePlayButton();
             });
             
             shareButton.addEventListener('click', shareRadio);
             
-            // INICIALIZACIÓN
-            updateDisplayInfo();
-            generateScheduleCards();
-            inicializarNovedades();
+            // ========== INICIALIZACIÓN ==========
+            async function init() {
+                console.log('🚀 Iniciando Teletext Radio (Modo Simple)');
+                
+                await loadSimplePlaylist();
+                updateDisplayInfo();
+                generateScheduleCards();
+                
+                setInterval(updateDisplayInfo, 60000);
+                
+                setInterval(() => {
+                    if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
+                        console.log('⚠️ Audio caído, reintentando...');
+                        audioPlayer.play().catch(() => playNextTrack());
+                    }
+                }, 5000);
+                
+                console.log('✅ Radio lista en MODO SIMPLE');
+            }
             
-            loadCurrentPlaylist();
-            
-            setInterval(checkScheduleChange, 60000);
-            setInterval(updateDisplayInfo, 60000);
-            
-            setInterval(() => {
-                if (isPlaying && audioPlayer.paused && !audioPlayer.ended) {
-                    console.log('⚠️ Radio se detuvo inesperadamente, reanudando...');
-                    audioPlayer.play().catch(e => {
-                        console.error('No se pudo reanudar, siguiente canción:', e);
-                        playNextTrack();
-                    });
-                }
-            }, 5000);
+            init();
         });
     </script>
 </body>

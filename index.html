@@ -404,10 +404,41 @@
                     playNextTrack();
                 };
                 
-                audioPlayer.onerror = function() {
-                    console.error('❌ Error de audio...');
-                    setTimeout(() => playNextTrack(), 500);
-                };
+                audioPlayer.onerror = function(e) {
+    console.group('❌ ERROR DE AUDIO DETECTADO');
+    
+    // 1. Información del error nativo
+    if (audioPlayer.error) {
+        console.error('Código:', audioPlayer.error.code);
+        console.error('Mensaje:', audioPlayer.error.message);
+        
+        // Códigos comunes:
+        // 1 = MEDIA_ERR_ABORTED (usuario canceló)
+        // 2 = MEDIA_ERR_NETWORK (error de red)
+        // 3 = MEDIA_ERR_DECODE (archivo corrupto/no soportado)
+        // 4 = MEDIA_ERR_SRC_NOT_SUPPORTED (formato no compatible)
+    } else {
+        console.error('Error nativo no disponible');
+    }
+    
+    // 2. Información de la canción actual
+    console.error('Canción fallida:', track.file);
+    console.error('Ruta completa:', track.path);
+    console.error('Índice:', currentTrackIndex + 1, '/', currentPlaylist.length);
+    
+    // 3. Estado del reproductor
+    console.error('Estado:', audioPlayer.readyState);
+    console.error('Src actual:', audioPlayer.src);
+    
+    console.groupEnd();
+    
+    // 4. Saltar canción automáticamente después de 3 segundos
+    console.log('🔄 Saltando canción en 3 segundos...');
+    setTimeout(() => {
+        console.log('⏭️ Forzando siguiente canción');
+        playNextTrack();
+    }, 3000);
+};
             }
             
             // ========== INTERFAZ ==========

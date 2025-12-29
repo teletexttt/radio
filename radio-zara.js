@@ -1,4 +1,4 @@
-// radio-zara.js - CON SALTO AUTOMÁTICO DE ERRORES
+// radio-zara.js - RADIO ESTABLE
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isPlaying) {
             audioPlayer.play().catch(e => {
                 console.error('❌ Error:', e.name);
-                playNextTrack(); // SALTO INMEDIATO
+                playNextTrack();
             });
         }
         
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         audioPlayer.onerror = function() {
             console.error('❌ Error audio');
-            playNextTrack(); // SALTO INMEDIATO
+            playNextTrack();
         };
     }
     
@@ -204,8 +204,22 @@ document.addEventListener('DOMContentLoaded', function() {
             isPlaying = false;
         } else {
             if (currentPlaylist.length === 0) await loadZaraPlaylist();
-            isPlaying = true;
-            playCurrentTrack();
+            
+            const track = currentPlaylist[currentTrackIndex];
+            const isSameTrack = audioPlayer.src && audioPlayer.src.includes(track.file);
+            
+            if (isSameTrack && !audioPlayer.ended) {
+                audioPlayer.play().then(() => {
+                    isPlaying = true;
+                    console.log('▶️ Reanudando transmisión');
+                }).catch(e => {
+                    console.error('Error reanudando:', e);
+                    playCurrentTrack();
+                });
+            } else {
+                isPlaying = true;
+                playCurrentTrack();
+            }
         }
         updatePlayButton();
     });
@@ -218,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
         await loadZaraPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
-        console.log('✅ Zara Radio lista (salta errores)');
+        console.log('✅ Zara Radio lista (estable)');
     }
     
     init();

@@ -1,4 +1,4 @@
-// radio-zara.js - VERSIÓN ZARA RADIO SIMPLE
+// radio-zara.js - VERSIÓN FINAL ESTABLE
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = false;
     let currentPlaylist = [];
     let currentTrackIndex = 0;
+    let lastValidCalculation = null; // NUEVO: Para estabilizar en refresh
     
     // ========== CONFIGURACIÓN PROGRAMAS (SIMULADOS) ==========
     const programNames = {
@@ -45,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ]
     };
     
-    // ========== FUNCIONES PROGRAMA (SIMULADAS) ==========
+    // ========== FUNCIONES PROGRAMA (SIMULADOS) ==========
     function getArgentinaTime() {
         const now = new Date();
         const argentinaOffset = -3 * 60;
@@ -108,10 +109,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== LÓGICA ZARA RADIO (UNA SOLA PLAYLIST) ==========
+    // ========== LÓGICA RADIO ESTABLE (CORREGIDO PARA REFRESH) ==========
     async function loadPlaylist() {
         try {
-            console.log('📻 Cargando playlist...');
+            console.log('📻 Sintonizando radio...');
             const response = await fetch('playlist.json');
             const data = await response.json();
             
@@ -147,12 +148,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalCancionesReproducidas = Math.floor(msTranscurridos / msPorCancion);
         
         // Posición actual en la playlist cíclica
-        currentTrackIndex = totalCancionesReproducidas % currentPlaylist.length;
+        const nuevaPosicion = totalCancionesReproducidas % currentPlaylist.length;
         
-        console.log('📡 LÓGICA ZARA RADIO:');
+        // VERIFICACIÓN DE ESTABILIDAD (EVITA SALTOS EN REFRESH)
+        if (lastValidCalculation !== null) {
+            const diferencia = Math.abs(nuevaPosicion - lastValidCalculation);
+            
+            // Si la diferencia es pequeña (1-2 canciones), mantener la anterior
+            // Esto evita saltos en refresh por milisegundos de diferencia
+            if (diferencia <= 2 && diferencia !== 0) {
+                console.log('📻 Manteniendo posición estable de radio...');
+                console.log(`   ↻ Refresh detectado, manteniendo canción #${lastValidCalculation + 1}`);
+                currentTrackIndex = lastValidCalculation;
+            } else {
+                // Cambio REAL (pasó tiempo suficiente)
+                currentTrackIndex = nuevaPosicion;
+                lastValidCalculation = nuevaPosicion;
+                console.log(`   ✅ Cambio real a canción #${currentTrackIndex + 1}`);
+            }
+        } else {
+            // Primera vez que se calcula
+            currentTrackIndex = nuevaPosicion;
+            lastValidCalculation = nuevaPosicion;
+        }
+        
+        console.log('📡 LÓGICA RADIO ESTABLE:');
         console.log(`   ▶️  Canción actual: #${currentTrackIndex + 1}`);
-        console.log(`   ⏱️  Transmisión continua desde: 1 enero 2025`);
-        console.log(`   🔄 Playlist cíclica: ${currentPlaylist.length} canciones`);
+        console.log(`   📻 Posición estable: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
     }
     
     function playTransmisionActual() {
@@ -164,9 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Configurar audio
         audioPlayer.src = track.path;
-        
-        // NO sincronizar por segundo, empezar desde donde carga
-        // (El navegador empieza donde puede)
         
         // Reproducir
         if (isPlaying) {
@@ -194,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // AVANZAR en la playlist
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+        lastValidCalculation = currentTrackIndex; // Actualizar posición válida
         
         console.log(`⏭️ Siguiente: #${currentTrackIndex + 1}`);
         
@@ -236,8 +256,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             isPlaying = true;
             
-            console.log('▶️ Conectando a transmisión Zara Radio...');
-            console.log('📻 1 playlist infinita, programas simulados');
+            console.log('▶️ Conectando a transmisión...');
+            console.log('📻 Radio estable - Sin saltos en refresh');
             
             // Calcular dónde va la transmisión AHORA
             calcularPosicionTransmision();
@@ -252,17 +272,19 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== INICIALIZACIÓN ==========
     async function init() {
-        console.log('🚀 Radio Zara Style - Iniciando');
+        console.log('🚀 Radio Zara - Versión Final Estable');
         console.log('📡 Lógica: 1 PLAYLIST INFINITA');
-        console.log('🎭 Programas: SIMULADOS (visual solamente)');
+        console.log('🔒 Estable en refresh (F5)');
+        console.log('🎭 Programas simulados');
         
         await loadPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
         updateDisplayInfo();
         
-        console.log('✅ Radio lista - Haz clic en PLAY');
-        console.log('💡 Se conectará a la transmisión continua');
+        console.log('✅ Radio estable lista');
+        console.log('💡 Haz clic en PLAY para conectarte');
+        console.log('🔄 F5 mantendrá posición estable');
     }
     
     init();

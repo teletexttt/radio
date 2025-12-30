@@ -1,4 +1,4 @@
-// radio-zara.js - SISTEMA CON VERIFICACIÓN CONTINUA
+// radio-zara.js - RADIO SIMPLE 1→2→3
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = false;
     let currentPlaylist = [];
     let currentTrackIndex = 0;
-    let verificationInterval = null;
     
     // ========== CONFIGURACIÓN ==========
     const programNames = {
@@ -84,119 +83,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return scheduleData.schedules[0];
     }
     
-    // ========== CÁLCULO PRECISO ==========
-    function calcularPosicionActual() {
-        const ahora = getArgentinaTime();
-        const segundosHoy = (ahora.getHours() * 3600) + (ahora.getMinutes() * 60) + ahora.getSeconds();
-        
-        if (currentPlaylist.length === 0) return { trackIndex: 0, segundoEnTrack: 0 };
-        
-        const duracionTotal = currentPlaylist.length * 240;
-        const segundosEnCiclo = segundosHoy % duracionTotal;
-        const trackIndex = Math.floor(segundosEnCiclo / 240) % currentPlaylist.length;
-        const segundoEnTrack = segundosEnCiclo % 240;
-        
-        return { trackIndex, segundoEnTrack };
-    }
-    
-    // ========== VERIFICACIÓN CONTINUA ==========
-    function iniciarVerificacion() {
-        detenerVerificacion();
-        
-        verificationInterval = setInterval(() => {
-            if (!isPlaying || currentPlaylist.length === 0) return;
-            
-            const posicionActual = calcularPosicionActual();
-            const posicionAudio = audioPlayer.currentTime;
-            const diferencia = Math.abs(posicionActual.segundoEnTrack - posicionAudio);
-            
-            // Re-sincronizar si hay desfase > 5 segundos
-            if (diferencia > 5 && !audioPlayer.ended) {
-                console.log(`🔄 Re-sincronizando: ${Math.floor(posicionAudio)}s → ${posicionActual.segundoEnTrack}s`);
-                audioPlayer.currentTime = posicionActual.segundoEnTrack;
-            }
-            
-            // Cambiar de canción si es necesario
-            if (posicionActual.trackIndex !== currentTrackIndex) {
-                console.log(`🔄 Cambio de canción por horario`);
-                currentTrackIndex = posicionActual.trackIndex;
-                cargarYReproducirTrackActual();
-            }
-            
-            // Forzar fin si pasó el tiempo
-            if (posicionActual.segundoEnTrack >= 239 && !audioPlayer.ended) {
-                console.log('⏰ Fin de canción detectado');
-                playNextTrack();
-            }
-        }, 3000); // Verificar cada 3 segundos
-    }
-    
-    function detenerVerificacion() {
-        if (verificationInterval) {
-            clearInterval(verificationInterval);
-            verificationInterval = null;
-        }
-    }
-    
-    // ========== ZARA RADIO ==========
-    async function loadZaraPlaylist() {
-        try {
-            console.log('📻 Cargando playlist...');
-            const response = await fetch('playlist.json');
-            const data = await response.json();
-            
-            currentPlaylist = data.tracks.map(track => ({
-                path: track,
-                file: track.split('/').pop()
-            }));
-            
-            // Posicionar según hora actual
-            const posicion = calcularPosicionActual();
-            currentTrackIndex = posicion.trackIndex;
-            
-            console.log(`⏱️ Sincronizado: canción ${currentTrackIndex + 1}/${currentPlaylist.length}`);
-            console.log(`   Segundo en canción: ${posicion.segundoEnTrack}s`);
-            
-            updateDisplayInfo();
-            
-        } catch (error) {
-            console.error('Error:', error);
-            currentPlaylist = [];
-            currentTrackIndex = 0;
-        }
-    }
-    
-    function cargarYReproducirTrackActual() {
-        if (currentPlaylist.length === 0) return;
-        
-        const track = currentPlaylist[currentTrackIndex];
-        const posicion = calcularPosicionActual();
-        
-        console.log(`🎵 ${track.file} (segundo ${Math.floor(posicion.segundoEnTrack)})`);
-        
-        audioPlayer.src = track.path;
-        audioPlayer.currentTime = posicion.segundoEnTrack;
-        
-        if (isPlaying) {
-            audioPlayer.play().catch(e => {
-                console.error('❌ Error:', e.name);
-                playNextTrack();
-            });
-        }
-        
-        audioPlayer.onerror = function() {
-            console.error('❌ Error audio');
-            playNextTrack();
-        };
-    }
-    
-    function playNextTrack() {
-        if (currentPlaylist.length === 0) return;
-        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-        console.log(`⏭️ ${currentTrackIndex + 1}/${currentPlaylist.length}`);
-        cargarYReproducirTrackActual();
-    }
-    
     function updateDisplayInfo() {
         const schedule = getCurrentSchedule();
         const displayName = schedule.displayName || programNames[schedule.name];
@@ -222,10 +108,88 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // ========== RADIO SIMPLE 1→2→3 ==========
+    async function loadPlaylist() {
+        try {
+            console.log('📻 Cargando playlist...');
+            const response = await fetch('playlist.json');
+            const data = await response.json();
+            
+            currentPlaylist = data.tracks.map(track => ({
+                path: track,
+                file: track.split('/').pop()
+            }));
+            
+            // Calcular canción según hora (cada 4 horas cambia)
+            const ahora = getArgentinaTime();
+            const horasDesdeMedianoche = ahora.getHours() + (ahora.getMinutes() / 60);
+            currentTrackIndex = Math.floor(horasDesdeMedianoche / 4) % currentPlaylist.length;
+            
+            console.log(`📻 Canción actual: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
+            updateDisplayInfo();
+            
+        } catch (error) {
+            console.error('Error:', error);
+            currentPlaylist = [];
+            currentTrackIndex = 0;
+        }
+    }
+    
+    function playNextTrack() {
+        if (currentPlaylist.length === 0) return;
+        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+        console.log(`⏭️ ${currentTrackIndex + 1}/${currentPlaylist.length}`);
+        playCurrentTrack();
+    }
+    
+    function playCurrentTrack() {
+        if (currentPlaylist.length === 0) return;
+        
+        const track = currentPlaylist[currentTrackIndex];
+        console.log(`🎵 ${track.file}`);
+        
+        audioPlayer.src = track.path;
+        audioPlayer.currentTime = 0;
+        
+        if (isPlaying) {
+            audioPlayer.play().catch(e => {
+                console.error('❌ Error:', e.name);
+                playNextTrack();
+            });
+        }
+        
+        audioPlayer.onended = function() {
+            if (isPlaying) {
+                console.log('✅ Canción terminada');
+                playNextTrack();
+            }
+        };
+        
+        audioPlayer.onerror = function() {
+            console.error('❌ Error audio');
+            playNextTrack();
+        };
+    }
+    
     function updatePlayButton() {
         playPath.setAttribute('opacity', isPlaying ? '0' : '1');
         pausePath1.setAttribute('opacity', isPlaying ? '1' : '0');
         pausePath2.setAttribute('opacity', isPlaying ? '1' : '0');
+    }
+    
+    function shareRadio() {
+        const url = window.location.href;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+                const originalHTML = shareButton.innerHTML;
+                shareButton.innerHTML = '✅';
+                shareButton.style.borderColor = '#00FF37';
+                setTimeout(() => {
+                    shareButton.innerHTML = originalHTML;
+                    shareButton.style.borderColor = '';
+                }, 2000);
+            });
+        }
     }
     
     // ========== EVENTOS ==========
@@ -233,38 +197,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isPlaying) {
             audioPlayer.pause();
             isPlaying = false;
-            detenerVerificacion();
         } else {
-            if (currentPlaylist.length === 0) await loadZaraPlaylist();
-            
-            const track = currentPlaylist[currentTrackIndex];
-            const isSameTrack = audioPlayer.src && audioPlayer.src.includes(track.file);
-            
-            if (isSameTrack && !audioPlayer.ended) {
-                audioPlayer.play().then(() => {
-                    isPlaying = true;
-                    console.log('▶️ Reanudando transmisión');
-                    iniciarVerificacion();
-                }).catch(e => {
-                    console.error('Error reanudando:', e);
-                    cargarYReproducirTrackActual();
-                });
-            } else {
-                isPlaying = true;
-                cargarYReproducirTrackActual();
-                iniciarVerificacion();
-            }
+            if (currentPlaylist.length === 0) await loadPlaylist();
+            isPlaying = true;
+            playCurrentTrack();
         }
         updatePlayButton();
     });
     
+    shareButton.addEventListener('click', shareRadio);
+    
     // ========== INICIALIZACIÓN ==========
     async function init() {
-        console.log('🚀 Iniciando Zara Radio (Sistema Verificado)...');
-        await loadZaraPlaylist();
+        console.log('🚀 Iniciando Radio Simple...');
+        await loadPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
-        console.log('✅ Radio lista - Verificación continua activa');
+        console.log('✅ Radio lista - Playlist 1→2→3');
     }
     
     init();

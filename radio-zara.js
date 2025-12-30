@@ -1,4 +1,4 @@
-// radio-zara.js - RADIO ESTABLE
+// radio-zara.js - RADIO ESTABLE SIN CORTES
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPlaylist = [];
     let currentTrackIndex = 0;
     let currentSchedule = null;
+    let finCheckInterval = null;
     
     // ========== CONFIGURACIÓN ==========
     const programNames = {
@@ -109,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== ZARA RADIO CON SALTO DE ERRORES ==========
+    // ========== ZARA RADIO SIN CORTES ==========
     async function loadZaraPlaylist() {
         try {
             console.log('📻 Cargando Zara Radio...');
@@ -146,8 +147,20 @@ document.addEventListener('DOMContentLoaded', function() {
         playCurrentTrack();
     }
     
+    function limpiarVerificacionFin() {
+        if (finCheckInterval) {
+            clearInterval(finCheckInterval);
+            finCheckInterval = null;
+        }
+        audioPlayer.onended = null;
+    }
+    
     function playCurrentTrack() {
         if (currentPlaylist.length === 0) return;
+        
+        // Limpiar verificaciones anteriores
+        limpiarVerificacionFin();
+        
         const track = currentPlaylist[currentTrackIndex];
         console.log(`🎵 ${track.file}`);
         
@@ -165,13 +178,30 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        const tiempoRestante = 240 - segundoEnCancion;
-        setTimeout(() => {
-            if (isPlaying) playNextTrack();
-        }, tiempoRestante * 1000);
+        // ✅ DETECCIÓN CORRECTA DEL FIN (SIN CORTES)
+        audioPlayer.onended = function() {
+            if (isPlaying) {
+                console.log('✅ Canción terminó completamente');
+                playNextTrack();
+            }
+        };
+        
+        // Backup: verificar progreso
+        finCheckInterval = setInterval(() => {
+            if (!isPlaying || !audioPlayer.src) {
+                limpiarVerificacionFin();
+                return;
+            }
+            
+            // Si el audio está cerca del fin (último 1%)
+            if (audioPlayer.currentTime >= 237 && !audioPlayer.ended) {
+                console.log('⏰ Próximo al fin, esperando evento ended...');
+            }
+        }, 5000);
         
         audioPlayer.onerror = function() {
             console.error('❌ Error audio');
+            limpiarVerificacionFin();
             playNextTrack();
         };
     }
@@ -202,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isPlaying) {
             audioPlayer.pause();
             isPlaying = false;
+            limpiarVerificacionFin();
         } else {
             if (currentPlaylist.length === 0) await loadZaraPlaylist();
             
@@ -232,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
         await loadZaraPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
-        console.log('✅ Zara Radio lista (estable)');
+        console.log('✅ Zara Radio lista (sin cortes)');
     }
     
     init();

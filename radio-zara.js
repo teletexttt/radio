@@ -1,4 +1,4 @@
-// radio-zara.js - RADIO SIMPLE - VERSIÓN RÁPIDA
+// radio-zara.js - RADIO SIMPLE - VERSIÓN ESTABLE
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTrackIndex = 0;
     let isTransitioning = false;
     let nextAudioPreload = null;
+    let lastCalculatedPosition = -1; // Para verificar consistencia
     
     // ========== CONFIGURACIÓN ==========
     const programNames = {
@@ -110,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== RADIO RÁPIDA ==========
+    // ========== RADIO ESTABLE ==========
     async function loadPlaylist() {
         try {
             console.log('📻 Cargando playlist...');
@@ -124,9 +125,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`📻 Playlist cargada: ${currentPlaylist.length} canciones`);
             
-            // Precalcular siguiente canción
-            preloadNextTrack();
-            
         } catch (error) {
             console.error('Error:', error);
             currentPlaylist = [];
@@ -134,46 +132,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function getSyncPosition() {
-        // Transmisión empezó el 2025-01-01 00:00 ARG
-        const transmissionStart = new Date('2025-01-01T03:00:00Z');
+    function getGlobalTrackPosition() {
+        // Fecha fija de inicio de transmisión
+        const transmissionStart = new Date('2025-01-01T03:00:00Z'); // 00:00 ARG
+        
         const now = new Date();
         const msSinceStart = now.getTime() - transmissionStart.getTime();
-        const msPerSlot = 4 * 60 * 60 * 1000; // 4 horas
+        const msPerSlot = 4 * 60 * 60 * 1000; // 4 horas en milisegundos
         
-        const slotIndex = Math.floor(msSinceStart / msPerSlot);
-        currentTrackIndex = slotIndex % currentPlaylist.length;
+        // Slot global actual (qué bloque de 4 horas estamos)
+        const globalSlot = Math.floor(msSinceStart / msPerSlot);
         
-        const msIntoCurrentSlot = msSinceStart % msPerSlot;
+        // Track index según slot global (playlist cíclica)
+        const calculatedIndex = globalSlot % currentPlaylist.length;
         
-        console.log(`🌍 Sincronización rápida:`);
-        console.log(`   ▶️ Canción: #${currentTrackIndex + 1}`);
-        console.log(`   ⏱️  En slot: ${Math.floor(msIntoCurrentSlot / 1000)}s`);
+        // Verificar consistencia
+        if (lastCalculatedPosition !== -1 && lastCalculatedPosition !== calculatedIndex) {
+            console.warn(`⚠️ Cambio detectado: ${lastCalculatedPosition} → ${calculatedIndex}`);
+        }
+        
+        lastCalculatedPosition = calculatedIndex;
+        
+        console.log(`🌍 Posición global calculada:`);
+        console.log(`   🎯 Slot global: ${globalSlot}`);
+        console.log(`   ▶️  Canción: #${calculatedIndex + 1}/${currentPlaylist.length}`);
+        console.log(`   ✅ Consistente: ${lastCalculatedPosition === calculatedIndex ? 'SÍ' : 'NO'}`);
         
         return {
-            trackIndex: currentTrackIndex,
-            msIntoCurrentSlot: msIntoCurrentSlot,
-            track: currentPlaylist[currentTrackIndex]
+            trackIndex: calculatedIndex,
+            msIntoSlot: msSinceStart % msPerSlot,
+            slot: globalSlot
         };
-    }
-    
-    function calculateStartTime(syncData, audioDuration) {
-        // Calcular punto de inicio en la canción actual
-        const slotDuration = 4 * 60 * 60; // 4 horas en segundos
-        const progress = (syncData.msIntoCurrentSlot / 1000) % slotDuration;
-        const scaledProgress = (progress / slotDuration) * audioDuration;
-        
-        // No empezar muy cerca del final
-        return Math.min(scaledProgress % audioDuration, audioDuration - 5);
     }
     
     function preloadNextTrack() {
         if (currentPlaylist.length === 0) return;
         
-        const nextIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+        // Precargar la canción que SIGUE en la secuencia global
+        const globalPos = getGlobalTrackPosition();
+        const nextIndex = (globalPos.trackIndex + 1) % currentPlaylist.length;
         const nextTrack = currentPlaylist[nextIndex];
         
-        // Precargar siguiente canción en background
         if (nextAudioPreload) {
             nextAudioPreload.pause();
             nextAudioPreload = null;
@@ -184,52 +183,60 @@ document.addEventListener('DOMContentLoaded', function() {
         nextAudioPreload.src = nextTrack.path;
         nextAudioPreload.load();
         
-        console.log(`🔮 Precargando: "${nextTrack.file}"`);
+        console.log(`🔮 Precargando siguiente: "${nextTrack.file}"`);
     }
     
     function playSyncedTrack() {
         if (currentPlaylist.length === 0 || isTransitioning) return;
         
-        console.time('⏱️ Tiempo sincronización');
+        console.time('⏱️ Sincronización');
         isTransitioning = true;
         
-        const sync = getSyncPosition();
-        const track = sync.track;
+        // Obtener posición GLOBAL actual
+        const globalPos = getGlobalTrackPosition();
+        currentTrackIndex = globalPos.trackIndex; // ¡IMPORTANTE! Sincronizar con global
+        const track = currentPlaylist[currentTrackIndex];
         
-        console.log(`🎵 Conectando a: "${track.file}"`);
+        console.log(`🎵 Conectando a transmisión global:`);
+        console.log(`   📀 "${track.file}"`);
+        console.log(`   #${currentTrackIndex + 1}/${currentPlaylist.length}`);
         
-        // 1. Configurar audio actual
+        // Configurar audio
         audioPlayer.src = track.path;
         
-        // 2. Intentar sincronización rápida
+        // Sincronizar tiempo de inicio
         let syncCompleted = false;
         const syncTimeout = setTimeout(() => {
             if (!syncCompleted) {
-                console.log('⚡ Sincronización timeout - Forzando inicio');
+                console.log('⚡ Timeout sincronización - Forzando inicio');
                 safePlay();
             }
-        }, 1500); // Máximo 1.5 segundos para sincronizar
+        }, 2000);
         
-        // 3. Sincronizar cuando carguen metadatos
         const onLoaded = () => {
             if (syncCompleted) return;
             syncCompleted = true;
             clearTimeout(syncTimeout);
             
             if (audioPlayer.duration > 0) {
-                const startTime = calculateStartTime(sync, audioPlayer.duration);
+                // Calcular posición dentro de la canción actual
+                const slotDuration = 4 * 60 * 60; // 4 horas en segundos
+                const progress = (globalPos.msIntoSlot / 1000) % slotDuration;
+                const scaledProgress = (progress / slotDuration) * audioPlayer.duration;
+                const startTime = Math.min(scaledProgress % audioPlayer.duration, audioPlayer.duration - 5);
+                
                 audioPlayer.currentTime = startTime;
-                console.log(`🎯 Inicio sincronizado: ${startTime.toFixed(1)}s`);
+                console.log(`🎯 Iniciando en: ${startTime.toFixed(1)}s/${audioPlayer.duration.toFixed(1)}s`);
             }
             
             safePlay();
-            console.timeEnd('⏱️ Tiempo sincronización');
+            console.timeEnd('⏱️ Sincronización');
         };
         
         audioPlayer.addEventListener('loadedmetadata', onLoaded, { once: true });
         
-        // 4. Si ya está listo, sincronizar inmediatamente
-        if (audioPlayer.readyState >= 1) { // HAVE_METADATA
+        // Si ya tiene metadata, usar inmediatamente
+        if (audioPlayer.readyState >= 1) {
             setTimeout(onLoaded, 10);
         }
     }
@@ -237,52 +244,62 @@ document.addEventListener('DOMContentLoaded', function() {
     function playNextTrackInstant() {
         if (currentPlaylist.length === 0 || isTransitioning) return;
         
-        console.time('⏱️ Tiempo cambio');
+        console.time('⏱️ Verificación cambio');
         isTransitioning = true;
         
-        // Cambiar a siguiente canción
-        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
-        const track = currentPlaylist[currentTrackIndex];
+        // 1. Verificar qué canción DEBERÍA estar sonando GLOBALMENTE
+        const globalPos = getGlobalTrackPosition();
+        const shouldBeTrackIndex = globalPos.trackIndex;
         
-        console.log(`⏭️ Cambio rápido a: "${track.file}"`);
+        console.log(`🔍 Verificación cambio:`);
+        console.log(`   🎧 Actual local: #${currentTrackIndex + 1}`);
+        console.log(`   🌍 Debería ser: #${shouldBeTrackIndex + 1}`);
         
-        // 1. Pausar y limpiar
-        audioPlayer.pause();
-        
-        // 2. Usar audio precargado si está disponible
-        if (nextAudioPreload && nextAudioPreload.src.includes(track.file)) {
-            console.log('🚀 Usando audio precargado!');
-            // Reutilizar el elemento precargado
-            const temp = audioPlayer;
-            audioPlayer = nextAudioPreload;
-            nextAudioPreload = temp;
-            nextAudioPreload.pause();
-            nextAudioPreload.currentTime = 0;
-        } else {
-            // Cambiar src normalmente
-            audioPlayer.src = track.path;
+        // 2. DECISIÓN: ¿Cambiar o repetir?
+        if (currentTrackIndex === shouldBeTrackIndex) {
+            // Misma canción, solo repetir desde inicio
+            console.log(`🔄 Repitiendo misma canción (bloque de 4 horas)`);
+            
+            audioPlayer.currentTime = 0;
+            
+            setTimeout(() => {
+                audioPlayer.play().catch(e => {
+                    console.error('❌ Error al repetir:', e);
+                });
+                isTransitioning = false;
+                console.timeEnd('⏱️ Verificación cambio');
+            }, 30);
+            
+            return;
         }
         
-        // 3. Empezar desde 0
+        // 3. Cambiar a la canción globalmente correcta
+        console.log(`⏭️ Cambiando a canción global: #${shouldBeTrackIndex + 1}`);
+        currentTrackIndex = shouldBeTrackIndex;
+        const track = currentPlaylist[currentTrackIndex];
+        
+        // Cambiar audio
+        audioPlayer.pause();
+        audioPlayer.src = track.path;
         audioPlayer.currentTime = 0;
         
-        // 4. Reproducir inmediatamente
+        // Reproducir
         setTimeout(() => {
             audioPlayer.play().catch(e => {
-                console.error('❌ Error play rápido:', e);
-                // Reintento rápido
+                console.error('❌ Error en cambio:', e);
+                // Reintento
                 setTimeout(() => {
                     isTransitioning = false;
                     playNextTrackInstant();
-                }, 200);
+                }, 300);
             });
             
             isTransitioning = false;
-            console.timeEnd('⏱️ Tiempo cambio');
+            console.timeEnd('⏱️ Verificación cambio');
             
-            // Precargar la siguiente
-            setTimeout(preloadNextTrack, 100);
-        }, 30); // Delay mínimo para estabilidad
+            // Precargar siguiente
+            preloadNextTrack();
+        }, 50);
     }
     
     function safePlay() {
@@ -292,12 +309,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         audioPlayer.play().catch(e => {
-            console.error('❌ Error en play:', e);
-            // Si falla la sincronización, intentar cambio normal
+            console.error('❌ Error play:', e);
             setTimeout(() => {
                 isTransitioning = false;
                 playNextTrackInstant();
-            }, 300);
+            }, 500);
         }).then(() => {
             isTransitioning = false;
         });
@@ -327,30 +343,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== EVENTOS ==========
     playButton.addEventListener('click', async function() {
         if (isPlaying) {
-            // Pausar
             audioPlayer.pause();
             isPlaying = false;
             console.log('⏸️ Pausado');
         } else {
-            // Reproducir
             if (currentPlaylist.length === 0) {
                 await loadPlaylist();
             }
             isPlaying = true;
-            console.log('▶️ Iniciando transmisión...');
+            console.log('▶️ Conectando...');
             playSyncedTrack();
         }
         updatePlayButton();
     });
     
-    // Configurar eventos del audio UNA VEZ
+    // Configurar eventos UNA VEZ
     audioPlayer.onended = function() {
-        console.log('✅ Canción terminada - Cambio rápido');
+        console.log('✅ Canción terminada - Verificando si cambiar...');
         playNextTrackInstant();
     };
     
     audioPlayer.onerror = function() {
-        console.error('❌ Error de audio - Recuperando...');
+        console.error('❌ Error audio');
         setTimeout(() => {
             if (isPlaying) {
                 playNextTrackInstant();
@@ -362,16 +376,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== INICIALIZACIÓN ==========
     async function init() {
-        console.log('🚀 Radio Simple - Versión Rápida');
-        console.log('⚡ Cambios instantáneos entre canciones');
+        console.log('🚀 Radio Simple - Versión Estable');
+        console.log('🎯 Cada F5 calculará MISMA posición');
+        console.log('🔄 Solo cambia cada 4 horas (no por terminar canción)');
         
         await loadPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
         updateDisplayInfo();
         
-        console.log('✅ Radio optimizada lista');
-        console.log('💡 Click PLAY - Cambios serán rápidos');
+        console.log('✅ Radio lista');
     }
     
     init();

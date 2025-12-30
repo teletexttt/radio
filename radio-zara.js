@@ -1,4 +1,4 @@
-// radio-zara.js - RADIO SIMPLE 1→2→3 - TRANSMISIÓN SINCRONIZADA (FIXED)
+// radio-zara.js - RADIO SIMPLE 1→2→3 - TRANSMISIÓN INFINITA
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -14,8 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = false;
     let currentPlaylist = [];
     let currentTrackIndex = 0;
-    let trackStartTime = 0;
-    let changeTimeout = null;
     
     // ========== CONFIGURACIÓN ==========
     const programNames = {
@@ -110,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== TRANSMISIÓN SINCRONIZADA ==========
+    // ========== TRANSMISIÓN INFINITA ==========
     async function loadPlaylist() {
         try {
             console.log('📻 Cargando playlist...');
@@ -131,119 +129,101 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function calculateSyncPosition() {
-        // La transmisión global comenzó el 1 de enero de 2025 a las 00:00 (hora Argentina)
-        const transmissionStart = new Date(Date.UTC(2025, 0, 1, 3, 0, 0, 0)); // 00:00 ARG = 03:00 UTC
+    function calculateInitialPosition() {
+        // La transmisión comenzó hace mucho tiempo (ej: 1 enero 2025)
+        // Cada 4 horas cambia de canción en la playlist infinita
+        const transmissionStart = new Date(Date.UTC(2025, 0, 1, 3, 0, 0, 0)); // 00:00 ARG
         
         const now = new Date();
-        const trackDuration = 4 * 60 * 60 * 1000; // 4 horas en milisegundos (METÁFORA)
+        const hoursPerTrack = 4; // Cada 4 horas, siguiente canción
+        const msPerTrack = hoursPerTrack * 60 * 60 * 1000;
         
-        // 1. Cuánto tiempo ha pasado desde que empezó la transmisión
+        // Cuánto tiempo ha pasado desde el inicio
         const timeSinceStart = now.getTime() - transmissionStart.getTime();
         
-        // 2. Qué canción está sonando AHORA MISMO (todas las radios del mundo)
-        currentTrackIndex = Math.floor(timeSinceStart / trackDuration) % currentPlaylist.length;
+        // Qué número de canción está sonando AHORA (playlist infinita)
+        // Ej: si pasaron 100 horas y cada canción "dura" 4 horas, vamos en la canción #25
+        currentTrackIndex = Math.floor(timeSinceStart / msPerTrack) % currentPlaylist.length;
         
-        // 3. En qué segundo/minuto de ESTA canción (metafórica) está la transmisión
-        const timeIntoCurrentTrack = timeSinceStart % trackDuration;
+        console.log(`🌍 Transmisión infinita:`);
+        console.log(`   ▶️ Canción actual: #${currentTrackIndex + 1} de ${currentPlaylist.length}`);
+        console.log(`   🔄 Playlist: ${currentTrackIndex + 1}→${currentTrackIndex + 2}→...`);
+        console.log(`   🔗 Todos conectados a la misma canción`);
         
-        // 4. Cuándo empezó ESTA canción específica en la línea de tiempo global
-        trackStartTime = transmissionStart.getTime() + (currentTrackIndex * trackDuration);
-        
-        // 5. Cuánto tiempo falta para que termine ESTE bloque de 4 horas
-        const timeLeftInBlock = trackDuration - timeIntoCurrentTrack;
-        
-        console.log(`🌍 Sincronización global calculada:`);
-        console.log(`   ▶️ Canción actual: ${currentTrackIndex + 1}/${currentPlaylist.length}`);
-        console.log(`   ⏱️  En bloque de 4 horas: ${Math.floor(timeIntoCurrentTrack / 1000 / 60)}min transcurridos`);
-        console.log(`   ⏳ Quedan: ${Math.floor(timeLeftInBlock / 1000 / 60)}min en este bloque`);
-        
-        return {
-            trackIndex: currentTrackIndex,
-            timeIntoCurrentTrack: timeIntoCurrentTrack / 1000, // en segundos
-            trackStartTime: trackStartTime,
-            timeLeftInBlock: timeLeftInBlock
-        };
+        return currentTrackIndex;
     }
     
-    function playSyncTrack() {
+    function playCurrentTrack(startFromBeginning = false) {
         if (currentPlaylist.length === 0) return;
         
-        // Limpiar timeout anterior si existe
-        if (changeTimeout) {
-            clearTimeout(changeTimeout);
-            changeTimeout = null;
-        }
-        
-        // Calcular posición EXACTA de la transmisión global
-        const syncData = calculateSyncPosition();
-        const track = currentPlaylist[syncData.trackIndex];
-        
-        console.log(`🎵 Conectando a transmisión global:`);
-        console.log(`   📀 "${track.file}" (Bloque ${syncData.trackIndex + 1})`);
-        console.log(`   🕐 Bloque empezó hace: ${Math.floor(syncData.timeIntoCurrentTrack / 60)} minutos`);
+        const track = currentPlaylist[currentTrackIndex];
+        console.log(`🎵 Transmisión en vivo:`);
+        console.log(`   📀 "${track.file}"`);
+        console.log(`   #${currentTrackIndex + 1}/${currentPlaylist.length}`);
         
         audioPlayer.src = track.path;
         
-        // Configurar el audio para que LOOPEE durante todo el bloque de 4 horas
-        audioPlayer.loop = true;
-        
-        // Esperar a que el audio esté cargado
-        audioPlayer.onloadedmetadata = function() {
-            // NO establecer currentTime basado en tiempo real
-            // En su lugar, calcular posición dentro del loop de la canción
-            const audioDuration = audioPlayer.duration || 140; // Duración real
-            const blockPosition = syncData.timeIntoCurrentTrack % audioDuration;
-            const startTime = Math.min(blockPosition, audioDuration - 1);
+        if (!startFromBeginning) {
+            // Calcular en qué segundo de la canción está la transmisión global
+            // Basado en el tiempo real desde que empezó ESTA canción
+            const transmissionStart = new Date(Date.UTC(2025, 0, 1, 3, 0, 0, 0));
+            const now = new Date();
+            const hoursPerTrack = 4;
+            const msPerTrack = hoursPerTrack * 60 * 60 * 1000;
             
-            audioPlayer.currentTime = startTime;
+            const timeSinceStart = now.getTime() - transmissionStart.getTime();
+            const timeIntoCurrentTrack = timeSinceStart % msPerTrack;
             
-            console.log(`   🔊 Audio: ${audioDuration.toFixed(1)}s (loop continuo)`);
-            console.log(`   🚀 Reproduciendo desde: ${startTime.toFixed(1)}s dentro del loop`);
-            
+            // Convertir a posición dentro de la canción REAL
+            // Asumimos que el tiempo de la canción se escala al bloque de 4 horas
+            // O simplemente empezamos desde un punto aleatorio/medio
+            audioPlayer.onloadedmetadata = function() {
+                const duration = audioPlayer.duration;
+                if (duration > 0) {
+                    // Posición proporcional dentro de la canción
+                    const progress = (timeIntoCurrentTrack / msPerTrack);
+                    const startTime = Math.min(progress * duration, duration - 5);
+                    
+                    audioPlayer.currentTime = startTime;
+                    console.log(`   🚀 Sincronizado en: ${startTime.toFixed(1)}s de ${duration.toFixed(1)}s`);
+                }
+                
+                if (isPlaying) {
+                    audioPlayer.play().catch(e => {
+                        console.error('❌ Error:', e.name);
+                        playNextTrack();
+                    });
+                }
+            };
+        } else {
+            audioPlayer.currentTime = 0;
             if (isPlaying) {
                 audioPlayer.play().catch(e => {
-                    console.error('❌ Error al reproducir:', e.name);
-                    scheduleNextTrack();
+                    console.error('❌ Error:', e.name);
+                    playNextTrack();
                 });
             }
-            
-            // Programar cambio al siguiente bloque (NO cuando termine la canción)
-            scheduleBlockChange(syncData.timeLeftInBlock);
-        };
-        
-        // REMOVER el onended que causa el loop infinito
-        audioPlayer.onended = null;
-        
-        audioPlayer.onerror = function() {
-            console.error('❌ Error de audio');
-            scheduleNextTrack();
-        };
-    }
-    
-    function scheduleBlockChange(timeUntilNextBlock) {
-        // Limpiar timeout anterior
-        if (changeTimeout) {
-            clearTimeout(changeTimeout);
         }
         
-        console.log(`⏳ Próximo bloque/canción en: ${Math.floor(timeUntilNextBlock / 1000 / 60)} minutos`);
+        // Cuando termine ESTA canción, pasar a la siguiente
+        audioPlayer.onended = function() {
+            console.log('✅ Canción terminada - Siguiente en playlist infinita');
+            playNextTrack();
+        };
         
-        // Programar cambio para cuando termine el bloque actual (4 horas)
-        changeTimeout = setTimeout(() => {
-            if (isPlaying) {
-                console.log(`🔄 Cambiando al siguiente bloque programático`);
-                playSyncTrack(); // Esto recalculará todo
-            }
-        }, timeUntilNextBlock);
-        
-        updateDisplayInfo();
+        audioPlayer.onerror = function() {
+            console.error('❌ Error de audio - Saltando a siguiente');
+            playNextTrack();
+        };
     }
     
-    function scheduleNextTrack() {
-        // Para errores, cambiar inmediatamente
-        console.log(`⚡ Cambio inmediato por error`);
-        playSyncTrack();
+    function playNextTrack() {
+        if (currentPlaylist.length === 0) return;
+        
+        // Siguiente en la playlist infinita
+        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+        console.log(`⏭️ Siguiente: #${currentTrackIndex + 1}/${currentPlaylist.length}`);
+        playCurrentTrack(true); // Esta sí empieza desde 0
     }
     
     function updatePlayButton() {
@@ -272,21 +252,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isPlaying) {
             audioPlayer.pause();
             isPlaying = false;
-            if (changeTimeout) {
-                clearTimeout(changeTimeout);
-                changeTimeout = null;
-            }
             console.log('⏸️ Pausado');
         } else {
             if (currentPlaylist.length === 0) await loadPlaylist();
             isPlaying = true;
             
-            console.log('▶️ Conectando a transmisión global...');
-            console.log('📡 Modo: Playlist 1→2→3 (bloques de 4 horas)');
+            console.log('▶️ Conectando a transmisión infinita...');
+            console.log('📡 Playlist 1→2→3→... infinita');
             
-            playSyncTrack();
+            // Calcular en qué canción está la transmisión global
+            calculateInitialPosition();
             
-            console.log('✅ Conectado - Escuchas lo mismo que todos');
+            // Unirse a la transmisión donde va
+            playCurrentTrack(false);
+            
+            console.log('✅ Conectado - Todos escuchan lo mismo');
         }
         updatePlayButton();
     });
@@ -296,16 +276,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== INICIALIZACIÓN ==========
     async function init() {
         console.log('🚀 Iniciando Radio Simple');
-        console.log('📡 Modo: Playlist programática 1→2→3');
-        console.log('⏱️  Cada canción = Bloque de 4 horas');
-        console.log('🎯 TODOS sincronizados en el mismo bloque');
+        console.log('📡 Modo: Transmisión infinita 24/7');
+        console.log('🔄 Playlist: 1→2→3→...→84→1→2→...');
+        console.log('👥 Todos se suman donde va la transmisión');
         
         await loadPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
         
-        console.log('✅ Radio lista');
-        console.log('💡 Cada canción se repite en loop durante 4 horas');
+        console.log('✅ Radio lista - Transmisión continua');
     }
     
     init();

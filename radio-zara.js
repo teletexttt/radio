@@ -1,4 +1,4 @@
-// radio-zara.js - RADIO SIMPLE - VERSIÓN ESTABLE
+// radio-zara.js - VERSIÓN ZARA RADIO SIMPLE
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -14,11 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = false;
     let currentPlaylist = [];
     let currentTrackIndex = 0;
-    let isTransitioning = false;
-    let nextAudioPreload = null;
-    let lastCalculatedPosition = -1; // Para verificar consistencia
     
-    // ========== CONFIGURACIÓN ==========
+    // ========== CONFIGURACIÓN PROGRAMAS (SIMULADOS) ==========
     const programNames = {
         "madrugada": "Radio 404",
         "mañana": "Archivo txt", 
@@ -48,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ]
     };
     
-    // ========== FUNCIONES PROGRAMA ==========
+    // ========== FUNCIONES PROGRAMA (SIMULADAS) ==========
     function getArgentinaTime() {
         const now = new Date();
         const argentinaOffset = -3 * 60;
@@ -111,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== RADIO ESTABLE ==========
+    // ========== LÓGICA ZARA RADIO (UNA SOLA PLAYLIST) ==========
     async function loadPlaylist() {
         try {
             console.log('📻 Cargando playlist...');
@@ -125,6 +122,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log(`📻 Playlist cargada: ${currentPlaylist.length} canciones`);
             
+            // Calcular posición ACTUAL en la transmisión continua
+            calcularPosicionTransmision();
+            
         } catch (error) {
             console.error('Error:', error);
             currentPlaylist = [];
@@ -132,191 +132,73 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function getGlobalTrackPosition() {
-        // Fecha fija de inicio de transmisión
-        const transmissionStart = new Date('2025-01-01T03:00:00Z'); // 00:00 ARG
+    function calcularPosicionTransmision() {
+        // Fecha de inicio de la transmisión (1 enero 2025, 00:00 ARG)
+        const inicioTransmision = new Date('2025-01-01T03:00:00Z');
+        const ahora = new Date();
         
-        const now = new Date();
-        const msSinceStart = now.getTime() - transmissionStart.getTime();
-        const msPerSlot = 4 * 60 * 60 * 1000; // 4 horas en milisegundos
+        // Tiempo transcurrido en MILISEGUNDOS
+        const msTranscurridos = ahora.getTime() - inicioTransmision.getTime();
         
-        // Slot global actual (qué bloque de 4 horas estamos)
-        const globalSlot = Math.floor(msSinceStart / msPerSlot);
+        // ESTIMADO: 3 minutos por canción (180,000 ms)
+        const msPorCancion = 3 * 60 * 1000;
         
-        // Track index según slot global (playlist cíclica)
-        const calculatedIndex = globalSlot % currentPlaylist.length;
+        // Total de canciones reproducidas desde el inicio
+        const totalCancionesReproducidas = Math.floor(msTranscurridos / msPorCancion);
         
-        // Verificar consistencia
-        if (lastCalculatedPosition !== -1 && lastCalculatedPosition !== calculatedIndex) {
-            console.warn(`⚠️ Cambio detectado: ${lastCalculatedPosition} → ${calculatedIndex}`);
-        }
+        // Posición actual en la playlist cíclica
+        currentTrackIndex = totalCancionesReproducidas % currentPlaylist.length;
         
-        lastCalculatedPosition = calculatedIndex;
-        
-        console.log(`🌍 Posición global calculada:`);
-        console.log(`   🎯 Slot global: ${globalSlot}`);
-        console.log(`   ▶️  Canción: #${calculatedIndex + 1}/${currentPlaylist.length}`);
-        console.log(`   ✅ Consistente: ${lastCalculatedPosition === calculatedIndex ? 'SÍ' : 'NO'}`);
-        
-        return {
-            trackIndex: calculatedIndex,
-            msIntoSlot: msSinceStart % msPerSlot,
-            slot: globalSlot
-        };
+        console.log('📡 LÓGICA ZARA RADIO:');
+        console.log(`   ▶️  Canción actual: #${currentTrackIndex + 1}`);
+        console.log(`   ⏱️  Transmisión continua desde: 1 enero 2025`);
+        console.log(`   🔄 Playlist cíclica: ${currentPlaylist.length} canciones`);
     }
     
-    function preloadNextTrack() {
+    function playTransmisionActual() {
         if (currentPlaylist.length === 0) return;
         
-        // Precargar la canción que SIGUE en la secuencia global
-        const globalPos = getGlobalTrackPosition();
-        const nextIndex = (globalPos.trackIndex + 1) % currentPlaylist.length;
-        const nextTrack = currentPlaylist[nextIndex];
-        
-        if (nextAudioPreload) {
-            nextAudioPreload.pause();
-            nextAudioPreload = null;
-        }
-        
-        nextAudioPreload = new Audio();
-        nextAudioPreload.preload = 'auto';
-        nextAudioPreload.src = nextTrack.path;
-        nextAudioPreload.load();
-        
-        console.log(`🔮 Precargando siguiente: "${nextTrack.file}"`);
-    }
-    
-    function playSyncedTrack() {
-        if (currentPlaylist.length === 0 || isTransitioning) return;
-        
-        console.time('⏱️ Sincronización');
-        isTransitioning = true;
-        
-        // Obtener posición GLOBAL actual
-        const globalPos = getGlobalTrackPosition();
-        currentTrackIndex = globalPos.trackIndex; // ¡IMPORTANTE! Sincronizar con global
         const track = currentPlaylist[currentTrackIndex];
-        
-        console.log(`🎵 Conectando a transmisión global:`);
-        console.log(`   📀 "${track.file}"`);
-        console.log(`   #${currentTrackIndex + 1}/${currentPlaylist.length}`);
+        console.log(`🎵 Reproduciendo: "${track.file}"`);
+        console.log(`   (#${currentTrackIndex + 1}/${currentPlaylist.length})`);
         
         // Configurar audio
         audioPlayer.src = track.path;
         
-        // Sincronizar tiempo de inicio
-        let syncCompleted = false;
-        const syncTimeout = setTimeout(() => {
-            if (!syncCompleted) {
-                console.log('⚡ Timeout sincronización - Forzando inicio');
-                safePlay();
-            }
-        }, 2000);
-        
-        const onLoaded = () => {
-            if (syncCompleted) return;
-            syncCompleted = true;
-            clearTimeout(syncTimeout);
-            
-            if (audioPlayer.duration > 0) {
-                // Calcular posición dentro de la canción actual
-                const slotDuration = 4 * 60 * 60; // 4 horas en segundos
-                const progress = (globalPos.msIntoSlot / 1000) % slotDuration;
-                const scaledProgress = (progress / slotDuration) * audioPlayer.duration;
-                const startTime = Math.min(scaledProgress % audioPlayer.duration, audioPlayer.duration - 5);
-                
-                audioPlayer.currentTime = startTime;
-                console.log(`🎯 Iniciando en: ${startTime.toFixed(1)}s/${audioPlayer.duration.toFixed(1)}s`);
-            }
-            
-            safePlay();
-            console.timeEnd('⏱️ Sincronización');
-        };
-        
-        audioPlayer.addEventListener('loadedmetadata', onLoaded, { once: true });
-        
-        // Si ya tiene metadata, usar inmediatamente
-        if (audioPlayer.readyState >= 1) {
-            setTimeout(onLoaded, 10);
-        }
-    }
-    
-    function playNextTrackInstant() {
-        if (currentPlaylist.length === 0 || isTransitioning) return;
-        
-        console.time('⏱️ Verificación cambio');
-        isTransitioning = true;
-        
-        // 1. Verificar qué canción DEBERÍA estar sonando GLOBALMENTE
-        const globalPos = getGlobalTrackPosition();
-        const shouldBeTrackIndex = globalPos.trackIndex;
-        
-        console.log(`🔍 Verificación cambio:`);
-        console.log(`   🎧 Actual local: #${currentTrackIndex + 1}`);
-        console.log(`   🌍 Debería ser: #${shouldBeTrackIndex + 1}`);
-        
-        // 2. DECISIÓN: ¿Cambiar o repetir?
-        if (currentTrackIndex === shouldBeTrackIndex) {
-            // Misma canción, solo repetir desde inicio
-            console.log(`🔄 Repitiendo misma canción (bloque de 4 horas)`);
-            
-            audioPlayer.currentTime = 0;
-            
-            setTimeout(() => {
-                audioPlayer.play().catch(e => {
-                    console.error('❌ Error al repetir:', e);
-                });
-                isTransitioning = false;
-                console.timeEnd('⏱️ Verificación cambio');
-            }, 30);
-            
-            return;
-        }
-        
-        // 3. Cambiar a la canción globalmente correcta
-        console.log(`⏭️ Cambiando a canción global: #${shouldBeTrackIndex + 1}`);
-        currentTrackIndex = shouldBeTrackIndex;
-        const track = currentPlaylist[currentTrackIndex];
-        
-        // Cambiar audio
-        audioPlayer.pause();
-        audioPlayer.src = track.path;
-        audioPlayer.currentTime = 0;
+        // NO sincronizar por segundo, empezar desde donde carga
+        // (El navegador empieza donde puede)
         
         // Reproducir
-        setTimeout(() => {
+        if (isPlaying) {
             audioPlayer.play().catch(e => {
-                console.error('❌ Error en cambio:', e);
-                // Reintento
-                setTimeout(() => {
-                    isTransitioning = false;
-                    playNextTrackInstant();
-                }, 300);
+                console.error('❌ Error:', e);
+                // Si falla, siguiente canción
+                setTimeout(siguienteCancion, 1000);
             });
-            
-            isTransitioning = false;
-            console.timeEnd('⏱️ Verificación cambio');
-            
-            // Precargar siguiente
-            preloadNextTrack();
-        }, 50);
-    }
-    
-    function safePlay() {
-        if (!isPlaying) {
-            isTransitioning = false;
-            return;
         }
         
-        audioPlayer.play().catch(e => {
-            console.error('❌ Error play:', e);
-            setTimeout(() => {
-                isTransitioning = false;
-                playNextTrackInstant();
-            }, 500);
-        }).then(() => {
-            isTransitioning = false;
-        });
+        // Cuando TERMINE esta canción, pasar a la SIGUIENTE
+        audioPlayer.onended = function() {
+            console.log('✅ Canción terminada - Siguiente en playlist');
+            siguienteCancion();
+        };
+        
+        audioPlayer.onerror = function() {
+            console.error('❌ Error de audio');
+            setTimeout(siguienteCancion, 1000);
+        };
+    }
+    
+    function siguienteCancion() {
+        if (currentPlaylist.length === 0) return;
+        
+        // AVANZAR en la playlist
+        currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
+        
+        console.log(`⏭️ Siguiente: #${currentTrackIndex + 1}`);
+        
+        // Reproducir siguiente
+        playTransmisionActual();
     }
     
     function updatePlayButton() {
@@ -343,49 +225,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== EVENTOS ==========
     playButton.addEventListener('click', async function() {
         if (isPlaying) {
+            // PAUSAR
             audioPlayer.pause();
             isPlaying = false;
             console.log('⏸️ Pausado');
         } else {
+            // PLAY - Conectar a transmisión
             if (currentPlaylist.length === 0) {
                 await loadPlaylist();
             }
             isPlaying = true;
-            console.log('▶️ Conectando...');
-            playSyncedTrack();
+            
+            console.log('▶️ Conectando a transmisión Zara Radio...');
+            console.log('📻 1 playlist infinita, programas simulados');
+            
+            // Calcular dónde va la transmisión AHORA
+            calcularPosicionTransmision();
+            
+            // Reproducir desde ahí
+            playTransmisionActual();
         }
         updatePlayButton();
     });
-    
-    // Configurar eventos UNA VEZ
-    audioPlayer.onended = function() {
-        console.log('✅ Canción terminada - Verificando si cambiar...');
-        playNextTrackInstant();
-    };
-    
-    audioPlayer.onerror = function() {
-        console.error('❌ Error audio');
-        setTimeout(() => {
-            if (isPlaying) {
-                playNextTrackInstant();
-            }
-        }, 500);
-    };
     
     shareButton.addEventListener('click', shareRadio);
     
     // ========== INICIALIZACIÓN ==========
     async function init() {
-        console.log('🚀 Radio Simple - Versión Estable');
-        console.log('🎯 Cada F5 calculará MISMA posición');
-        console.log('🔄 Solo cambia cada 4 horas (no por terminar canción)');
+        console.log('🚀 Radio Zara Style - Iniciando');
+        console.log('📡 Lógica: 1 PLAYLIST INFINITA');
+        console.log('🎭 Programas: SIMULADOS (visual solamente)');
         
         await loadPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
         updateDisplayInfo();
         
-        console.log('✅ Radio lista');
+        console.log('✅ Radio lista - Haz clic en PLAY');
+        console.log('💡 Se conectará a la transmisión continua');
     }
     
     init();

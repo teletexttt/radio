@@ -1,4 +1,4 @@
-// radio-zara.js - VERSIÓN FINAL CON SINCRONIZACIÓN EXACTA
+// radio-zara.js - VERSIÓN FINAL CORREGIDA (INICIO RÁPIDO)
 document.addEventListener('DOMContentLoaded', function() {
     const playButton = document.getElementById('radioPlayButton');
     const shareButton = document.getElementById('shareRadioButton');
@@ -168,7 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function playTransmisionExacta() {
         if (currentPlaylist.length === 0) return;
         
-        // Obtener posición EXACTA de la transmisión
         const posicion = calcularPosicionExacta();
         const track = posicion.track;
         
@@ -176,26 +175,14 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`   📀 "${track.file}"`);
         console.log(`   🎯 Empezando en segundo: ${posicion.segundoEnCancion}`);
         
-        // Configurar audio
+        // FIXED: Configurar src y tiempo INMEDIATAMENTE (sin esperar loadedmetadata)
         audioPlayer.src = track.path;
+        // Establecer currentTime de inmediato. El navegador lo aplicará cuando cargue.
+        audioPlayer.currentTime = Math.min(posicion.segundoEnCancion, 3600); // Límite seguro de 1 hora
         
-        // Configurar el tiempo exacto CUANDO cargue el audio
-        const configurarTiempoExacto = () => {
-            if (audioPlayer.duration > 0) {
-                const startTime = Math.min(posicion.segundoEnCancion, audioPlayer.duration - 1);
-                audioPlayer.currentTime = startTime;
-                console.log(`   🔊 Posicionado en: ${startTime.toFixed(1)}s de ${audioPlayer.duration.toFixed(1)}s`);
-            }
-        };
+        console.log(`   🔊 Tiempo establecido: ${posicion.segundoEnCancion}s (sin esperar metadata)`);
         
-        audioPlayer.addEventListener('loadedmetadata', configurarTiempoExacto, { once: true });
-        
-        // Si ya está cargado, configurar inmediatamente
-        if (audioPlayer.readyState >= 1) {
-            setTimeout(configurarTiempoExacto, 10);
-        }
-        
-        // Reproducir
+        // FIXED: Reproducir inmediatamente
         if (isPlaying) {
             audioPlayer.play().catch(e => {
                 console.error('❌ Error al reproducir:', e);
@@ -203,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Cuando termine, siguiente canción (desde 0)
+        // Configurar manejadores de eventos para errores y fin de canción
         audioPlayer.onended = function() {
             console.log('✅ Canción terminada - Siguiente');
             siguienteCancion();
@@ -272,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
             isPlaying = true;
             
             console.log('▶️ Conectando a transmisión exacta...');
-            console.log('📡 Todos en el mismo segundo exacto');
+            console.log('⚡ INICIO RÁPIDO (sin esperar metadata)');
             
             playTransmisionExacta();
         }
@@ -283,17 +270,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== INICIALIZACIÓN ==========
     async function init() {
-        console.log('🚀 Radio Zara - Versión Final');
+        console.log('🚀 Radio Zara - Versión Final (Inicio Rápido)');
         console.log('🎯 Sincronización exacta por segundo');
-        console.log('📻 Playlist infinita desde 1/1/2025');
-        console.log('👥 Todos escuchan EXACTAMENTE lo mismo');
+        console.log('⚡ Corrección: Inicio inmediato (sin esperar metadata)');
         
         await loadPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
         updateDisplayInfo();
         
-        console.log('✅ Radio lista con sincronización exacta');
+        console.log('✅ Radio lista con sincronización exacta e inicio rápido');
     }
     
     init();

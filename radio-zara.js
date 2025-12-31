@@ -14,8 +14,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let isPlaying = false;
     let currentPlaylist = [];
     let currentTrackIndex = 0;
-    
-    // ========== CONFIGURACIÓN PROGRAMAS (SIMULADOS) ==========
+    let playlistLoaded = false;
+    let errorCount = 0;
+    const MAX_ERRORS = 3;
+
+    // ========== CONFIGURACIÓN PROGRAMAS ==========
     const programNames = {
         "madrugada": "Radio 404",
         "mañana": "Archivo txt", 
@@ -45,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ]
     };
     
-    // ========== FUNCIONES PROGRAMA (SIMULADOS) ==========
+    // ========== FUNCIONES PROGRAMA ==========
     function getArgentinaTime() {
         const now = new Date();
         const argentinaOffset = -3 * 60;
@@ -108,8 +111,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ========== LÓGICA RADIO CON SINCRONIZACIÓN EXACTA ==========
+    // ========== LÓGICA RADIO ==========
     async function loadPlaylist() {
+        if (playlistLoaded) return;
+        
         try {
             console.log('📻 Cargando playlist...');
             const response = await fetch('playlist.json');
@@ -120,6 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 file: track.split('/').pop()
             }));
             
+            playlistLoaded = true;
             console.log(`📻 Playlist cargada: ${currentPlaylist.length} canciones`);
             
         } catch (error) {
@@ -130,27 +136,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function calcularPosicionExacta() {
-        // 1. Transmisión comenzó el 1 enero 2025, 00:00 ARG
         const inicioTransmision = new Date('2025-01-01T03:00:00Z');
         const ahora = new Date();
         
-        // 2. Segundos transcurridos desde que empezó la radio
         const segundosTranscurridos = Math.floor((ahora - inicioTransmision) / 1000);
-        
-        // 3. Duración promedio por canción (3 minutos = 180 segundos)
-        // ¡IMPORTANTE! Todos usan el MISMO número
         const segundosPorCancion = 180;
-        
-        // 4. Segundos totales de la playlist completa
         const segundosTotalPlaylist = currentPlaylist.length * segundosPorCancion;
-        
-        // 5. Posición actual en la playlist cíclica infinita
         const posicionEnPlaylist = segundosTranscurridos % segundosTotalPlaylist;
         
-        // 6. Qué canción está sonando AHORA
         currentTrackIndex = Math.floor(posicionEnPlaylist / segundosPorCancion) % currentPlaylist.length;
-        
-        // 7. En qué segundo de ESA canción está la transmisión
         const segundoEnCancion = posicionEnPlaylist % segundosPorCancion;
         
         console.log('🎯 SINCRONIZACIÓN EXACTA:');
@@ -175,29 +169,56 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`   📀 "${track.file}"`);
         console.log(`   🎯 Empezando en segundo: ${posicion.segundoEnCancion}`);
         
-        // FIXED: Configurar src y tiempo INMEDIATAMENTE (sin esperar loadedmetadata)
+        // Limpiar eventos previos
+        audioPlayer.onloadedmetadata = null;
+        audioPlayer.onerror = null;
+        audioPlayer.onended = null;
+        
+        // Configurar audio
         audioPlayer.src = track.path;
-        // Establecer currentTime de inmediato. El navegador lo aplicará cuando cargue.
-        audioPlayer.currentTime = Math.min(posicion.segundoEnCancion, 3600); // Límite seguro de 1 hora
+        audioPlayer.currentTime = Math.min(posicion.segundoEnCancion, 3600);
         
-        console.log(`   🔊 Tiempo establecido: ${posicion.segundoEnCancion}s (sin esperar metadata)`);
+        console.log(`   🔊 Tiempo establecido: ${posicion.segundoEnCancion}s`);
         
-        // FIXED: Reproducir inmediatamente
-        if (isPlaying) {
-            audioPlayer.play().catch(e => {
-                console.error('❌ Error al reproducir:', e);
-                setTimeout(siguienteCancion, 1000);
+        // Intentar reproducir inmediatamente
+        const playPromise = audioPlayer.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.catch(e => {
+                console.error('❌ Error al reproducir:', e.name);
+                setTimeout(() => {
+                    audioPlayer.play().catch(() => {
+                        setTimeout(siguienteCancion, 1000);
+                    });
+                }, 300);
             });
         }
         
-        // Configurar manejadores de eventos para errores y fin de canción
+        // Configurar eventos
+        audioPlayer.onloadedmetadata = function() {
+            if (Math.abs(audioPlayer.currentTime - posicion.segundoEnCancion) > 2) {
+                audioPlayer.currentTime = Math.min(posicion.segundoEnCancion, 3600);
+            }
+        };
+        
         audioPlayer.onended = function() {
+            errorCount = 0;
             console.log('✅ Canción terminada - Siguiente');
             siguienteCancion();
         };
         
         audioPlayer.onerror = function() {
             console.error('❌ Error de audio');
+            errorCount++;
+            
+            if (errorCount >= MAX_ERRORS) {
+                console.error('🚨 Demasiados errores - Deteniendo');
+                isPlaying = false;
+                updatePlayButton();
+                errorCount = 0;
+                return;
+            }
+            
             setTimeout(siguienteCancion, 1000);
         };
     }
@@ -205,25 +226,54 @@ document.addEventListener('DOMContentLoaded', function() {
     function siguienteCancion() {
         if (currentPlaylist.length === 0) return;
         
-        // Avanzar a siguiente canción
+        errorCount = 0;
         currentTrackIndex = (currentTrackIndex + 1) % currentPlaylist.length;
         const track = currentPlaylist[currentTrackIndex];
         
         console.log(`⏭️ Siguiente canción: #${currentTrackIndex + 1} (${track.file})`);
         
-        // Para cambios normales, empezar desde 0
+        // Limpiar eventos
+        audioPlayer.onloadedmetadata = null;
+        audioPlayer.onerror = null;
+        audioPlayer.onended = null;
+        
         audioPlayer.src = track.path;
         audioPlayer.currentTime = 0;
         
         if (isPlaying) {
-            audioPlayer.play().catch(e => {
-                console.error('❌ Error:', e);
+            const playPromise = audioPlayer.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                    console.error('❌ Error:', e.name);
+                    setTimeout(siguienteCancion, 1000);
+                });
+            }
+            
+            audioPlayer.onerror = function() {
+                console.error('❌ Error de audio');
+                errorCount++;
+                
+                if (errorCount >= MAX_ERRORS) {
+                    console.error('🚨 Demasiados errores - Deteniendo');
+                    isPlaying = false;
+                    updatePlayButton();
+                    errorCount = 0;
+                    return;
+                }
+                
                 setTimeout(siguienteCancion, 1000);
-            });
+            };
+            
+            audioPlayer.onended = function() {
+                errorCount = 0;
+                siguienteCancion();
+            };
         }
     }
     
     function updatePlayButton() {
+        if (!playPath || !pausePath1 || !pausePath2) return;
         playPath.setAttribute('opacity', isPlaying ? '0' : '1');
         pausePath1.setAttribute('opacity', isPlaying ? '1' : '0');
         pausePath2.setAttribute('opacity', isPlaying ? '1' : '0');
@@ -247,21 +297,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // ========== EVENTOS ==========
     playButton.addEventListener('click', async function() {
         if (isPlaying) {
-            // PAUSAR
             audioPlayer.pause();
             isPlaying = false;
             console.log('⏸️ Pausado');
         } else {
-            // PLAY - Conectar a transmisión EXACTA
-            if (currentPlaylist.length === 0) {
+            if (!playlistLoaded) {
                 await loadPlaylist();
             }
             isPlaying = true;
             
             console.log('▶️ Conectando a transmisión exacta...');
-            console.log('⚡ INICIO RÁPIDO (sin esperar metadata)');
+            console.log('⚡ INICIO RÁPIDO');
             
-            playTransmisionExacta();
+            setTimeout(() => {
+                playTransmisionExacta();
+            }, 0);
         }
         updatePlayButton();
     });
@@ -270,16 +320,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== INICIALIZACIÓN ==========
     async function init() {
-        console.log('🚀 Radio Zara - Versión Final (Inicio Rápido)');
+        console.log('🚀 Radio Zara - Versión Final');
         console.log('🎯 Sincronización exacta por segundo');
-        console.log('⚡ Corrección: Inicio inmediato (sin esperar metadata)');
         
         await loadPlaylist();
         generateScheduleCards();
         setInterval(updateDisplayInfo, 60000);
         updateDisplayInfo();
         
-        console.log('✅ Radio lista con sincronización exacta e inicio rápido');
+        console.log('✅ Radio lista');
     }
     
     init();
